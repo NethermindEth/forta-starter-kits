@@ -37,7 +37,7 @@ function provideHandleTransaction(helper, getFlashloans) {
     // Iterating from the end to find the profitable transfer instance
     for(let i = transferEvents.length -1; i >= 0; i--) {
       if(transferEvents[i].name === "Transfer" && transferEvents[i].args.src.toLowerCase() === calledContract) {
-        endRecipient = transferEvents[i]["args"]["dst"].toLowerCase();
+        endRecipient = transferEvents[i].args.dst.toLowerCase();
         break;
       }
     }
