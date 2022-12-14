@@ -23,13 +23,24 @@ const transferEventSigs = [
 function provideHandleTransaction(helper, getFlashloans) {
   return async function handleTransaction(txEvent) {
     const findings = [];
-    const initiator = txEvent.from;
+    const initiator = txEvent.from.toLowerCase();
+    let calledContract;
+    let endRecipient;
 
     const flashloans = await getFlashloans(txEvent);
     if (flashloans.length === 0) return findings;
 
+    calledContract = txEvent.to.toLowerCase();
     const transferEvents = txEvent.filterLog(transferEventSigs);
     const { traces } = txEvent;
+
+    // Iterating from the end to find the profitable transfer instance
+    for(let i = transferEvents.length -1; i >= 0; i--) {
+      if(transferEvents[i].name === "Transfer" && transferEvents[i].args.src.toLowerCase() === calledContract) {
+        endRecipient = transferEvents[i]["args"]["dst"].toLowerCase();
+        break;
+      }
+    }
 
     // For each flashloan calculate the token profits and the borrowed amount
     const flashloansData = await Promise.all(
@@ -49,9 +60,9 @@ function provideHandleTransaction(helper, getFlashloans) {
       })
     );
 
-    // Set the initial total profit to the initiator's profit
-    const totalTokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
-    let totalNativeProfit = helper.calculateNativeProfit(traces, initiator);
+    // Set the initial total profit to the end recipient's profit
+    const totalTokenProfits = helper.calculateTokenProfits(transferEvents, endRecipient);
+    let totalNativeProfit = helper.calculateNativeProfit(traces, endRecipient);
     let totalBorrowed = 0;
 
     // Subtract the tx fee
