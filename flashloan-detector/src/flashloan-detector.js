@@ -4,6 +4,7 @@ const { getDydxFlashloan } = require("./detectors/dydx-detector");
 const { getEulerFlashloan } = require("./detectors/euler-detector");
 const { getIronBankFlashloan } = require("./detectors/iron-bank-detector");
 const { getMakerFlashloan } = require("./detectors/maker-detector");
+const { getBalancerFlashloan } = require("./detectors/balancer-detector");
 const { getUniswapV2Flashloan } = require("./detectors/uniswap-v2-detector");
 const { getUniswapV3Flashloan } = require("./detectors/uniswap-v3-detector");
 
@@ -19,6 +20,7 @@ module.exports = {
     const makerFlashloans = getMakerFlashloan(txEvent);
     const uniswapV2Flashloans = await getUniswapV2Flashloan(txEvent);
     const uniswapV3Flashloans = await getUniswapV3Flashloan(txEvent);
+    const balancerFlashloans = getBalancerFlashloan(txEvent);
 
     flashloanProtocols.push(
       ...aaveV2Flashloans,
@@ -28,7 +30,8 @@ module.exports = {
       ...ironBankFlashloans,
       ...makerFlashloans,
       ...uniswapV2Flashloans,
-      ...uniswapV3Flashloans
+      ...uniswapV3Flashloans,
+      ...balancerFlashloans
     );
 
     return flashloanProtocols;
