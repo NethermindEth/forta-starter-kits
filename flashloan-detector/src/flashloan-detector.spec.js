@@ -117,6 +117,10 @@ const mockUniswapV3FunctionCall = {
   },
 };
 
+const mockBalancererEvent = {
+  args: { token: asset, amount, receiver: account },
+};
+
 describe("FlashloanDetector library", () => {
   const mockTxEvent = {
     filterLog: jest.fn(),
@@ -151,13 +155,14 @@ describe("FlashloanDetector library", () => {
       mockTxEvent.filterLog.mockReturnValueOnce([mockMakerEvent]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV2FunctionCall]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV3FunctionCall]);
+      mockTxEvent.filterLog.mockReturnValueOnce([mockBalancererEvent]);
       const flashloans = await getFlashloans(mockTxEvent);
 
       const expectedFlashloanData = { account, amount, asset };
       const expectedArray = [];
 
-      // 7 flashloans: aaveV2, aaveV3, dydx, euler, iron bank, maker, uniswap V2, uniswap V3
-      for (let i = 0; i < 8; i++) {
+      // 8 flashloans: aaveV2, aaveV3, dydx, euler, iron bank, maker, uniswap V2, uniswap V3, balancer
+      for (let i = 0; i < 9; i++) {
         expectedArray.push(expectedFlashloanData);
       }
 
