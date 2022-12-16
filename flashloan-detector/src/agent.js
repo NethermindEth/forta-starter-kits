@@ -23,30 +23,21 @@ const transferEventSigs = [
 function provideHandleTransaction(helper, getFlashloans) {
   return async function handleTransaction(txEvent) {
     const findings = [];
-    const initiator = txEvent.from.toLowerCase();
+    const initiator = txEvent.from;
 
-    // flashloans[0].account IS THE BORROWER CONTRACT
-    // OF THE FLASHLOAN, THAT THEN SENDS THE TRANSFER
-    // TO THE EOA
     const flashloans = await getFlashloans(txEvent);
     if (flashloans.length === 0) return findings;
 
-    // transferEvents[17] IS THE CORRECT TRANSFER,
-    // THAT SENT THE PROFIT FROM THE BORROWER CONTRACT
-    // TO THE END RECIPIENT, WHO HAPPENS TO BE THE
-    // INITIATOR EOA IN THIS TRANSACTION
+    const calledContract = txEvent.to;
     const transferEvents = txEvent.filterLog(transferEventSigs);
     const { traces } = txEvent;
-    
-    console.log("the last transferEvents is: " + JSON.stringify(transferEvents[transferEvents.length - 1]));
 
-    // Set the initial total profit to the end recipient's profit
     let totalTokenProfits = {};
     let totalNativeProfit = helper.zero;
     let totalBorrowed = 0;
 
     // For each flashloan calculate the token profits and the borrowed amount
-    const flashloansData = await Promise.all(
+    await Promise.all(
       flashloans.map(async (flashloan) => {
         const { asset, amount, account } = flashloan;
 
@@ -61,59 +52,90 @@ function provideHandleTransaction(helper, getFlashloans) {
           totalNativeProfit = nativeProfit.add(nativeProfit);
         }
 
-        // Iterating from the end to find the profitable transfer instance
-        for(let i = transferEvents.length -1; i >= 0; i--) {
-          if(transferEvents[i].name === "Transfer" && transferEvents[i].args.src.toLowerCase() === account) {
-            const _endRecipient = transferEvents[i].args.dst.toLowerCase();
-            const tokenProfits = helper.calculateTokenProfits(transferEvents, _endRecipient);
-            const nativeProfit = helper.calculateNativeProfit(traces, _endRecipient);
+        // Iterating through back of Transfers to find recipient of end profit
+        for (let i = transferEvents.length - 1; i >= 0; i--) {
+          const { name } = transferEvents[i];
+          const { src, dst } = transferEvents[i].args;
 
-            // ADD PROFIT TO THE DECLARED OBJECTS.
+          if (name === "Transfer" && src.toLowerCase() === calledContract && src.toLowerCase() === initiator) {
+            const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
+            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
+            if (positiveProfits.length === 0) {
+              continue;
+            }
+
             Object.entries(tokenProfits).forEach(([address, profit]) => {
               if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
               totalTokenProfits[address] = totalTokenProfits[address].add(profit);
             });
-            totalNativeProfit = totalNativeProfit.add(nativeProfit);
+            break;
+          } else if (name === "Transfer" && src.toLowerCase() === account && src.toLowerCase() === initiator) {
+            const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
+            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
+            if (positiveProfits.length === 0) {
+              continue;
+            }
+
+            Object.entries(tokenProfits).forEach(([address, profit]) => {
+              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+            });
+            break;
+          } else if (name === "Transfer" && src.toLowerCase() === calledContract) {
+            const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
+            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
+            if (positiveProfits.length === 0) {
+              continue;
+            }
+
+            Object.entries(tokenProfits).forEach(([address, profit]) => {
+              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+            });
+            break;
+          } else if (name === "Transfer" && src.toLowerCase() === account) {
+            const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
+            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
+            if (positiveProfits.length === 0) {
+              continue;
+            }
+
+            Object.entries(tokenProfits).forEach(([address, profit]) => {
+              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+            });
+            break;
           }
         }
 
-        // ORIGINAL
-        // const borrowedAmountUsd = await helper.calculateBorrowedAmount(asset, amount, chain);
+        for (let i = traces.length - 1; i >= 0; i--) {
+          const { from, to, value, callType } = traces[i].action;
+
+          if (value && value !== "0x0" && callType === "call" && to.toLowerCase() === initiator) {
+            const nativeProfit = helper.calculateNativeProfit(traces, initiator);
+            totalNativeProfit = totalNativeProfit.add(nativeProfit);
+            break;
+          } else if (value && value !== "0x0" && callType === "call" && from.toLowerCase() === account) {
+            const dstAddress = to.toLowerCase();
+            const nativeProfit = helper.calculateNativeProfit(traces, dstAddress);
+            if (nativeProfit === helper.zero) {
+              continue;
+            }
+
+            totalNativeProfit = totalNativeProfit.add(nativeProfit);
+            break;
+          }
+        }
+
         totalBorrowed = await helper.calculateBorrowedAmount(asset, amount, chain);
-        // return { tokenProfits, nativeProfit, borrowedAmountUsd };
       })
     );
-
-    console.log(`totalTokenProfits is ${JSON.stringify(totalTokenProfits)}; totalNativeProfit is ${totalNativeProfit}; totalBorrowed is ${totalBorrowed}.`);
-
-    /*
-    // Set the initial total profit to the end recipient's profit
-    const totalTokenProfits = helper.calculateTokenProfits(transferEvents, endRecipient);
-    let totalNativeProfit = helper.calculateNativeProfit(traces, endRecipient);
-    let totalBorrowed = 0;
-    */
 
     // Subtract the tx fee
     const { gasUsed } = await helper.getTransactionReceipt(txEvent.hash);
     const { gasPrice } = txEvent.transaction;
     const txFee = ethers.BigNumber.from(gasUsed).mul(ethers.BigNumber.from(gasPrice));
     totalNativeProfit = totalNativeProfit.sub(txFee);
-
-    /*
-    // MOVED TO INSIDE THE Flashloan LOOP
-    flashloansData.forEach((flashloan) => {
-      const { tokenProfits, nativeProfit, borrowedAmountUsd } = flashloan;
-
-      // Set initial value and add the profit for the asset to the total
-      Object.entries(tokenProfits).forEach(([address, profit]) => {
-        if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-        totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-      });
-
-      totalNativeProfit = totalNativeProfit.add(nativeProfit);
-      totalBorrowed += borrowedAmountUsd;
-    });
-    */
 
     let tokensUsdProfit = 0;
     let nativeUsdProfit = 0;
