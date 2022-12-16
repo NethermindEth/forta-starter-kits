@@ -1,4 +1,4 @@
-const { FindingType, FindingSeverity, Finding, ethers } = require("forta-agent");
+const { FindingType, FindingSeverity, Finding, ethers, LabelType, EntityType } = require("forta-agent");
 const { provideHandleTransaction, provideInitialize } = require("./agent");
 
 const asset = "0xasset";
@@ -99,6 +99,13 @@ describe("flashloan detector agent", () => {
           profit: (tokenUsdProfit + nativeUsdProfit).toFixed(2),
           tokens: [asset],
         },
+        labels: [{
+          entityType: EntityType.Address,
+          entity: initiator,
+          labelType: LabelType.Attacker,
+          confidence: 90,
+          customValue: "Initiator of transaction"
+        }]
       }),
     ]);
 
@@ -136,6 +143,13 @@ describe("flashloan detector agent", () => {
           profit: (2000).toFixed(2),
           tokens: [asset],
         },
+        labels: [{
+          entityType: EntityType.Address,
+          entity: initiator,
+          labelType: LabelType.Attacker,
+          confidence: 60,
+          customValue: "Initiator of transaction"
+        }]
       }),
     ]);
 
@@ -173,6 +187,13 @@ describe("flashloan detector agent", () => {
           profit: (tokenUsdProfit + highNativeUsdProfit).toFixed(2),
           tokens: [asset],
         },
+        labels: [{
+          entityType: EntityType.Address,
+          entity: initiator,
+          labelType: LabelType.Attacker,
+          confidence: 90,
+          customValue: "Initiator of transaction"
+        }]
       }),
     ]);
 
@@ -219,12 +240,19 @@ describe("flashloan detector agent", () => {
           profit: (2000).toFixed(2),
           tokens: [asset],
         },
+        labels: [{
+          entityType: EntityType.Address,
+          entity: initiator,
+          labelType: LabelType.Attacker,
+          confidence: 60,
+          customValue: "Initiator of transaction"
+        }]
       }),
     ]);
 
     expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
     expect(mockHelper.calculateTokenProfits).toHaveBeenCalledWith([diffMockTransferEvent], diffEndRecipient);
-    expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([], initiator);
+    expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([mockTrace], initiator);
     expect(mockHelper.calculateTokensUsdProfit).toHaveBeenCalledWith(
       {
         [asset]: tokenProfit,

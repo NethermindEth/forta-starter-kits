@@ -1,4 +1,4 @@
-const { Finding, FindingSeverity, FindingType, ethers } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, ethers, LabelType, EntityType } = require("forta-agent");
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
 
@@ -171,6 +171,13 @@ function provideHandleTransaction(helper, getFlashloans) {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
           },
+          labels: [{
+            entityType: EntityType.Address,
+            entity: initiator,
+            labelType: LabelType.Attacker,
+            confidence: 90,
+            customValue: "Initiator of transaction"
+          }]
         })
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
@@ -185,6 +192,13 @@ function provideHandleTransaction(helper, getFlashloans) {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
           },
+          labels: [{
+            entityType: EntityType.Address,
+            entity: initiator,
+            labelType: LabelType.Attacker,
+            confidence: 60,
+            customValue: "Initiator of transaction"
+          }]
         })
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
@@ -199,6 +213,13 @@ function provideHandleTransaction(helper, getFlashloans) {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
           },
+          labels: [{
+            entityType: EntityType.Address,
+            entity: initiator,
+            labelType: LabelType.Attacker,
+            confidence: 90,
+            customValue: "Initiator of transaction"
+          }]
         })
       );
     }
