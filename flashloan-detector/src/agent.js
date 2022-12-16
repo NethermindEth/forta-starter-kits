@@ -57,7 +57,7 @@ function provideHandleTransaction(helper, getFlashloans) {
           const { name } = transferEvents[i];
           const { src, dst } = transferEvents[i].args;
 
-          if (name === "Transfer" && src.toLowerCase() === calledContract && src.toLowerCase() === initiator) {
+          if (name === "Transfer" && src.toLowerCase() === calledContract && dst.toLowerCase() === initiator) {
             const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
             const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
             if (positiveProfits.length === 0) {
@@ -69,7 +69,7 @@ function provideHandleTransaction(helper, getFlashloans) {
               totalTokenProfits[address] = totalTokenProfits[address].add(profit);
             });
             break;
-          } else if (name === "Transfer" && src.toLowerCase() === account && src.toLowerCase() === initiator) {
+          } else if (name === "Transfer" && src.toLowerCase() === account && dst.toLowerCase() === initiator) {
             const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
             const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
             if (positiveProfits.length === 0) {
