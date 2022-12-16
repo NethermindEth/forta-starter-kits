@@ -52,78 +52,54 @@ function provideHandleTransaction(helper, getFlashloans) {
           totalNativeProfit = nativeProfit.add(nativeProfit);
         }
 
-        // Iterating through back of Transfers to find recipient of end profit
-        for (let i = transferEvents.length - 1; i >= 0; i--) {
-          const { name } = transferEvents[i];
-          const { src, dst } = transferEvents[i].args;
+        traceLoop: for (let i = traces.length - 1; i >= 0; i--) {
+          const { from, to, value, callType, input } = traces[i].action;
 
-          if (name === "Transfer" && src.toLowerCase() === calledContract && dst.toLowerCase() === initiator) {
-            const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
-            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
-            if (positiveProfits.length === 0) {
-              continue;
+          if (value && value !== "0x0" && callType === "call") {
+            if((from.toLowerCase() === account || from.toLowerCase() === calledContract) && to.toLowerCase() === initiator) {
+              const nativeProfit = helper.calculateNativeProfit(traces, initiator);
+              totalNativeProfit = totalNativeProfit.add(nativeProfit);
+              break traceLoop;
+            } else if(from.toLowerCase() === account || from.toLowerCase() === calledContract) {
+              const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
+              if (nativeProfit === helper.zero) {
+                continue;
+              }
+
+              totalNativeProfit = totalNativeProfit.add(nativeProfit);
+              break traceLoop;
             }
-
-            Object.entries(tokenProfits).forEach(([address, profit]) => {
-              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-            });
-            break;
-          } else if (name === "Transfer" && src.toLowerCase() === account && dst.toLowerCase() === initiator) {
-            const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
-            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
-            if (positiveProfits.length === 0) {
-              continue;
+          } else if(value === "0x0" && (input.startsWith("0xa9059cbb") || input.startsWith("0x23b872dd"))) {
+            for (let j = transferEvents.length - 1; j >= 0; j--) {
+              const { name } = transferEvents[j];
+              const { src, dst } = transferEvents[j].args;
+    
+              if (name === "Transfer" && (src.toLowerCase() === calledContract || src.toLowerCase() === account) && dst.toLowerCase() === initiator) {
+                const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
+                const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
+                if (positiveProfits.length === 0) {
+                  continue;
+                }
+    
+                Object.entries(tokenProfits).forEach(([address, profit]) => {
+                  if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+                  totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+                });
+                break traceLoop;
+              } else if (name === "Transfer" && (src.toLowerCase() === calledContract || src.toLowerCase() === account)) {
+                const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
+                const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
+                if (positiveProfits.length === 0) {
+                  continue;
+                }
+    
+                Object.entries(tokenProfits).forEach(([address, profit]) => {
+                  if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+                  totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+                });
+                break traceLoop;
+              }
             }
-
-            Object.entries(tokenProfits).forEach(([address, profit]) => {
-              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-            });
-            break;
-          } else if (name === "Transfer" && src.toLowerCase() === calledContract) {
-            const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
-            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
-            if (positiveProfits.length === 0) {
-              continue;
-            }
-
-            Object.entries(tokenProfits).forEach(([address, profit]) => {
-              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-            });
-            break;
-          } else if (name === "Transfer" && src.toLowerCase() === account) {
-            const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
-            const positiveProfits = Object.values(tokenProfits).filter((i) => i > helper.zero);
-            if (positiveProfits.length === 0) {
-              continue;
-            }
-
-            Object.entries(tokenProfits).forEach(([address, profit]) => {
-              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-            });
-            break;
-          }
-        }
-
-        for (let i = traces.length - 1; i >= 0; i--) {
-          const { from, to, value, callType } = traces[i].action;
-
-          if (value && value !== "0x0" && callType === "call" && to.toLowerCase() === initiator) {
-            const nativeProfit = helper.calculateNativeProfit(traces, initiator);
-            totalNativeProfit = totalNativeProfit.add(nativeProfit);
-            break;
-          } else if (value && value !== "0x0" && callType === "call" && from.toLowerCase() === account) {
-            const dstAddress = to.toLowerCase();
-            const nativeProfit = helper.calculateNativeProfit(traces, dstAddress);
-            if (nativeProfit === helper.zero) {
-              continue;
-            }
-
-            totalNativeProfit = totalNativeProfit.add(nativeProfit);
-            break;
           }
         }
 
