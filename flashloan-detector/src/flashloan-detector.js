@@ -7,6 +7,7 @@ const { getMakerFlashloan } = require("./detectors/maker-detector");
 const { getBalancerFlashloan } = require("./detectors/balancer-detector");
 const { getUniswapV2Flashloan } = require("./detectors/uniswap-v2-detector");
 const { getUniswapV3Flashloan } = require("./detectors/uniswap-v3-detector");
+const { getDodoFlashloan } = require("./detectors/dodo-detector");
 
 module.exports = {
   // Returns an array of protocols from which a flashloan was taken
@@ -21,6 +22,7 @@ module.exports = {
     const uniswapV2Flashloans = await getUniswapV2Flashloan(txEvent);
     const uniswapV3Flashloans = await getUniswapV3Flashloan(txEvent);
     const balancerFlashloans = getBalancerFlashloan(txEvent);
+    const dodoFlashloans = getDodoFlashloan(txEvent);
 
     flashloanProtocols.push(
       ...aaveV2Flashloans,
@@ -31,7 +33,8 @@ module.exports = {
       ...makerFlashloans,
       ...uniswapV2Flashloans,
       ...uniswapV3Flashloans,
-      ...balancerFlashloans
+      ...balancerFlashloans,
+      ...dodoFlashloans
     );
 
     return flashloanProtocols;
