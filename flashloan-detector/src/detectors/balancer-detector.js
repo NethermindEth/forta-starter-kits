@@ -1,4 +1,5 @@
-const balancerFlashloanSig = "event FlashLoan(address indexed receiver, address indexed token, uint256 amount, uint256 feeAmount)";
+const balancerFlashloanSig =
+  "event FlashLoan(address indexed receiver, address indexed token, uint256 amount, uint256 feeAmount)";
 
 module.exports = {
   getBalancerFlashloan: (txEvent) => {
