@@ -18,7 +18,7 @@ jest.mock("forta-agent", () => {
         getMarket: () => [asset],
         underlying: () => asset,
         token0: () => asset,
-        _QUOTE_TOKEN_: () => asset
+        _QUOTE_TOKEN_: () => asset,
       })),
     },
   };
