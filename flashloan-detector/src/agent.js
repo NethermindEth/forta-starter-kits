@@ -26,7 +26,8 @@ function provideHandleTransaction(helper, getFlashloans) {
     const initiator = txEvent.from;
 
     const flashloans = await getFlashloans(txEvent);
-    if (flashloans.length === 0) return findings;
+    const numOfFlashloans = flashloans.length;
+    if (numOfFlashloans === 0) return findings;
 
     const calledContract = txEvent.to;
     const transferEvents = txEvent.filterLog(transferEventSigs);
@@ -38,7 +39,7 @@ function provideHandleTransaction(helper, getFlashloans) {
 
     // For each flashloan calculate the token profits and the borrowed amount
     await Promise.all(
-      flashloans.map(async (flashloan) => {
+      flashloans.map(async (flashloan, flashloanIndex) => {
         const { asset, amount, account } = flashloan;
 
         if (account !== initiator) {
@@ -56,11 +57,14 @@ function provideHandleTransaction(helper, getFlashloans) {
           const { from, to, value, callType, input } = traces[i].action;
 
           if (value && value !== "0x0" && callType === "call") {
-            if((from.toLowerCase() === account || from.toLowerCase() === calledContract) && to.toLowerCase() === initiator) {
+            if (
+              (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
+              to.toLowerCase() === initiator
+            ) {
               const nativeProfit = helper.calculateNativeProfit(traces, initiator);
               totalNativeProfit = totalNativeProfit.add(nativeProfit);
               break traceLoop;
-            } else if(from.toLowerCase() === account || from.toLowerCase() === calledContract) {
+            } else if (from.toLowerCase() === account || from.toLowerCase() === calledContract) {
               const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
               if (nativeProfit === helper.zero) {
                 continue;
@@ -69,30 +73,44 @@ function provideHandleTransaction(helper, getFlashloans) {
               totalNativeProfit = totalNativeProfit.add(nativeProfit);
               break traceLoop;
             }
-          } else if(value === "0x0" && (input.startsWith("0xa9059cbb") || input.startsWith("0x23b872dd"))) {
+          } else if (
+            value === "0x0" &&
+            // FIND BETTER WAY TO TRACK transfer() AND transferFrom() FUNCTION SIGNATURES
+            (input.startsWith("0xa9059cbb") || input.startsWith("0x23b872dd"))
+          ) {
             for (let j = transferEvents.length - 1; j >= 0; j--) {
               const { name } = transferEvents[j];
               const { src, dst } = transferEvents[j].args;
-    
-              if (name === "Transfer" && (src.toLowerCase() === calledContract || src.toLowerCase() === account) && dst.toLowerCase() === initiator) {
+
+              if (
+                name === "Transfer" &&
+                (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
+                dst.toLowerCase() === initiator
+              ) {
                 const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
                 const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
                 if (positiveProfits.length === 0) {
                   continue;
                 }
-    
+
                 Object.entries(tokenProfits).forEach(([address, profit]) => {
                   if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
                   totalTokenProfits[address] = totalTokenProfits[address].add(profit);
                 });
                 break traceLoop;
-              } else if (name === "Transfer" && (src.toLowerCase() === calledContract || src.toLowerCase() === account)) {
+              } else if (
+                name === "Transfer" &&
+                (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
+                // Only start looping through Transfers of unknown destination (dst)
+                // during the last flashloan. This to prevent "double counting"
+                flashloanIndex === (numOfFlashloans - 1)
+              ) {
                 const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
                 const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
                 if (positiveProfits.length === 0) {
                   continue;
                 }
-    
+
                 Object.entries(tokenProfits).forEach(([address, profit]) => {
                   if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
                   totalTokenProfits[address] = totalTokenProfits[address].add(profit);
@@ -147,13 +165,15 @@ function provideHandleTransaction(helper, getFlashloans) {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
           },
-          labels: [{
-            entityType: EntityType.Address,
-            entity: initiator,
-            labelType: LabelType.Attacker,
-            confidence: 90,
-            customValue: "Initiator of transaction"
-          }]
+          labels: [
+            {
+              entityType: EntityType.Address,
+              entity: initiator,
+              labelType: LabelType.Attacker,
+              confidence: 90,
+              customValue: "Initiator of transaction",
+            },
+          ],
         })
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
@@ -168,13 +188,15 @@ function provideHandleTransaction(helper, getFlashloans) {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
           },
-          labels: [{
-            entityType: EntityType.Address,
-            entity: initiator,
-            labelType: LabelType.Attacker,
-            confidence: 60,
-            customValue: "Initiator of transaction"
-          }]
+          labels: [
+            {
+              entityType: EntityType.Address,
+              entity: initiator,
+              labelType: LabelType.Attacker,
+              confidence: 60,
+              customValue: "Initiator of transaction",
+            },
+          ],
         })
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
@@ -189,13 +211,15 @@ function provideHandleTransaction(helper, getFlashloans) {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
           },
-          labels: [{
-            entityType: EntityType.Address,
-            entity: initiator,
-            labelType: LabelType.Attacker,
-            confidence: 90,
-            customValue: "Initiator of transaction"
-          }]
+          labels: [
+            {
+              entityType: EntityType.Address,
+              entity: initiator,
+              labelType: LabelType.Attacker,
+              confidence: 90,
+              customValue: "Initiator of transaction",
+            },
+          ],
         })
       );
     }
