@@ -22,7 +22,7 @@ module.exports = {
     const uniswapV2Flashloans = await getUniswapV2Flashloan(txEvent);
     const uniswapV3Flashloans = await getUniswapV3Flashloan(txEvent);
     const balancerFlashloans = getBalancerFlashloan(txEvent);
-    const dodoFlashloans = getDodoFlashloan(txEvent);
+    const dodoFlashloans = await getDodoFlashloan(txEvent);
 
     flashloanProtocols.push(
       ...aaveV2Flashloans,

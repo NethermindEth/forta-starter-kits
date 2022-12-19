@@ -8,37 +8,35 @@ const dodoPoolAbi = [
 ];
 
 module.exports = {
-    getDodoFlashloan: (txEvent) => {
-        const flashloans = [];
+    getDodoFlashloan: async (txEvent) => {
         const events = txEvent.filterLog(dodoFlashloanAbi);
 
-        events.forEach(async (event) => {
-            const { address } = event;
-            const { assetTo, baseAmount, quoteAmount } = event.args;
+        const flashloans = await Promise.all(
+            events.map(async (event) => {
+                const { address } = event;
+                const { assetTo, baseAmount, quoteAmount } = event.args;
 
-            const contract = new ethers.Contract(address, dodoPoolAbi, getEthersProvider());
+                const contract = new ethers.Contract(address, dodoPoolAbi, getEthersProvider());
 
-            if(quoteAmount.gt(ethers.constants.Zero)) {
-                const quoteToken = await contract._QUOTE_TOKEN_();
-
-                flashloans.push({
-                    asset: quoteToken.toLowerCase(),
-                    amount: quoteAmount,
-                    account: assetTo.toLowerCase()
-                });
-            };
-            
-            if(baseAmount.gt(ethers.constants.Zero)) {
-                const baseToken = await contract._BASE_TOKEN_();
-
-                flashloans.push({
-                    asset: baseToken.toLowerCase(),
-                    amount: baseAmount,
-                    account: assetTo.toLowerCase()
-                });
-            };
-
-        });
+                if(quoteAmount.gt(ethers.constants.Zero)) {
+                    const quoteToken = await contract._QUOTE_TOKEN_();
+    
+                    return {
+                        asset: quoteToken.toLowerCase(),
+                        amount: quoteAmount,
+                        account: assetTo.toLowerCase()
+                    };
+                } else if(baseAmount.gt(ethers.constants.Zero)) {
+                    const baseToken = await contract._BASE_TOKEN_();
+    
+                    return {
+                        asset: baseToken.toLowerCase(),
+                        amount: baseAmount,
+                        account: assetTo.toLowerCase()
+                    };
+                };
+            })
+        );
         return flashloans;
     },
   };
