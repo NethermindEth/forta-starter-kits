@@ -1,4 +1,12 @@
-const { Finding, FindingSeverity, FindingType, ethers, LabelType, EntityType } = require("forta-agent");
+const {
+  Finding,
+  FindingSeverity,
+  FindingType,
+  ethers,
+  LabelType,
+  EntityType,
+  getEthersProvider,
+} = require("forta-agent");
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
 
@@ -20,7 +28,12 @@ const transferEventSigs = [
   "event Withdrawal(address indexed src, uint256 wad)",
 ];
 
-function provideHandleTransaction(helper, getFlashloans) {
+const transferFunctionSigs = [
+  ethers.utils.keccak256(ethers.utils.toUtf8Bytes("transfer(address,uint256)")).substring(0, 10),
+  ethers.utils.keccak256(ethers.utils.toUtf8Bytes("transferFrom(address,address,uint256)")).substring(0, 10),
+];
+
+function provideHandleTransaction(helper, getFlashloans, provider) {
   return async function handleTransaction(txEvent) {
     const findings = [];
     const initiator = txEvent.from;
@@ -29,7 +42,7 @@ function provideHandleTransaction(helper, getFlashloans) {
     const numOfFlashloans = flashloans.length;
     if (numOfFlashloans === 0) return findings;
 
-    const calledContract = txEvent.to;
+    const calledContract = txEvent.to.toLowerCase();
     const transferEvents = txEvent.filterLog(transferEventSigs);
     const { traces } = txEvent;
 
@@ -64,7 +77,12 @@ function provideHandleTransaction(helper, getFlashloans) {
               const nativeProfit = helper.calculateNativeProfit(traces, initiator);
               totalNativeProfit = totalNativeProfit.add(nativeProfit);
               break traceLoop;
-            } else if (from.toLowerCase() === account || from.toLowerCase() === calledContract) {
+            } else if (
+              (from.toLowerCase() === account || from.toLowerCase() === calledContract)
+              // Only start looping through Transfers of unknown destination (dst)
+              // during the last flashloan to prevent "double counting"
+               && flashloanIndex === numOfFlashloans - 1
+            ) {
               const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
               if (nativeProfit === helper.zero) {
                 continue;
@@ -75,8 +93,8 @@ function provideHandleTransaction(helper, getFlashloans) {
             }
           } else if (
             value === "0x0" &&
-            // FIND BETTER WAY TO TRACK transfer() AND transferFrom() FUNCTION SIGNATURES
-            (input.startsWith("0xa9059cbb") || input.startsWith("0x23b872dd"))
+            (input.startsWith(transferFunctionSigs[0]) || input.startsWith(transferFunctionSigs[1])) &&
+            (calledContract === from.toLowerCase() || account === from.toLowerCase())
           ) {
             for (let j = transferEvents.length - 1; j >= 0; j--) {
               const { name } = transferEvents[j];
@@ -102,9 +120,15 @@ function provideHandleTransaction(helper, getFlashloans) {
                 name === "Transfer" &&
                 (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
                 // Only start looping through Transfers of unknown destination (dst)
-                // during the last flashloan. This to prevent "double counting"
-                flashloanIndex === (numOfFlashloans - 1)
+                // during the last flashloan to prevent "double counting"
+                flashloanIndex === numOfFlashloans - 1
               ) {
+                // Only proceed with recipients that are EOAs
+                const dstCode = await provider.getCode(dst);
+                if (dstCode !== "0x") {
+                  continue;
+                }
+
                 const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
                 const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
                 if (positiveProfits.length === 0) {
@@ -235,5 +259,5 @@ module.exports = {
   provideInitialize,
   initialize: provideInitialize(helperModule),
   provideHandleTransaction,
-  handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn),
+  handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
 };
