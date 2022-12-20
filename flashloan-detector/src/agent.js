@@ -78,10 +78,10 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
               totalNativeProfit = totalNativeProfit.add(nativeProfit);
               break traceLoop;
             } else if (
-              (from.toLowerCase() === account || from.toLowerCase() === calledContract)
+              (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
               // Only start looping through Transfers of unknown destination (dst)
               // during the last flashloan to prevent "double counting"
-               && flashloanIndex === numOfFlashloans - 1
+              flashloanIndex === numOfFlashloans - 1
             ) {
               const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
               if (nativeProfit === helper.zero) {
