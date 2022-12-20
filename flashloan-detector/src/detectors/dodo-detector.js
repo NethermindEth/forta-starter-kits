@@ -1,6 +1,7 @@
 const { ethers, getEthersProvider } = require("forta-agent");
 
-const dodoFlashloanAbi = "event DODOFlashLoan (address borrower, address assetTo, uint256 baseAmount, uint256 quoteAmount)";
+const dodoFlashloanAbi =
+  "event DODOFlashLoan (address borrower, address assetTo, uint256 baseAmount, uint256 quoteAmount)";
 
 const dodoPoolAbi = [
   "function _BASE_TOKEN_ public view returns (address)",
