@@ -63,7 +63,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
             totalTokenProfits[address] = totalTokenProfits[address].add(profit);
           });
-          totalNativeProfit = nativeProfit.add(nativeProfit);
+          totalNativeProfit = totalNativeProfit.add(nativeProfit);
         }
 
         traceLoop: for (let i = traces.length - 1; i >= 0; i--) {
