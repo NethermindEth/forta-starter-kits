@@ -87,7 +87,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
               const toCode = await provider.getCode(to);
               if (toCode !== "0x") {
                 continue;
-              };
+              }
 
               const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
               if (nativeProfit === helper.zero) {

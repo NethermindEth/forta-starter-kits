@@ -43,7 +43,7 @@ const mockHelper = {
 
 describe("flashloan detector agent", () => {
   const mockProvider = {
-    getCode: jest.fn()
+    getCode: jest.fn(),
   };
 
   let initialize;
@@ -55,7 +55,7 @@ describe("flashloan detector agent", () => {
       to: initiator,
       value: 100,
       callType: "call",
-      input: "0x0"
+      input: "0x0",
     },
   };
 
@@ -65,9 +65,9 @@ describe("flashloan detector agent", () => {
       to: initiator,
       value: "0x0",
       callType: "call",
-      input: "0xa9059cbbDeFi"
-    }
-  }
+      input: "0xa9059cbbDeFi",
+    },
+  };
 
   const mockTransferEvent = {
     name: "Transfer",
@@ -106,7 +106,7 @@ describe("flashloan detector agent", () => {
       filterLog: jest.fn(),
       transaction: { gasPrice: 0 },
     };
-    
+
     mockGetFlashloans.mockResolvedValueOnce([flashloan]);
     mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
     mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
@@ -122,7 +122,7 @@ describe("flashloan detector agent", () => {
         severity: FindingSeverity.High,
         type: FindingType.Exploit,
         metadata: {
-          profit: (highNativeUsdProfit).toFixed(2),
+          profit: highNativeUsdProfit.toFixed(2),
           tokens: [],
         },
         labels: [
@@ -137,8 +137,6 @@ describe("flashloan detector agent", () => {
       }),
     ]);
 
-    
-
     expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
     expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([mockNativeTransferTrace], initiator);
     expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
@@ -152,7 +150,7 @@ describe("flashloan detector agent", () => {
       filterLog: jest.fn(),
       transaction: { gasPrice: 0 },
     };
-    
+
     mockGetFlashloans.mockResolvedValueOnce([flashloan]);
     mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
     mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
@@ -169,7 +167,7 @@ describe("flashloan detector agent", () => {
         severity: FindingSeverity.High,
         type: FindingType.Exploit,
         metadata: {
-          profit: (hightokenUsdProfit).toFixed(2),
+          profit: hightokenUsdProfit.toFixed(2),
           tokens: [asset],
         },
         labels: [
@@ -219,7 +217,7 @@ describe("flashloan detector agent", () => {
         severity: FindingSeverity.High,
         type: FindingType.Exploit,
         metadata: {
-          profit: (veryHighTokenUsdProfit).toFixed(2),
+          profit: veryHighTokenUsdProfit.toFixed(2),
           tokens: [asset],
         },
         labels: [
@@ -281,7 +279,7 @@ describe("flashloan detector agent", () => {
         severity: FindingSeverity.Low,
         type: FindingType.Exploit,
         metadata: {
-          profit: (lowTokenUsdProfit).toFixed(2),
+          profit: lowTokenUsdProfit.toFixed(2),
           tokens: [asset],
         },
         labels: [
@@ -317,7 +315,7 @@ describe("flashloan detector agent", () => {
         to: diffEndRecipient,
         value: 100,
         callType: "call",
-        input: "0x0"
+        input: "0x0",
       },
     };
 
@@ -345,7 +343,7 @@ describe("flashloan detector agent", () => {
         severity: FindingSeverity.Low,
         type: FindingType.Exploit,
         metadata: {
-          profit: (lowNativeUsdProfit).toFixed(2),
+          profit: lowNativeUsdProfit.toFixed(2),
           tokens: [],
         },
         labels: [
@@ -361,7 +359,10 @@ describe("flashloan detector agent", () => {
     ]);
 
     expect(mockProvider.getCode).toHaveBeenCalledWith(diffEndRecipient);
-    expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([mockNativeTransferDiffRecipientTrace], diffEndRecipient);
+    expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith(
+      [mockNativeTransferDiffRecipientTrace],
+      diffEndRecipient
+    );
     expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
     expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
   });
