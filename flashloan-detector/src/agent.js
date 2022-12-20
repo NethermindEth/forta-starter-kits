@@ -83,6 +83,12 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
               // during the last flashloan to prevent "double counting"
               flashloanIndex === numOfFlashloans - 1
             ) {
+              // Only proceed with recipients that are EOAs
+              const toCode = await provider.getCode(to);
+              if (toCode !== "0x") {
+                continue;
+              };
+
               const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
               if (nativeProfit === helper.zero) {
                 continue;
