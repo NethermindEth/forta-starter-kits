@@ -68,6 +68,7 @@ module.exports = {
     await ethcallProvider.init();
     const { chainId } = await getEthersProvider().getNetwork();
     return {
+      chainId,
       chain: getChainByChainId(chainId),
       nativeToken: getNativeTokenByChainId(chainId),
     };
