@@ -5,7 +5,7 @@ const dodoFlashloanAbi =
 
 const dodoPoolAbi = [
   "function _BASE_TOKEN_() public view returns (address)",
-  "function _QUOTE_TOKEN_(0) public view returns (address)",
+  "function _QUOTE_TOKEN_() public view returns (address)",
 ];
 
 module.exports = {
