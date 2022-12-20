@@ -156,9 +156,9 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
               }
             }
           }
-        // Check the profit of the initiator if not on mainnet
-        // or if no traces only during the last flashloan
-        } else if(flashloanIndex === numOfFlashloans - 1) {
+          // Check the profit of the initiator if not on mainnet
+          // or if no traces only during the last flashloan
+        } else if (flashloanIndex === numOfFlashloans - 1) {
           const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
           Object.entries(tokenProfits).forEach(([address, profit]) => {
             if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
