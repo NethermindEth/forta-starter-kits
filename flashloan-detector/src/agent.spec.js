@@ -14,9 +14,6 @@ const nativeProfit = ethers.utils.parseEther("1");
 const lowTokenUsdProfit = 1000;
 const lowNativeUsdProfit = 1000;
 
-const tokenUsdProfit = 100_000;
-const nativeUsdProfit = 100_000;
-
 const highNativeUsdProfit = 200_000;
 const hightokenUsdProfit = 200_000;
 
@@ -192,6 +189,58 @@ describe("flashloan detector agent", () => {
     );
   });
 
+  it("returns a finding when there is a flashloan with low token profit but no traces", async () => {
+    const mockTxEvent = {
+      from: initiator,
+      to: contractCalled,
+      traces: [],
+      filterLog: jest.fn(),
+      transaction: { gasPrice: 0 },
+    };
+
+    mockGetFlashloans.mockResolvedValueOnce([flashloan]);
+    mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
+    mockProvider.getCode.mockReturnValueOnce("0x");
+    mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
+    mockHelper.calculateNativeProfit.mockReturnValueOnce(0);
+    mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
+    mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+    mockHelper.calculateTokensUsdProfit.mockResolvedValueOnce(lowTokenUsdProfit);
+    const findings = await handleTransaction(mockTxEvent);
+
+    expect(findings).toStrictEqual([
+      Finding.fromObject({
+        name: "Flashloan detected",
+        description: `${initiator} launched flash loan attack`,
+        alertId: "FLASHLOAN-ATTACK",
+        severity: FindingSeverity.Low,
+        type: FindingType.Exploit,
+        metadata: {
+          profit: lowTokenUsdProfit.toFixed(2),
+          tokens: [asset],
+        },
+        labels: [
+          {
+            entityType: EntityType.Address,
+            entity: initiator,
+            labelType: LabelType.Attacker,
+            confidence: 60,
+            customValue: "Initiator of transaction",
+          },
+        ],
+      }),
+    ]);
+
+    expect(mockHelper.calculateTokenProfits).toHaveBeenCalledWith([mockTransferEvent], initiator);
+    expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
+    expect(mockHelper.calculateTokensUsdProfit).toHaveBeenCalledWith(
+      {
+        [asset]: tokenProfit,
+      },
+      chain
+    );
+  });
+
   it("returns a finding if there is a flashloan with high token profit and high percentage", async () => {
     const mockTxEvent = {
       from: initiator,
@@ -265,10 +314,8 @@ describe("flashloan detector agent", () => {
     mockProvider.getCode.mockReturnValueOnce("0x");
     mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
     mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
-    // mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
     mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
     mockHelper.calculateTokensUsdProfit.mockResolvedValueOnce(lowTokenUsdProfit);
-    // mockHelper.calculateNativeUsdProfit.mockResolvedValueOnce(1000);
     const findings = await handleTransaction(mockTxEvent);
 
     expect(findings).toStrictEqual([
@@ -297,14 +344,12 @@ describe("flashloan detector agent", () => {
     expect(mockProvider.getCode).toHaveBeenCalledWith(diffEndRecipient);
     expect(mockHelper.calculateTokenProfits).toHaveBeenCalledWith([diffMockTransferEvent], diffEndRecipient);
     expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
-    // expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([mockTrace], initiator);
     expect(mockHelper.calculateTokensUsdProfit).toHaveBeenCalledWith(
       {
         [asset]: tokenProfit,
       },
       chain
     );
-    // expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
   });
 
   it("returns a finding if there is a flashloan with low native profit with a different end recipient", async () => {
