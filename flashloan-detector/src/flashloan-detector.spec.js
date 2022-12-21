@@ -18,6 +18,7 @@ jest.mock("forta-agent", () => {
         getMarket: () => [asset],
         underlying: () => asset,
         token0: () => asset,
+        _QUOTE_TOKEN_: () => asset,
       })),
     },
   };
@@ -117,6 +118,15 @@ const mockUniswapV3FunctionCall = {
   },
 };
 
+const mockBalancerEvent = {
+  args: { token: asset, amount, receiver: account },
+};
+
+const mockDodoFlashLoanEvent = {
+  address: "0xdefi",
+  args: { baseAmount: ethers.constants.Zero, quoteAmount: amount, assetTo: account },
+};
+
 describe("FlashloanDetector library", () => {
   const mockTxEvent = {
     filterLog: jest.fn(),
@@ -151,13 +161,17 @@ describe("FlashloanDetector library", () => {
       mockTxEvent.filterLog.mockReturnValueOnce([mockMakerEvent]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV2FunctionCall]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV3FunctionCall]);
+      mockTxEvent.filterLog.mockReturnValueOnce([mockBalancerEvent]);
+      mockTxEvent.filterLog.mockReturnValueOnce([mockDodoFlashLoanEvent]);
       const flashloans = await getFlashloans(mockTxEvent);
 
       const expectedFlashloanData = { account, amount, asset };
       const expectedArray = [];
 
-      // 7 flashloans: aaveV2, aaveV3, dydx, euler, iron bank, maker, uniswap V2, uniswap V3
-      for (let i = 0; i < 8; i++) {
+      // 10 flashloans:
+      // 1. aaveV2, 2. aaveV3, 3. dydx, 4. euler, 5. iron bank
+      // 6. maker, 7. uniswap V2, 8. uniswap V3, 9. balancer, 10. DODO
+      for (let i = 0; i < 10; i++) {
         expectedArray.push(expectedFlashloanData);
       }
 
