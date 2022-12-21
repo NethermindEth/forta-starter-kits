@@ -169,7 +169,8 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           totalNativeProfit = totalNativeProfit.add(nativeProfit);
         }
 
-        totalBorrowed = await helper.calculateBorrowedAmount(asset, amount, chain);
+        borrowedAmount = await helper.calculateBorrowedAmount(asset, amount, chain);
+        totalBorrowed = totalBorrowed.add(borrowedAmount);
       })
     );
 
