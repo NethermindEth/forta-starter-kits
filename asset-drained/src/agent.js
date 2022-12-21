@@ -110,9 +110,11 @@ const handleBlock = async (blockEvent) => {
   const { blockNumber } = blockEvent;
   const findings = [];
 
-  // Only process addresses that had more funds withdrawn than deposited
   let transfers = Object.values(transfersObj)
-    .filter((t) => t.value.lt(ZERO))
+    // DON'T FILTER OUT INSTANCES WHERE THE VALUE TRANSFERED OUT IS MORE THAN
+    // WHAT WAS DEPOSITED, SINCE NOW WE'RE CHECKING IF 99% OF FUNDS WERE DRAINED
+    // INSTEAD OF 100%
+    // .filter((t) => t.value.lt(ZERO))
     .filter((t) => t.address !== ethers.constants.AddressZero);
   if (transfers.length === 0) return [];
 
@@ -128,9 +130,29 @@ const handleBlock = async (blockEvent) => {
     return contract.balanceOf(e.address);
   });
 
-  // Only process addresses with fully drained assets
-  const balances = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
-  transfers = transfers.filter((_, i) => balances[i]["success"] && balances[i]["returnData"].eq(ZERO));
+  // Get the balances of the addresses pre and post drainage to compare
+  // and find instances here the balance changed by 99% or more
+  // (ONLY PUT IN THIS IF STATEMENT TO SEE IF I CAN SUCCESSFULLY
+  // MAKE BOTH tryAll() CALLS AT THE BLOCK AFTER THE EXPLOIT)
+  if(blockNumber === 22529658) {
+    console.log("before balance calls");
+
+    const balancesPreDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 2);
+    const balancesPostDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
+
+    console.log(`balancesPreDrain is ${JSON.stringify(balancesPreDrain)}`);
+    console.log(`balancesPostDrain is ${JSON.stringify(balancesPostDrain)}`);
+  }
+
+  /*
+  transfers = transfers.filter(
+    (_, i) =>
+      balancesPostDrain[i]["success"] &&
+      balancesPreDrain[i]["success"] &&
+      // Confirm post drain balance is less than or equal to 1% of pre drain balance
+      balancesPostDrain[i]["returnData"].lte(balancesPreDrain[i]["returnData"].div(100))
+  );
+  */
 
   // Filter out events to EOAs
   transfers = await Promise.all(
@@ -142,7 +164,10 @@ const handleBlock = async (blockEvent) => {
   transfers = transfers.filter((e) => !!e);
 
   const calls = await Promise.all([
-    ...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols)),
+    ...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols))/*,
+    // IS IT NECESSARY TO DO THIS .map() IF NOW
+    // WE'RE CHECKING IT'S PRE-DRAIN BALANCE
+    // AS PART OF OUR NORMAL CHECK?
     ...transfers.map(async (event) => {
       const block10MinsAgo = blockNumber - blocksIn10Minutes;
 
@@ -161,15 +186,22 @@ const handleBlock = async (blockEvent) => {
       }
       return output;
     }),
+    */
   ]);
 
-  const symbols = calls.slice(0, transfers.length);
-  const balances10MinsAgo = calls.slice(transfers.length);
+  // const symbols = calls.slice(0, transfers.length);
+  // const balances10MinsAgo = calls.slice(transfers.length);
 
-  symbols.forEach((s, i) => {
+  // ORIGINAL 
+  // symbols.forEach((s, i) => {
+  calls.forEach((s, i) => {
     transfers[i].symbol = s;
   });
 
+  /*
+  // IS IT NECESSARY TO DO THIS CHECK IF NOW
+  // WE'RE CHECKING IT'S PRE-DRAIN BALANCE
+  // AS PART OF OUR NORMAL CHECK?
   transfers = transfers.filter((t, i) => {
     // Flag the address as ignored if its balance was 0 10 minutes ago
     if (balances10MinsAgo[i].eq(ZERO)) {
@@ -178,6 +210,7 @@ const handleBlock = async (blockEvent) => {
     }
     return true;
   });
+  */
 
   transfers.forEach((t) => {
     findings.push(
