@@ -129,8 +129,8 @@ const handleBlock = async (blockEvent) => {
   });
 
   // Only process addresses with fully drained assets
-  const balances = await ethcallProvider.all(balanceCalls, blockNumber - 1);
-  transfers = transfers.filter((_, i) => balances[1][i].eq(ZERO));
+  const balances = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
+  transfers = transfers.filter((_, i) => balances[i]["success"] && balances[i]["returnData"].eq(ZERO));
 
   // Filter out events to EOAs
   transfers = await Promise.all(
