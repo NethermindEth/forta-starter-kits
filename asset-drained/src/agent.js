@@ -2,7 +2,7 @@ const { Finding, FindingSeverity, FindingType, ethers, getEthersProvider } = req
 const { MulticallProvider, MulticallContract } = require("forta-agent-tools");
 const LRU = require("lru-cache");
 
-const { getBlocksIn10Minutes, hashCode, getAddressType, getAssetSymbol, TOKEN_ABI } = require("./helper");
+const { hashCode, getAddressType, getAssetSymbol, TOKEN_ABI } = require("./helper");
 const AddressType = require("./address-type");
 
 const ZERO = ethers.constants.Zero;
@@ -13,12 +13,9 @@ const ethcallProvider = new MulticallProvider(getEthersProvider());
 const cachedAddresses = new LRU({ max: 100_000 });
 const cachedAssetSymbols = new LRU({ max: 100_000 });
 
-let blocksIn10Minutes;
 let transfersObj = {};
 
 const initialize = async () => {
-  const { chainId } = await getEthersProvider().getNetwork();
-  blocksIn10Minutes = getBlocksIn10Minutes(chainId);
   await ethcallProvider.init();
 };
 
@@ -126,13 +123,12 @@ const handleBlock = async (blockEvent) => {
     return contract.balanceOf(e.address);
   });
 
-  // Get the balances of the addresses pre- and post-drain to compare
-  // and find instances here the balance dropped by 99% or more
+  // Get the balances of the addresses pre- and post-drain
   const balancesPreDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 2);
   const balancesPostDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
 
-  // Filter for transfers where the victim's post-drain balance is
-  // 1% or less of their pre-drain balance
+  // Filter for transfers where the victim's post-drain balance
+  // is 1% or less of their pre-drain balance
   transfers = transfers.filter(
     (_, i) =>
       balancesPostDrain[i]["success"] &&
@@ -150,54 +146,13 @@ const handleBlock = async (blockEvent) => {
   );
   transfers = transfers.filter((e) => !!e);
 
-  const calls = await Promise.all([
-    ...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols)) /*,
-    // IS IT NECESSARY TO DO THIS .map() IF NOW
-    // WE'RE CHECKING IT'S PRE-DRAIN BALANCE
-    // AS PART OF OUR NORMAL CHECK?
-    ...transfers.map(async (event) => {
-      const block10MinsAgo = blockNumber - blocksIn10Minutes;
-
-      if (event.asset === "native") {
-        return getEthersProvider().getBalance(event.address, block10MinsAgo);
-      }
-
-      const contract = new ethers.Contract(event.asset, TOKEN_ABI, getEthersProvider());
-      let output;
-      try {
-        output = await contract.balanceOf(event.address, {
-          blockTag: block10MinsAgo,
-        });
-      } catch {
-        output = ethers.BigNumber.from(0);
-      }
-      return output;
-    }),
-    */,
+  const symbols = await Promise.all([
+    ...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols))
   ]);
 
-  // const symbols = calls.slice(0, transfers.length);
-  // const balances10MinsAgo = calls.slice(transfers.length);
-
-  // ORIGINAL
-  // symbols.forEach((s, i) => {
-  calls.forEach((s, i) => {
+  symbols.forEach((s, i) => {
     transfers[i].symbol = s;
   });
-
-  /*
-  // IS IT NECESSARY TO DO THIS CHECK IF NOW
-  // WE'RE CHECKING IT'S PRE-DRAIN BALANCE
-  // AS PART OF OUR NORMAL CHECK?
-  transfers = transfers.filter((t, i) => {
-    // Flag the address as ignored if its balance was 0 10 minutes ago
-    if (balances10MinsAgo[i].eq(ZERO)) {
-      cachedAddresses.set(t.address, AddressType.Ignored);
-      return false;
-    }
-    return true;
-  });
-  */
 
   transfers.forEach((t) => {
     findings.push(
