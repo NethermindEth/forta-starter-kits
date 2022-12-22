@@ -107,8 +107,7 @@ const handleBlock = async (blockEvent) => {
   const { blockNumber } = blockEvent;
   const findings = [];
 
-  let transfers = Object.values(transfersObj)
-    .filter((t) => t.address !== ethers.constants.AddressZero);
+  let transfers = Object.values(transfersObj).filter((t) => t.address !== ethers.constants.AddressZero);
   if (transfers.length === 0) return [];
 
   const st = new Date();
@@ -146,9 +145,7 @@ const handleBlock = async (blockEvent) => {
   );
   transfers = transfers.filter((e) => !!e);
 
-  const symbols = await Promise.all([
-    ...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols))
-  ]);
+  const symbols = await Promise.all([...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols))]);
 
   symbols.forEach((s, i) => {
     transfers[i].symbol = s;

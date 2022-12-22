@@ -176,11 +176,11 @@ describe("Asset drained bot test suite", () => {
       // Balance call for pre-drain balances
       mockEthcallProviderTryAll.mockResolvedValueOnce([
         { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim     (address1)
-        { success: true, returnData: ethers.BigNumber.from(50) },   // Exploiter  (address2)
+        { success: true, returnData: ethers.BigNumber.from(50) }, // Exploiter  (address2)
       ]);
       // Balance call for post-drain balances
       mockEthcallProviderTryAll.mockResolvedValueOnce([
-        { success: true, returnData: ethers.BigNumber.from(5) },    // Victim     (address1)
+        { success: true, returnData: ethers.BigNumber.from(5) }, // Victim     (address1)
         { success: true, returnData: ethers.BigNumber.from(1045) }, // Exploiter  (address2)
       ]);
 
@@ -229,14 +229,14 @@ describe("Asset drained bot test suite", () => {
       // Balance call for pre-drain balances
       mockEthcallProviderTryAll.mockResolvedValueOnce([
         { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim       (address1)
-        { success: true, returnData: ethers.BigNumber.from(50) },   // Exploiter 01 (address2)
-        { success: true, returnData: ethers.BigNumber.from(75) },   // Exploiter 02 (address3)
+        { success: true, returnData: ethers.BigNumber.from(50) }, // Exploiter 01 (address2)
+        { success: true, returnData: ethers.BigNumber.from(75) }, // Exploiter 02 (address3)
       ]);
       // Balance call for post-drain balances
       mockEthcallProviderTryAll.mockResolvedValueOnce([
-        { success: true, returnData: ethers.BigNumber.from(7) },    // Victim       (address1)
-        { success: true, returnData: ethers.BigNumber.from(450) },  // Exploiter 01 (address2)
-        { success: true, returnData: ethers.BigNumber.from(668) },  // Exploiter 02 (address3)
+        { success: true, returnData: ethers.BigNumber.from(7) }, // Victim       (address1)
+        { success: true, returnData: ethers.BigNumber.from(450) }, // Exploiter 01 (address2)
+        { success: true, returnData: ethers.BigNumber.from(668) }, // Exploiter 02 (address3)
       ]);
 
       await handleTransaction(mockTxEvent);
