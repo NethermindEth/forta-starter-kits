@@ -152,6 +152,7 @@ describe("Asset drained bot test suite", () => {
     beforeEach(() => {
       mockTxEvent.filterLog.mockReset();
       mockTxEvent2.filterLog.mockReset();
+      mockEthcallProviderTryAll.mockReset();
       Object.keys(getTransfersObj()).forEach((key) => delete getTransfersObj()[key]);
     });
 
@@ -241,7 +242,7 @@ describe("Asset drained bot test suite", () => {
       await handleTransaction(mockTxEvent);
       await handleTransaction(mockTxEvent2);
       const findings = await handleBlock(mockBlockEvent);
-      expect(mockEthcallProviderAll).mockEthcallProviderTryAll(2);
+      expect(mockEthcallProviderTryAll).toHaveBeenCalledTimes(2);
       expect(findings).toStrictEqual([
         Finding.fromObject({
           name: "Asset drained",
