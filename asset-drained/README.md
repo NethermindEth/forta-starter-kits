@@ -2,7 +2,7 @@
 
 ## Description
 
-This bot detects if a contract has had 99% or more of its assets drained within a block. It monitors ERC20 and native tokens transfers from contracts and raises an alert when a contract has its balance decrease by 99% or more from one block to the next.
+This bot detects if a contract has had 99% or more of one of its assets drained within a block. It monitors ERC20 and native tokens transfers from contracts and raises an alert when a contract has its balance decreased by 99% or more from one block to the next.
 
 ## Supported Chains
 
@@ -17,7 +17,7 @@ This bot detects if a contract has had 99% or more of its assets drained within 
 ## Alerts
 
 - ASSET-DRAINED
-  - Fired when a contract has 99% or more of its assets drained
+  - Fired when a contract has had 99% or more of one of its assets drained
   - Severity is always set to "high"
   - Type is always set to "suspicious"
   - Metadata:
