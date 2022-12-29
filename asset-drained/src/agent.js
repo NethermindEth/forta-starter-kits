@@ -107,6 +107,7 @@ const handleBlock = async (blockEvent) => {
   const { blockNumber } = blockEvent;
   const findings = [];
 
+  // Only process addresses that had more funds withdrawn than deposited
   let transfers = Object.values(transfersObj)
     .filter((t) => t.value.lt(ZERO))
     .filter((t) => t.address !== ethers.constants.AddressZero);
