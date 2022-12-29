@@ -2,7 +2,7 @@ const { Finding, FindingSeverity, FindingType, ethers, getEthersProvider } = req
 const { MulticallProvider, MulticallContract } = require("forta-agent-tools");
 const LRU = require("lru-cache");
 
-const { getBlocksIn10Minutes, hashCode, getAddressType, getAssetSymbol, TOKEN_ABI } = require("./helper");
+const { hashCode, getAddressType, getAssetSymbol, TOKEN_ABI } = require("./helper");
 const AddressType = require("./address-type");
 
 const ZERO = ethers.constants.Zero;
@@ -13,12 +13,9 @@ const ethcallProvider = new MulticallProvider(getEthersProvider());
 const cachedAddresses = new LRU({ max: 100_000 });
 const cachedAssetSymbols = new LRU({ max: 100_000 });
 
-let blocksIn10Minutes;
 let transfersObj = {};
 
 const initialize = async () => {
-  const { chainId } = await getEthersProvider().getNetwork();
-  blocksIn10Minutes = getBlocksIn10Minutes(chainId);
   await ethcallProvider.init();
 };
 
@@ -128,9 +125,19 @@ const handleBlock = async (blockEvent) => {
     return contract.balanceOf(e.address);
   });
 
-  // Only process addresses with fully drained assets
-  const balances = await ethcallProvider.all(balanceCalls, blockNumber - 1);
-  transfers = transfers.filter((_, i) => balances[1][i].eq(ZERO));
+  // Get the balances of the addresses pre- and post-drain
+  const balancesPreDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 2);
+  const balancesPostDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
+
+  // Filter for transfers where the victim's post-drain balance
+  // is 1% or less of their pre-drain balance
+  transfers = transfers.filter(
+    (_, i) =>
+      balancesPostDrain[i]["success"] &&
+      balancesPreDrain[i]["success"] &&
+      // Balance check: less than or equal to 1% of pre drain balance
+      balancesPostDrain[i]["returnData"].lte(balancesPreDrain[i]["returnData"].div(100))
+  );
 
   // Filter out events to EOAs
   transfers = await Promise.all(
@@ -141,49 +148,17 @@ const handleBlock = async (blockEvent) => {
   );
   transfers = transfers.filter((e) => !!e);
 
-  const calls = await Promise.all([
-    ...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols)),
-    ...transfers.map(async (event) => {
-      const block10MinsAgo = blockNumber - blocksIn10Minutes;
-
-      if (event.asset === "native") {
-        return getEthersProvider().getBalance(event.address, block10MinsAgo);
-      }
-
-      const contract = new ethers.Contract(event.asset, TOKEN_ABI, getEthersProvider());
-      let output;
-      try {
-        output = await contract.balanceOf(event.address, {
-          blockTag: block10MinsAgo,
-        });
-      } catch {
-        output = ethers.BigNumber.from(0);
-      }
-      return output;
-    }),
-  ]);
-
-  const symbols = calls.slice(0, transfers.length);
-  const balances10MinsAgo = calls.slice(transfers.length);
+  const symbols = await Promise.all([...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols))]);
 
   symbols.forEach((s, i) => {
     transfers[i].symbol = s;
-  });
-
-  transfers = transfers.filter((t, i) => {
-    // Flag the address as ignored if its balance was 0 10 minutes ago
-    if (balances10MinsAgo[i].eq(ZERO)) {
-      cachedAddresses.set(t.address, AddressType.Ignored);
-      return false;
-    }
-    return true;
   });
 
   transfers.forEach((t) => {
     findings.push(
       Finding.fromObject({
         name: "Asset drained",
-        description: `All ${t.symbol} tokens were drained from ${t.address}`,
+        description: `99% or more of ${t.address}'s ${t.symbol} tokens were drained`,
         alertId: "ASSET-DRAINED",
         severity: FindingSeverity.High,
         type: FindingType.Exploit,

@@ -6,30 +6,6 @@ const TOKEN_ABI = [
   "function symbol() external view returns (string memory)",
 ];
 
-// On the rollups every tx is counted as a new block
-// so it isn't possible to get the balance 10 mins ago
-// we hardcode 1000 to get an older balance
-function getBlocksIn10Minutes(network) {
-  switch (network) {
-    case 1:
-      return 50; // 12 seconds per block
-    case 10:
-      return 1000; // rollup
-    case 56:
-      return 120; // 5 seconds per block
-    case 137:
-      return 260; // 2.3 seconds per block
-    case 250:
-      return 500; // 1.2 seconds per block
-    case 42161:
-      return 1000; // rollup
-    case 43114:
-      return 200; // 3 seconds per block
-    default:
-      return 1000;
-  }
-}
-
 function hashCode(address, asset) {
   const str = address + asset;
   let hash = 0;
@@ -68,7 +44,6 @@ async function getAssetSymbol(address, cachedAssetSymbols) {
 }
 
 module.exports = {
-  getBlocksIn10Minutes,
   hashCode,
   getAddressType,
   getAssetSymbol,
