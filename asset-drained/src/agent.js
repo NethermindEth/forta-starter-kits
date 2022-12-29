@@ -107,7 +107,9 @@ const handleBlock = async (blockEvent) => {
   const { blockNumber } = blockEvent;
   const findings = [];
 
-  let transfers = Object.values(transfersObj).filter((t) => t.address !== ethers.constants.AddressZero);
+  let transfers = Object.values(transfersObj)
+    .filter((t) => t.value.lt(ZERO))
+    .filter((t) => t.address !== ethers.constants.AddressZero);
   if (transfers.length === 0) return [];
 
   const st = new Date();
