@@ -6,25 +6,22 @@ const { Buffer } = require("node:buffer");
 
 async function persist(value, key) {
 	const valueToPersist = Buffer.from(value.toString());
-    const hasLocalNode = await process.env.hasOwnProperty('LOCAL_NODE');
+    const hasLocalNode = process.env.hasOwnProperty('LOCAL_NODE');
 	if(!hasLocalNode) {
         // fetchJwt() erroring out when running locally,
         // though the docs mention it should return a mock value
         // source: https://docs.forta.network/en/latest/sdk/#fetchjwt
 		// const token = await fetchJwt({});
-        const token = {token: "jwt-string"} // For testing
+        const token = { token: "jwt-string" } // For testing
 
         // When logged, headers is an empty object
 		const headers = new Headers({"Authorization": `Bearer ${token}`});
-
         // This fetch() call doesn't seem to return anything, even if it fails
-        // Though the README states it should return Promise<Response>
-		const response = await fetch(`https://research.forta.network/database/bot/${key}`, { method: 'POST', headers, body: valueToPersist});
+        // Though the node-fetch README states it should return Promise<Response>
+		const response = await (await fetch(`https://research.forta.network/database/bot/${key}`, { method: 'POST', headers, body: valueToPersist }));
 
-        // Per the docs for node-fetch, a Response type has a 
-        // .ok property that has a boolean that we could use
-        // instead of .status. Need an actual response to test
-        if(response.status === 200) {
+        // Response.body should be a string, so this should work
+        if(response.ok && response.body.length > 0) {
             return;
         } else {
             console.log(`failed to persist ${value} to database`);
@@ -37,26 +34,34 @@ async function persist(value, key) {
 }
 
 async function load(key) {
-    const hasLocalNode = await process.env.hasOwnProperty('LOCAL_NODE');
+    const hasLocalNode = process.env.hasOwnProperty('LOCAL_NODE');
 	if(!hasLocalNode) {
         // fetchJwt() erroring out when running locally,
         // though the docs mention it should return a mock value
         // source: https://docs.forta.network/en/latest/sdk/#fetchjwt
+        // error: "Could not resolve host 'forta-jwt-provider'.
+        // This url host can only be resolved inside of a running scan node"
         // const token = await fetchJwt({});
         const token = { token: "jwt-string" }; // For testing
 
         // When logged, headers is an empty object
 		const headers = new Headers({ "Authorization": `Bearer ${token}` });
-        const response = await fetch(`https://research.forta.network/database/bot/${key}`, { headers });
+        // This instance of fetching from the DB returns a message of:
+        // {"message":"unauthorized"}, expectedly. Could be from either
+        // the mock Jwt or headers being an empty object, possibly both
+        const response = await (await fetch(`https://research.forta.network/database/bot/${key}`, { headers })).json();
 
-		// Per the docs for node-fetch, a Response type has a 
-        // .ok property that has a boolean that we could use
-        // instead of .status. Need an actual response to test
-		if(response.status === 200 && response.content.length > 0) {
+		// Response.body should be a string, so this should work
+		if(response.ok && response.body.length > 0) {
 			const bufferString = (await response.buffer()).toString();
 			return JSON.parse(bufferString);
 		} else {
-			console.log(`${key} does not exist`);
+			console.log(`${key} has no database entry`);
+            // If this is the first bot instance that is deployed,
+            // the database will not have data to return,
+            // thus return zero to assign value to the variables
+            // necessary
+            return 0;
 		}
 	} else {
 		// Checking if it exists locally
