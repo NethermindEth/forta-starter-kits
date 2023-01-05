@@ -24,18 +24,16 @@ const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
 const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
 
+// Need to have plan in place for when these balloon up to huge numbers
 let detectedFlashloans, detectedFlashloansHighProfit, totalTxns;
 
 function provideInitialize(helper) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
 
-    // If this is the first instance deployed,
-    // these variables will be undefined
-    // since they have nothing to load
-    detectedFlashloans = 951 /*await load(DETECT_FLASHLOANS_KEY);*/
-	  detectedFlashloansHighProfit = 753 /*await load(DETECT_FLASHLOANS_HIGH_KEY);*/
-	  totalTxns = 852 /*await load(TOTAL_TXNS_KEY);*/
+    detectedFlashloans = await load(DETECT_FLASHLOANS_KEY);
+    detectedFlashloansHighProfit = await load(DETECT_FLASHLOANS_HIGH_KEY);
+    totalTxns = await load(TOTAL_TXNS_KEY);
   };
 }
 
@@ -52,6 +50,7 @@ const transferFunctionSigs = [
 function provideHandleTransaction(helper, getFlashloans, provider) {
   return async function handleTransaction(txEvent) {
     const findings = [];
+    totalTxns += 1;
     const initiator = txEvent.from;
 
     const flashloans = await getFlashloans(txEvent);
@@ -217,6 +216,8 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
     console.log("Percentage:", percentage.toFixed(2));
 
     if (percentage > PERCENTAGE_THRESHOLD && totalProfit > PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE) {
+      detectedFlashloansHighProfit += 1;
+      anomalyScore = detectedFlashloansHighProfit / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -227,12 +228,13 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
+            anomalyScore
           },
           labels: [
             {
-              entityType: EntityType.Address,
+              entityType: EntityType.Address, // change to "Address"; Update to Forta JS SDK 0.1.16
               entity: initiator,
-              labelType: LabelType.Attacker,
+              labelType: LabelType.Attacker, // change to "Address"; Update to Forta JS SDK 0.1.16
               confidence: 90,
               customValue: "Initiator of transaction",
             },
@@ -240,6 +242,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
         })
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
+      detectedFlashloans += 1;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -250,12 +253,13 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
+            anomalyScore
           },
           labels: [
             {
-              entityType: EntityType.Address,
+              entityType: EntityType.Address, // change to "Address"; Update to Forta JS SDK 0.1.16
               entity: initiator,
-              labelType: LabelType.Attacker,
+              labelType: LabelType.Attacker, // change to "Address"; Update to Forta JS SDK 0.1.16
               confidence: 60,
               customValue: "Initiator of transaction",
             },
@@ -263,6 +267,8 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
         })
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
+      detectedFlashloansHighProfit += 1;
+      anomalyScore = detectedFlashloansHighProfit / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -273,12 +279,13 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
+            anomalyScore
           },
           labels: [
             {
-              entityType: EntityType.Address,
+              entityType: EntityType.Address, // change to "Address"; Update to Forta JS SDK 0.1.16
               entity: initiator,
-              labelType: LabelType.Attacker,
+              labelType: LabelType.Attacker, // change to "Address"; Update to Forta JS SDK 0.1.16
               confidence: 90,
               customValue: "Initiator of transaction",
             },
@@ -298,11 +305,10 @@ function provideHandleBlock() {
   return async (blockEvent) => {
 		const findings = [];
 
-    // Use block 16337040 to pass this check
-		if (blockEvent.blockNumber % 240 === 0) {
-        persist(detectedFlashloans, DETECT_FLASHLOANS_KEY);
-				persist(detectedFlashloansHighProfit, DETECT_FLASHLOANS_HIGH_KEY);
-				persist(totalTxns, TOTAL_TXNS_KEY);
+    if (blockEvent.blockNumber % 240 === 0) {
+      persist(detectedFlashloans, DETECT_FLASHLOANS_KEY);
+			persist(detectedFlashloansHighProfit, DETECT_FLASHLOANS_HIGH_KEY);
+			persist(totalTxns, TOTAL_TXNS_KEY);
 		}
 		
 		return findings;
