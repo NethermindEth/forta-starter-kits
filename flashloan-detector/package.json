@@ -31,11 +31,12 @@
   "dependencies": {
     "axios": "^0.27.2",
     "ethers-multicall": "^0.2.3",
-    "forta-agent": "^0.1.15"
+    "forta-agent": "^0.1.15",
+    "node-fetch": "^2.6.7"
   },
   "devDependencies": {
-    "prettier": "^2.7.1",
     "jest": "^28.1.1",
-    "nodemon": "^2.0.16"
+    "nodemon": "^2.0.16",
+    "prettier": "^2.7.1"
   }
 }

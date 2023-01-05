@@ -9,6 +9,7 @@ const {
 } = require("forta-agent");
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
+const { persist, load } = require("./persistence.helper");
 
 let chainId;
 let chain;
@@ -19,9 +20,22 @@ const PROFIT_THRESHOLD = 500_000;
 const PERCENTAGE_THRESHOLD = 2;
 const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
 
+const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
+const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
+const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
+
+let detectedFlashloans, detectedFlashloansHighProfit, totalTxns;
+
 function provideInitialize(helper) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
+
+    // If this is the first instance deployed,
+    // these variables will be undefined
+    // since they have nothing to load
+    detectedFlashloans = 951 /*await load(DETECT_FLASHLOANS_KEY);*/
+	  detectedFlashloansHighProfit = 753 /*await load(DETECT_FLASHLOANS_HIGH_KEY);*/
+	  totalTxns = 852 /*await load(TOTAL_TXNS_KEY);*/
   };
 }
 
@@ -280,9 +294,26 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
   };
 }
 
+function provideHandleBlock() {
+  return async (blockEvent) => {
+		const findings = [];
+
+    // Use block 16337040 to pass this check
+		if (blockEvent.blockNumber % 240 === 0) {
+        persist(detectedFlashloans, DETECT_FLASHLOANS_KEY);
+				persist(detectedFlashloansHighProfit, DETECT_FLASHLOANS_HIGH_KEY);
+				persist(totalTxns, TOTAL_TXNS_KEY);
+		}
+		
+		return findings;
+	}
+}
+
 module.exports = {
   provideInitialize,
   initialize: provideInitialize(helperModule),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
+  provideHandleBlock,
+  handleBlock: provideHandleBlock()
 };
