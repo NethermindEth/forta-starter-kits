@@ -1,15 +1,7 @@
-const {
-  Finding,
-  FindingSeverity,
-  FindingType,
-  ethers,
-  LabelType,
-  EntityType,
-  getEthersProvider,
-} = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, ethers, Label, EntityType, getEthersProvider } = require("forta-agent");
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
-const { persist, load } = require("./persistence.helper");
+const PersistenceHelper = require("./persistence.helper");
 
 let chainId;
 let chain;
@@ -24,16 +16,15 @@ const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
 const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
 
-// Need to have plan in place for when these balloon up to huge numbers
 let detectedFlashloans, detectedFlashloansHighProfit, totalTxns;
 
-function provideInitialize(helper) {
+function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
 
-    detectedFlashloans = await load(DETECT_FLASHLOANS_KEY);
-    detectedFlashloansHighProfit = await load(DETECT_FLASHLOANS_HIGH_KEY);
-    totalTxns = await load(TOTAL_TXNS_KEY);
+    detectedFlashloans = await persistenceHelper.load(detectFlashloansKey);
+    detectedFlashloansHighProfit = await persistenceHelper.load(detectFlashloansHighKey);
+    totalTxns = await persistenceHelper.load(totalTxnsKey);
   };
 }
 
@@ -228,21 +219,14 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore
+            anomalyScore,
           },
-          labels: [
-            {
-              entityType: EntityType.Address, // change to "Address"; Update to Forta JS SDK 0.1.16
-              entity: initiator,
-              labelType: LabelType.Attacker, // change to "Address"; Update to Forta JS SDK 0.1.16
-              confidence: 90,
-              customValue: "Initiator of transaction",
-            },
-          ],
+          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
         })
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
       detectedFlashloans += 1;
+      anomalyScore = detectedFlashloans / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -253,17 +237,9 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore
+            anomalyScore,
           },
-          labels: [
-            {
-              entityType: EntityType.Address, // change to "Address"; Update to Forta JS SDK 0.1.16
-              entity: initiator,
-              labelType: LabelType.Attacker, // change to "Address"; Update to Forta JS SDK 0.1.16
-              confidence: 60,
-              customValue: "Initiator of transaction",
-            },
-          ],
+          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 60)],
         })
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
@@ -279,17 +255,9 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore
+            anomalyScore,
           },
-          labels: [
-            {
-              entityType: EntityType.Address, // change to "Address"; Update to Forta JS SDK 0.1.16
-              entity: initiator,
-              labelType: LabelType.Attacker, // change to "Address"; Update to Forta JS SDK 0.1.16
-              confidence: 90,
-              customValue: "Initiator of transaction",
-            },
-          ],
+          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
         })
       );
     }
@@ -301,25 +269,31 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
   };
 }
 
-function provideHandleBlock() {
+function provideHandleBlock(persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
   return async (blockEvent) => {
-		const findings = [];
+    const findings = [];
 
     if (blockEvent.blockNumber % 240 === 0) {
-      persist(detectedFlashloans, DETECT_FLASHLOANS_KEY);
-			persist(detectedFlashloansHighProfit, DETECT_FLASHLOANS_HIGH_KEY);
-			persist(totalTxns, TOTAL_TXNS_KEY);
-		}
-		
-		return findings;
-	}
+      await persistenceHelper.persist(detectedFlashloans, detectFlashloansKey);
+      await persistenceHelper.persist(detectedFlashloansHighProfit, detectFlashloansHighKey);
+      await persistenceHelper.persist(totalTxns, totalTxnsKey);
+    }
+
+    return findings;
+  };
 }
 
 module.exports = {
   provideInitialize,
-  initialize: provideInitialize(helperModule),
+  initialize: provideInitialize(
+    helperModule,
+    PersistenceHelper,
+    DETECT_FLASHLOANS_KEY,
+    DETECT_FLASHLOANS_HIGH_KEY,
+    TOTAL_TXNS_KEY
+  ),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
   provideHandleBlock,
-  handleBlock: provideHandleBlock()
+  handleBlock: provideHandleBlock(PersistenceHelper, DETECT_FLASHLOANS_KEY, DETECT_FLASHLOANS_HIGH_KEY, TOTAL_TXNS_KEY),
 };
