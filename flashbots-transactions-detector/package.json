@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "forta-agent": "0.1.9"
+    "forta-agent": "^0.1.16"
   },
   "devDependencies": {
     "jest": "^27.0.6",

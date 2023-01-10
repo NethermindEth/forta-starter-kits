@@ -5,7 +5,11 @@ const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=10";
 let lastBlockNumber = 0;
 
 function provideHandleBlock(getTransactionReceipt) {
+  let cachedFindings = [];
   return async () => {
+    if (cachedFindings.length >= 4) {
+      cachedFindings.splice(0, 4);
+    }
     let result;
     try {
       result = await axios.get(flashbotsUrl);
@@ -21,7 +25,7 @@ function provideHandleBlock(getTransactionReceipt) {
       blocks.map(async (block) => {
         const { transactions, block_number: blockNumber } = block;
         let currentBlockFindings;
-
+        console.log(lastBlockNumber);
         // Only process blocks that aren't processed
         if (blockNumber > lastBlockNumber) {
           // Create finding for every flashbots transaction in the block
@@ -59,9 +63,10 @@ function provideHandleBlock(getTransactionReceipt) {
         return currentBlockFindings;
       })
     );
-
     findings = findings.flat().filter((f) => !!f);
-    return findings;
+    cachedFindings.push(...findings);
+
+    return cachedFindings.slice(0, 4);
   };
 }
 
