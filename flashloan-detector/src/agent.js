@@ -226,7 +226,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.9),
             Label.fromObject(EntityType.Transaction, txEvent.hash, "Flashloan Transaction", 1),
           ],
         })
@@ -247,7 +247,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.6),
             Label.fromObject(EntityType.Transaction, txEvent.hash, "Flashloan Transaction", 1),
           ],
         })
@@ -268,7 +268,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.9),
             Label.fromObject(EntityType.Transaction, txEvent.hash, "Flashloan Transaction", 1),
           ],
         })
