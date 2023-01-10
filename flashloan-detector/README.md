@@ -26,6 +26,18 @@ Describe each of the type of alerts fired by this agent
   - Metadata:
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
+  - Labels
+    - Label 01:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The attacker's address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1)
+    - Label 0:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The transaction hash
+      - `label`: The type of the label, always set to "Flashloan Transaction"
+      - `confidence`: The confidence level of the transaction being a flashloan (0-1)
+      
 
 - FLASHLOAN-ATTACK-WITH-HIGH-PROFIT
   - Fired when a transaction contains a flashoan and the borrower made significant profit
@@ -34,6 +46,17 @@ Describe each of the type of alerts fired by this agent
   - Metadata:
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
+  - Labels
+    - Label 01:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The attacker's address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1)
+    - Label 0:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The transaction hash
+      - `label`: The type of the label, always set to "Flashloan Transaction"
+      - `confidence`: The confidence level of the transaction being a flashloan (0-1)
 
 ## Test Data
 
