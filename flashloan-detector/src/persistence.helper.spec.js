@@ -1,6 +1,10 @@
-const PersistenceHelper = require("./persistence.helper");
+const { PersistenceHelper } = require("./persistence.helper");
 const { fetchJwt } = require("forta-agent");
-const { fetch, Headers } = require("node-fetch");
+const fetch = require("node-fetch");
+// const { Headers } = require("node-fetch");
+const { Buffer } = require("node:buffer");
+
+const mockDbUrl = "databaseurl.com/";
 
 const mockJwt = { token: "aabb1234" };
 const mockKey = "mock-test-key";
@@ -21,10 +25,6 @@ jest.mock("forta-agent", () => {
   };
 });
 
-// Mock the fetchJwt implementation
-// to return the mock JWT
-// fetchJwt.mockImplementation(() => mockJwt);
-
 // Mock the fetch function and the Header constructor
 // of the node-fetch module
 const mockFetch = jest.fn();
@@ -35,53 +35,96 @@ jest.mock("node-fetch", () => {
     fetch: () => mockFetch(),
   };
 });
-// Mock both the Headers and fetch implementation to return
-// the mock Headers and fetch response objects
-Headers.mockImplementation(() => {
-  return "mockHeader";
-});
 
 describe("Persistence Helper test suite", () => {
-  let persistenceHelper = new PersistenceHelper();
+  let persistenceHelper;
 
-  it("should correctly POST value to the Forta provided database", async () => {
+  beforeAll(() => {
+    persistenceHelper = new PersistenceHelper(mockDbUrl);
+  });
+
+  afterEach(() => {
+    mockHasOwnProperty.mockClear();
+    mockFetchJwt.mockClear();
+    mockFetch.mockClear();
+  });
+
+  it("should correctly POST a value to the database", async () => {
     const mockValue = 101;
-    const mockFetchResponse = Promise.resolve(new Response(JSON.stringify({ status: "202" })));
 
-    mockHasOwnProperty.mockResolvedValueOnce(false);
+    const mockResponseInit = { status: 202 };
+    const mockPostMethodResponse = { data: "4234" };
+    const mockFetchResponse = new Response(JSON.stringify(mockPostMethodResponse), mockResponseInit);
+
+    mockHasOwnProperty.mockReturnValueOnce(false);
+    mockFetchJwt.mockResolvedValueOnce(mockJwt);
+    mockFetch.mockResolvedValueOnce(Promise.resolve(mockFetchResponse));
+
+    await persistenceHelper.persist(mockValue, mockKey);
+
+    expect(mockHasOwnProperty).toHaveBeenCalledTimes(1);
+    expect(mockFetchJwt).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    // STRUGGLING TO CONFIRM FETCH WAS CALLED WITH THE RIGHT ARGS
+    // expect(mockFetch).toHaveBeenCalledWith(`${mockDbUrl}${mockKey}`, {
+    // method: "POST",
+    // headers: new Headers({ Authorization: `Bearer ${mockJwt}` }),
+    // body: Buffer.from(mockValue.toString()),
+    // });
+  });
+
+  it("should fail to POST a value to the database", async () => {
+    const mockValue = 202;
+
+    const mockResponseInit = { status: 305 };
+    const mockPostMethodResponse = { data: "4234" };
+    const mockFetchResponse = new Response(JSON.stringify(mockPostMethodResponse), mockResponseInit);
+
+    mockHasOwnProperty.mockReturnValueOnce(false);
     mockFetchJwt.mockResolvedValueOnce(mockJwt);
     mockFetch.mockResolvedValueOnce(mockFetchResponse);
 
     await persistenceHelper.persist(mockValue, mockKey);
 
-    expect(mockHasOwnProperty).toHaveBeenCalled();
-    // expect(mockFetchJwt).toHaveBeenCalled(); // CANNOT GET THIS WORK PASS
-    // expect(mockFetch).toHaveBeenCalled();    // NOR THIS ONE :/
+    expect(mockHasOwnProperty).toHaveBeenCalledTimes(1);
+    expect(mockFetchJwt).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   /*
-  it("should fail to POST value to the Forta provided database event", async () => {
-    const mockValue = 202;
-    const mockFetchResponse = Promise.resolve(new Response());
+  it("should correctly load variable values from the database", async () => {
+      const mockBuffer = jest.fn();
+      const mockData = 4234;
 
-    mockHasOwnProperty.mockResolvedValueOnce(false);
-    mockFetchJwt.mockResolvedValueOnce(mockJwt);
-    mockFetch.mockResolvedValueOnce(mockFetchResponse);
+      const mockResponseInit = { status: 207 };
+      const mockPostMethodResponse = Buffer.from(mockData.toString());
+      const mockFetchResponse = new Response(JSON.stringify(mockPostMethodResponse), mockResponseInit);
 
-    await persist(mockValue, mockKey);
+      mockHasOwnProperty.mockReturnValueOnce(false);
+      mockFetchJwt.mockResolvedValueOnce(mockJwt);
+      mockFetch.mockResolvedValueOnce(mockFetchResponse);
+      mockBuffer.mockResolvedValueOnce("buffer return value");
 
-    expect(mockHasOwnProperty).toHaveBeenCalled();
-    // expect(mockFetchJwt).toHaveBeenCalled(); // CANNOT GET THIS WORK PASS
-    // expect(mockFetch).toHaveBeenCalled();    // NOR THIS ONE :/
-  });
+      // fetch.mockImplementation(() => { return { status: 200, content: ["content01", "content02"], buffer: mockBuffer }});
+      // mockBuffer.mockResolvedValueOnce({ data: "bufferedData", content: "bufferedContent" });
 
-  it("should correctly load variable values from the Forta provided database", async () => {
-      mockHasOwnProperty.mockResolvedValueOnce(false);
-      fetch.mockImplementation(() => { return { status: 200, content: ["content01", "content02"], buffer: mockBuffer }});
-      mockBuffer.mockResolvedValueOnce({ data: "bufferedData", content: "bufferedContent" });
-
-      /*const mockLoadedData = load(mockKey);
+      await persistenceHelper.load(mockKey);
       // expect(mockLoadedData)
   });
   */
+
+  it("should fail to load values from the database, but return zero", async () => {
+    const mockData = 4234;
+
+    const mockResponseInit = { status: 308 };
+    const mockPostMethodResponse = Buffer.from(mockData.toString());
+    const mockFetchResponse = new Response(JSON.stringify(mockPostMethodResponse), mockResponseInit);
+
+    mockHasOwnProperty.mockReturnValueOnce(false);
+    mockFetchJwt.mockResolvedValueOnce(mockJwt);
+    mockFetch.mockResolvedValueOnce(mockFetchResponse);
+
+    const fetchedValue = await persistenceHelper.load(mockKey);
+    expect(fetchedValue).toStrictEqual(0);
+  });
 });
