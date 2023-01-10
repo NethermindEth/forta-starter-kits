@@ -1,7 +1,7 @@
 const { Finding, FindingSeverity, FindingType, ethers, Label, EntityType, getEthersProvider } = require("forta-agent");
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
-const PersistenceHelper = require("./persistence.helper");
+const { PersistenceHelper } = require("./persistence.helper");
 
 let chainId;
 let chain;
@@ -16,7 +16,9 @@ const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
 const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
 
-let detectedFlashloans, detectedFlashloansHighProfit, totalTxns;
+let detectedFlashloans = 0;
+let detectedFlashloansHighProfit = 0;
+let totalTxns = 0;
 
 function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
   return async function initialize() {
@@ -287,7 +289,7 @@ module.exports = {
   provideInitialize,
   initialize: provideInitialize(
     helperModule,
-    PersistenceHelper,
+    new PersistenceHelper(),
     DETECT_FLASHLOANS_KEY,
     DETECT_FLASHLOANS_HIGH_KEY,
     TOTAL_TXNS_KEY
@@ -295,5 +297,10 @@ module.exports = {
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
   provideHandleBlock,
-  handleBlock: provideHandleBlock(PersistenceHelper, DETECT_FLASHLOANS_KEY, DETECT_FLASHLOANS_HIGH_KEY, TOTAL_TXNS_KEY),
+  handleBlock: provideHandleBlock(
+    new PersistenceHelper(),
+    DETECT_FLASHLOANS_KEY,
+    DETECT_FLASHLOANS_HIGH_KEY,
+    TOTAL_TXNS_KEY
+  ),
 };
