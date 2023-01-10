@@ -121,6 +121,7 @@ describe("flashloan detector agent", () => {
 
     it("returns a finding if there is a flashloan with high native profit", async () => {
       const mockTxEvent = {
+        hash: "mockHash",
         from: initiator,
         to: contractCalled,
         traces: [mockNativeTransferTrace],
@@ -150,7 +151,10 @@ describe("flashloan detector agent", () => {
             tokens: [],
             anomalyScore: mockHighProfitAnomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+          ],
         }),
       ]);
 
@@ -161,6 +165,7 @@ describe("flashloan detector agent", () => {
 
     it("returns a finding if there is a flashloan with high token profit", async () => {
       const mockTxEvent = {
+        hash: "mockHash",
         from: initiator,
         to: contractCalled,
         traces: [mockErc20TransferTrace],
@@ -191,7 +196,10 @@ describe("flashloan detector agent", () => {
             tokens: [asset],
             anomalyScore: mockHighProfitAnomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+          ],
         }),
       ]);
 
@@ -207,6 +215,7 @@ describe("flashloan detector agent", () => {
 
     it("returns a finding when there is a flashloan with low token profit but no traces", async () => {
       const mockTxEvent = {
+        hash: "mockHash",
         from: initiator,
         to: contractCalled,
         traces: [],
@@ -239,7 +248,10 @@ describe("flashloan detector agent", () => {
             tokens: [asset],
             anomalyScore: mockLowProfitAnomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 60)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
+            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+          ],
         }),
       ]);
 
@@ -255,6 +267,7 @@ describe("flashloan detector agent", () => {
 
     it("returns a finding if there is a flashloan with high token profit and high percentage", async () => {
       const mockTxEvent = {
+        hash: "mockHash",
         from: initiator,
         to: contractCalled,
         traces: [mockErc20TransferTrace],
@@ -285,7 +298,10 @@ describe("flashloan detector agent", () => {
             tokens: [asset],
             anomalyScore: mockHighProfitAnomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+          ],
         }),
       ]);
 
@@ -310,6 +326,7 @@ describe("flashloan detector agent", () => {
       };
 
       const mockTxEvent = {
+        hash: "mockHash",
         from: initiator,
         to: contractCalled,
         traces: [mockErc20TransferTrace],
@@ -341,7 +358,10 @@ describe("flashloan detector agent", () => {
             tokens: [asset],
             anomalyScore: mockLowProfitAnomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 60)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
+            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+          ],
         }),
       ]);
 
@@ -369,6 +389,7 @@ describe("flashloan detector agent", () => {
       };
 
       const mockTxEvent = {
+        hash: "mockHash",
         from: initiator,
         to: contractCalled,
         traces: [mockNativeTransferDiffRecipientTrace],
@@ -399,7 +420,10 @@ describe("flashloan detector agent", () => {
             tokens: [],
             anomalyScore: mockLowProfitAnomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 60)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
+            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+          ],
         }),
       ]);
 
