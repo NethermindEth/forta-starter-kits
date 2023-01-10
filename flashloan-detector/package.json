@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "dotenv": "^16.0.3",
     "ethers-multicall": "^0.2.3",
     "forta-agent": "^0.1.16",
     "node-fetch": "^2.6.7"
