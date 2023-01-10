@@ -68,6 +68,10 @@ class PersistenceHelper {
         return parseInt(data.toString());
       } else {
         console.log(`file ${key} does not exist`);
+        // If this is the first bot instance that is deployed,
+        // the database will not have data to return,
+        // thus return zero to assign value to the variables
+        // necessary
         return 0;
       }
     }
