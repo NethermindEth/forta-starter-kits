@@ -149,7 +149,7 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: highNativeUsdProfit.toFixed(2),
             tokens: [],
-            anomalyScore: mockHighProfitAnomalyScore,
+            anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
@@ -194,7 +194,7 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: hightokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockHighProfitAnomalyScore,
+            anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
@@ -246,7 +246,7 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: lowTokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockLowProfitAnomalyScore,
+            anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
@@ -296,7 +296,7 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: veryHighTokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockHighProfitAnomalyScore,
+            anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
@@ -356,7 +356,7 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: lowTokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockLowProfitAnomalyScore,
+            anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
@@ -418,7 +418,7 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: lowNativeUsdProfit.toFixed(2),
             tokens: [],
-            anomalyScore: mockLowProfitAnomalyScore,
+            anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 60),

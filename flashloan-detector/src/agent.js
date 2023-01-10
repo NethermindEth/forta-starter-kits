@@ -223,7 +223,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore,
+            anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
@@ -244,7 +244,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore,
+            anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
@@ -265,7 +265,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore,
+            anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
