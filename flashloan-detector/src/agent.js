@@ -16,6 +16,8 @@ const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
 const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
 
+const DATABASE_URL = "https://research.forta.network/database/bot/";
+
 let detectedFlashloans = 0;
 let detectedFlashloansHighProfit = 0;
 let totalTxns = 0;
@@ -223,7 +225,10 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             tokens: tokensArray,
             anomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Transaction, txEvent.hash, "Flashloan Transaction", 1),
+          ],
         })
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
@@ -241,7 +246,10 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             tokens: tokensArray,
             anomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 60)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 60),
+            Label.fromObject(EntityType.Transaction, txEvent.hash, "Flashloan Transaction", 1),
+          ],
         })
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
@@ -259,7 +267,10 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             tokens: tokensArray,
             anomalyScore,
           },
-          labels: [Label.fromObject(EntityType.Address, initiator, "Attacker", 90)],
+          labels: [
+            Label.fromObject(EntityType.Address, initiator, "Attacker", 90),
+            Label.fromObject(EntityType.Transaction, txEvent.hash, "Flashloan Transaction", 1),
+          ],
         })
       );
     }
@@ -289,7 +300,7 @@ module.exports = {
   provideInitialize,
   initialize: provideInitialize(
     helperModule,
-    new PersistenceHelper(),
+    new PersistenceHelper(DATABASE_URL),
     DETECT_FLASHLOANS_KEY,
     DETECT_FLASHLOANS_HIGH_KEY,
     TOTAL_TXNS_KEY
@@ -298,7 +309,7 @@ module.exports = {
   handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
   provideHandleBlock,
   handleBlock: provideHandleBlock(
-    new PersistenceHelper(),
+    new PersistenceHelper(DATABASE_URL),
     DETECT_FLASHLOANS_KEY,
     DETECT_FLASHLOANS_HIGH_KEY,
     TOTAL_TXNS_KEY
