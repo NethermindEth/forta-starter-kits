@@ -27,12 +27,12 @@ Describe each of the type of alerts fired by this agent
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
   - Labels
-    - Label 01:
+    - Label:
       - `entityType`: The type of the entity, always set to "Address"
       - `entity`: The attacker's address
       - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker (0-1)
-    - Label 0:
+    - Label:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The transaction hash
       - `label`: The type of the label, always set to "Flashloan Transaction"
