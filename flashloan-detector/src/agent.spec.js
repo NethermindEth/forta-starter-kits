@@ -152,8 +152,13 @@ describe("flashloan detector agent", () => {
             anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.9),
-            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
@@ -197,8 +202,13 @@ describe("flashloan detector agent", () => {
             anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.9),
-            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
@@ -249,8 +259,13 @@ describe("flashloan detector agent", () => {
             anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.6),
-            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
@@ -299,8 +314,13 @@ describe("flashloan detector agent", () => {
             anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.9),
-            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
@@ -359,8 +379,13 @@ describe("flashloan detector agent", () => {
             anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.6),
-            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
@@ -421,8 +446,13 @@ describe("flashloan detector agent", () => {
             anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject(EntityType.Address, initiator, "Attacker", 0.6),
-            Label.fromObject(EntityType.Transaction, mockTxEvent.hash, "Flashloan Transaction", 1),
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
