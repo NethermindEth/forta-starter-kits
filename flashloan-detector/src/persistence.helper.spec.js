@@ -2,6 +2,7 @@ const { PersistenceHelper } = require("./persistence.helper");
 const { existsSync, writeFileSync, unlinkSync } = require("fs");
 const fetch = require("node-fetch");
 
+const { Response } = jest.requireActual("node-fetch");
 jest.mock("node-fetch");
 
 const mockDbUrl = "databaseurl.com/";
