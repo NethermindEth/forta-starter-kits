@@ -212,7 +212,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
 
     if (percentage > PERCENTAGE_THRESHOLD && totalProfit > PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE) {
       detectedFlashloansHighProfit += 1;
-      anomalyScore = detectedFlashloansHighProfit / totalTxns;
+      const anomalyScore = detectedFlashloansHighProfit / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -238,7 +238,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
       detectedFlashloans += 1;
-      anomalyScore = detectedFlashloans / totalTxns;
+      const anomalyScore = detectedFlashloans / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -264,7 +264,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
       detectedFlashloansHighProfit += 1;
-      anomalyScore = detectedFlashloansHighProfit / totalTxns;
+      const anomalyScore = detectedFlashloansHighProfit / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
