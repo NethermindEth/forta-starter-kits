@@ -26,6 +26,20 @@ Describe each of the type of alerts fired by this agent
   - Metadata:
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `FLASHLOAN-ATTACK` transactions out of the total number of transactions processed by this bot.
+  - Labels
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The attacker's address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to `0.6`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The transaction hash
+      - `label`: The type of the label, always set to "Flashloan Transaction"
+      - `confidence`: The confidence level of the transaction being a flashloan (0-1). Always set to `1`.
+      
 
 - FLASHLOAN-ATTACK-WITH-HIGH-PROFIT
   - Fired when a transaction contains a flashoan and the borrower made significant profit
@@ -34,6 +48,19 @@ Describe each of the type of alerts fired by this agent
   - Metadata:
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `FLASHLOAN-ATTACK-WITH-HIGH-PROFIT` transactions out of the total number of transactions processed by this bot.
+  - Labels
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The attacker's address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to `0.9`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The transaction hash
+      - `label`: The type of the label, always set to "Flashloan Transaction"
+      - `confidence`: The confidence level of the transaction being a flashloan (0-1). Always set to `1`.
 
 ## Test Data
 

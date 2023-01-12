@@ -1,14 +1,7 @@
-const {
-  Finding,
-  FindingSeverity,
-  FindingType,
-  ethers,
-  LabelType,
-  EntityType,
-  getEthersProvider,
-} = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, ethers, Label, EntityType, getEthersProvider } = require("forta-agent");
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
+const { PersistenceHelper } = require("./persistence.helper");
 
 let chainId;
 let chain;
@@ -19,9 +12,23 @@ const PROFIT_THRESHOLD = 500_000;
 const PERCENTAGE_THRESHOLD = 2;
 const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
 
-function provideInitialize(helper) {
+const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
+const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
+const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
+
+const DATABASE_URL = "https://research.forta.network/database/bot/";
+
+let detectedFlashloans = 0;
+let detectedFlashloansHighProfit = 0;
+let totalTxns = 0;
+
+function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
+
+    detectedFlashloans = await persistenceHelper.load(detectFlashloansKey);
+    detectedFlashloansHighProfit = await persistenceHelper.load(detectFlashloansHighKey);
+    totalTxns = await persistenceHelper.load(totalTxnsKey);
   };
 }
 
@@ -38,6 +45,7 @@ const transferFunctionSigs = [
 function provideHandleTransaction(helper, getFlashloans, provider) {
   return async function handleTransaction(txEvent) {
     const findings = [];
+    totalTxns += 1;
     const initiator = txEvent.from;
 
     const flashloans = await getFlashloans(txEvent);
@@ -203,6 +211,8 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
     console.log("Percentage:", percentage.toFixed(2));
 
     if (percentage > PERCENTAGE_THRESHOLD && totalProfit > PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE) {
+      detectedFlashloansHighProfit += 1;
+      const anomalyScore = detectedFlashloansHighProfit / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -213,19 +223,22 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
+            anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
-            {
-              entityType: EntityType.Address,
-              entity: initiator,
-              labelType: LabelType.Attacker,
-              confidence: 90,
-              customValue: "Initiator of transaction",
-            },
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         })
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
+      detectedFlashloans += 1;
+      const anomalyScore = detectedFlashloans / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -236,19 +249,22 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
+            anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
-            {
-              entityType: EntityType.Address,
-              entity: initiator,
-              labelType: LabelType.Attacker,
-              confidence: 60,
-              customValue: "Initiator of transaction",
-            },
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         })
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
+      detectedFlashloansHighProfit += 1;
+      const anomalyScore = detectedFlashloansHighProfit / totalTxns;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -259,15 +275,16 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
+            anomalyScore: anomalyScore.toFixed(2),
           },
           labels: [
-            {
-              entityType: EntityType.Address,
-              entity: initiator,
-              labelType: LabelType.Attacker,
-              confidence: 90,
-              customValue: "Initiator of transaction",
-            },
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txEvent.hash,
+              label: "Flashloan Transaction",
+              confidence: 1,
+            }),
           ],
         })
       );
@@ -280,9 +297,36 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
   };
 }
 
+function provideHandleBlock(persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
+  return async (blockEvent) => {
+    const findings = [];
+
+    if (blockEvent.blockNumber % 240 === 0) {
+      await persistenceHelper.persist(detectedFlashloans, detectFlashloansKey);
+      await persistenceHelper.persist(detectedFlashloansHighProfit, detectFlashloansHighKey);
+      await persistenceHelper.persist(totalTxns, totalTxnsKey);
+    }
+
+    return findings;
+  };
+}
+
 module.exports = {
   provideInitialize,
-  initialize: provideInitialize(helperModule),
+  initialize: provideInitialize(
+    helperModule,
+    new PersistenceHelper(DATABASE_URL),
+    DETECT_FLASHLOANS_KEY,
+    DETECT_FLASHLOANS_HIGH_KEY,
+    TOTAL_TXNS_KEY
+  ),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
+  provideHandleBlock,
+  handleBlock: provideHandleBlock(
+    new PersistenceHelper(DATABASE_URL),
+    DETECT_FLASHLOANS_KEY,
+    DETECT_FLASHLOANS_HIGH_KEY,
+    TOTAL_TXNS_KEY
+  ),
 };
