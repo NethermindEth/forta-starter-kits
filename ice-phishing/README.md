@@ -26,7 +26,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
+    - Label 2:
+      - `entity`: The first approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC20 token approval, always set to "1"
+    - Label 3:
+      - `entity`: The last approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC20 token approval, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS
 
@@ -36,7 +53,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
+    - Label 2:
+      - `entity`: The first approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC721 token approval, always set to "1"
+    - Label 3:
+      - `entity`: The last approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC721 token approval, always set to "1"
 
 - ICE-PHISHING-ERC721-APPROVAL-FOR-ALL
 
@@ -46,7 +80,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain the approved asset address
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.2"
+    - Label 2:
+      - `entity`: The `ApprovalForAll` transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC721 `ApprovalForAll`, always set to "1"
 
 - ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL
 
@@ -56,7 +102,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain the approved asset address
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.2"
+    - Label 2:
+      - `entity`: The `ApprovalForAll` transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC1155 `ApprovalForAll`, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO
 
@@ -66,7 +124,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.25"
+    - Label 2:
+      - `entity`: The first approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC20 token approval, always set to "1"
+    - Label 3:
+      - `entity`: The last approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC20 token approval, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO
 
@@ -76,7 +151,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.25"
+    - Label 2:
+      - `entity`: The first approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC721 token approval, always set to "1"
+    - Label 3:
+      - `entity`: The last approval transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC721 token approval, always set to "1"
 
 - ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO
 
@@ -86,7 +178,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain the approved asset address
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.15"
+    - Label 2:
+      - `entity`: The `ApprovalForAll` transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC721 `ApprovalForAll`, always set to "1"
 
 - ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO
 
@@ -96,7 +200,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain the approved asset address
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.15"
+    - Label 2:
+      - `entity`: The `ApprovalForAll` transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Approval"
+      - `confidence`: The confidence level of the transaction being an ERC1155 `ApprovalForAll`, always set to "1"
 
 - ICE-PHISHING-ERC20-PERMIT
 
@@ -107,7 +223,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `msgSender` - the account that called the asset's `permit` function
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-  - Addresses contain the permitted asset address
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+  - Addresses contain the approved asset address
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
+    - Label 2:
+      - `entity`: The `Permit`'s transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Permit"
+      - `confidence`: The confidence level of the transaction being an ERC20 `Permit`, always set to "1"
 
 - ICE-PHISHING-ERC20-PERMIT-INFO
 
@@ -118,7 +246,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `msgSender` - the account that called the asset's `permit` function
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-  - Addresses contain the permitted asset address
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+  - Addresses contain the approved asset address
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.2"
+    - Label 2:
+      - `entity`: The `Permit`'s transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Permit"
+      - `confidence`: The confidence level of the transaction being an ERC20 `Permit`, always set to "1"
 
 - ICE-PHISHING-ERC20-SCAM-PERMIT
 
@@ -131,7 +271,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - the account that called the asset's `permit` function
       - `spender` - the account that received the permission
       - `owner` - the owner of the assets
-    - Addresses contain the permitted asset address
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - Addresses contain the approved asset address
+    - Labels:
+      - First Label(s):
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
+      - Last Label :
+        - `entity`: The `Permit`'s transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Permit"
+        - `confidence`: The confidence level of the transaction being an ERC20 `Permit`, always set to "1"
 
 - ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT
 
@@ -144,7 +296,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - the account that called the asset's `permit` function
       - `spender` - the account that received the permission
       - `owner` - the owner of the assets
-    - Addresses contain the permitted asset address
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - Addresses contain the approved asset address
+    - Labels:
+      - Label 1:
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
+      - Label 2:
+        - `entity`: The `Permit`'s transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Permit"
+        - `confidence`: The confidence level of the transaction being an ERC20 `Permit`, always set to "1"
 
 - ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT
 
@@ -157,7 +321,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - the account that called the asset's `permit` function
       - `spender` - the account that received the permission
       - `owner` - the owner of the assets
-    - Addresses contain the permitted asset address
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - Addresses contain the approved asset address
+    - Labels:
+      - Label 1:
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.5"
+      - Label 2:
+        - `entity`: The `Permit`'s transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Permit"
+        - `confidence`: The confidence level of the transaction being an ERC20 `Permit`, always set to "1"
 
 - ICE-PHISHING-SCAM-APPROVAL
 
@@ -168,7 +344,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `scamDomains` - The list of domains related to the scam addresses
       - `scamSpender` - the account that received the approval
       - `owner` - the owner of the assets
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
     - Addresses contain the approved asset address
+    - Labels:
+      - Label 1:
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
+      - Label 2:
+        - `entity`: The approval transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Approval"
+        - `confidence`: The confidence level of the transaction being a token approval, always set to "1"
 
 - ICE-PHISHING-SCAM-CREATOR-APPROVAL
 
@@ -180,7 +368,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `scamCreator` - The scam address that created the contract
       - `spender` - the contract that received the approval
       - `owner` - the owner of the assets
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
     - Addresses contain the approved asset address
+    - Labels:
+      - Label 1:
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
+      - Label 2:
+        - `entity`: The approval transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Approval"
+        - `confidence`: The confidence level of the transaction being a token approval, always set to "1"
 
 - ICE-PHISHING-SUSPICIOUS-APPROVAL
 
@@ -191,7 +391,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `suspiciousSpender` - the address of the suspicious spender
       - `suspiciousContractCreator` - the address of the suspicious contract creator
       - `owner` - the owner of the assets
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
     - Addresses contain the approved asset address
+    - Labels:
+      - Label 1:
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.5"
+      - Label 2:
+        - `entity`: The approval transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Approval"
+        - `confidence`: The confidence level of the transaction being a token approval, always set to "1"
 
 - ICE-PHISHING-SCAM-TRANSFER
 
@@ -204,7 +416,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - The account that initiated the transfer
       - `owner` - The owner of the assets
       - `receiver` - The account that received the assets
-    - Addresses contain the transferred asset address
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - Addresses contain the approved asset address
+    - Labels:
+      - First Label(s):
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.95"
+      - Last Label :
+        - `entity`: The transfer transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Transfer"
+        - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 - ICE-PHISHING-SCAM-CREATOR-TRANSFER
 
@@ -217,7 +441,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - The account that initiated the transfer
       - `owner` - The owner of the assets
       - `receiver` - The account that received the assets
-    - Addresses contain the transferred asset address
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - Addresses contain the approved asset address
+    - Labels:
+      - First Label(s):
+        - `entity`: The attacker's address
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `confidence`: The confidence level of the address being an attacker, always set to "0.95"
+      - Last Label :
+        - `entity`: The transfer transaction hash
+        - `entityType`: The type of the entity, always set to "Transaction"
+        - `label`: The type of the label, always set to "Transfer"
+        - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 - ICE-PHISHING-SUSPICIOUS-TRANSFER
 
@@ -230,7 +466,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - The account that initiated the transfer
       - `owner` - The owner of the assets
       - `receiver` - The account that received the assets
-    - Addresses contain the transferred asset address
+      - `anomalyScore` - score of how anomalous the alert is (0-1)
+  - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's contract address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.6"
+    - Label 2:
+      - `entity`: The attacker's EOA address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.6"
+    - Label 3:
+      - `entity`: The transfer transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS
 
@@ -240,7 +493,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first transfer tx
     - `lastTxHash` - hash of the last transfer tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.4"
+    - Label 2:
+      - `entity`: The first transfer's transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+    - Label 3:
+      - `entity`: The last transfer's transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW
 
@@ -250,7 +520,24 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first transfer tx
     - `lastTxHash` - hash of the last transfer tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
   - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.25"
+    - Label 2:
+      - `entity`: The first transfer's transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+    - Label 3:
+      - `entity`: The last transfer's transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 - ICE-PHISHING-PERMITTED-ERC20-TRANSFER
 
@@ -261,7 +548,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that transferred the tokens
     - `owner` - the owner of the assets
     - `receiver` - the account that received the tokens
-  - Addresses contain the transferred asset address
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+  - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.4"
+    - Label 2:
+      - `entity`: The transfer transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 - ICE-PHISHING-PERMITTED-ERC20-TRANSFER-MEDIUM
 
@@ -272,7 +571,19 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that transferred the tokens
     - `owner` - the owner of the assets
     - `receiver` - the account that received the tokens
-  - Addresses contain the transferred asset address
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+  - Addresses contain an array of the impacted assets
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
+    - Label 2:
+      - `entity`: The transfer transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Transfer"
+      - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
 ## Test Data
 
