@@ -51,6 +51,7 @@ const {
   erc1155transferEventABI,
 } = require("./utils");
 const AddressType = require("./address-type");
+const { PersistenceHelper } = require("./persistence.helper");
 
 const approvals = {};
 const approvalsERC20 = {};
@@ -75,13 +76,85 @@ const cachedAddresses = new LRU({ max: 100_000 });
 
 let chainId;
 
-const provideInitialize = (provider) => {
+const DATABASE_URL = "https://research.forta.network/database/bot/";
+
+const DATABASE_KEYS = {
+  totalPermits: "nm-icephishing-bot-total-permits-key",
+  totalApprovals: "nm-icephishing-bot-total-approvals-key",
+  totalTransfers: "nm-icephishing-bot-total-transfers-key",
+  totalERC20Approvals: "nm-icephishing-bot-total-erc20-approvals-key",
+  totalERC721Approvals: "nm-icephishing-bot-total-erc721-approvals-key",
+  totalERC721ApprovalsForAll: "nm-icephishing-bot-total-erc721-approvalsforall-key",
+  totalERC1155ApprovalsForAll: "nm-icephishing-bot-total-erc1155-approvalsforall-key",
+  detectedPermits: "nm-icephishing-bot-detect-permits-key",
+  detectedPermitsInfo: "nm-icephishing-bot-detect-permits-info-key",
+  detectedScamPermits: "nm-icephishing-bot-detect-scam-permits-key",
+  detectedScamCreatorPermits: "nm-icephishing-bot-detect-scam-creator-permits-key",
+  detectedSuspiciousPermits: "nm-icephishing-bot-detect-suspicious-permits-key",
+  detectedERC20Approvals: "nm-icephishing-bot-detect-erc20-approvals-key",
+  detectedERC20ApprovalsInfo: "nm-icephishing-bot-detect-erc20-approvals-info-key",
+  detectedERC721Approvals: "nm-icephishing-bot-detect-erc721-approvals-key",
+  detectedERC721ApprovalsInfo: "nm-icephishing-bot-detect-erc721-approvals-info-key",
+  detectedERC721ApprovalsForAll: "nm-icephishing-bot-detect-erc721-approvalsforall-key",
+  detectedERC721ApprovalsForAllInfo: "nm-icephishing-bot-detect-erc721-approvalsforall-info-key",
+  detectedERC1155ApprovalsForAll: "nm-icephishing-bot-detect-erc1155-approvalsforall-key",
+  detectedERC1155ApprovalsForAllInfo: "nm-icephishing-bot-detect-erc1155-approvalsforall-info-key",
+  detectedScamApprovals: "nm-icephishing-bot-detect-scam-approvals-key",
+  detectedScamCreatorApprovals: "nm-icephishing-bot-detect-scam-creator-approvals-key",
+  detectedSuspiciousApprovals: "nm-icephishing-bot-detect-suspicious-approvals-key",
+  detectedTransfers: "nm-icephishing-bot-detect-transfers-key",
+  detectedTransfersLow: "nm-icephishing-bot-detect-transfers-low-key",
+  detectedPermittedTransfers: "nm-icephishing-bot-detect-permitted-transfers-key",
+  detectedPermittedTransfersMedium: "nm-icephishing-bot-detect-permitted-transfers-medium-key",
+  detectedScamTransfers: "nm-icephishing-bot-detect-scam-transfers-key",
+  detectedScamCreatorTransfers: "nm-icephishing-bot-detect-scam-creator-transfers-key",
+  detectedSuspiciousTransfers: "nm-icephishing-bot-detect-suspicious-transfers-key",
+};
+
+const counters = {
+  totalPermits: 0,
+  totalApprovals: 0,
+  totalTransfers: 0,
+  totalERC20Approvals: 0,
+  totalERC721Approvals: 0,
+  totalERC721ApprovalsForAll: 0,
+  totalERC1155ApprovalsForAll: 0,
+  detectedPermits: 0,
+  detectedPermitsInfo: 0,
+  detectedScamPermits: 0,
+  detectedScamCreatorPermits: 0,
+  detectedSuspiciousPermits: 0,
+  detectedERC20Approvals: 0,
+  detectedERC20ApprovalsInfo: 0,
+  detectedERC721Approvals: 0,
+  detectedERC721ApprovalsInfo: 0,
+  detectedERC721ApprovalsForAll: 0,
+  detectedERC721ApprovalsForAllInfo: 0,
+  detectedERC1155ApprovalsForAll: 0,
+  detectedERC1155ApprovalsForAllInfo: 0,
+  detectedScamApprovals: 0,
+  detectedScamCreatorApprovals: 0,
+  detectedSuspiciousApprovals: 0,
+  detectedTransfers: 0,
+  detectedTransfersLow: 0,
+  detectedPermittedTransfers: 0,
+  detectedPermittedTransfersMedium: 0,
+  detectedScamTransfers: 0,
+  detectedScamCreatorTransfers: 0,
+  detectedSuspiciousTransfers: 0,
+};
+
+const provideInitialize = (provider, persistenceHelper, databaseKeys, counters) => {
   return async () => {
     ({ chainId } = await provider.getNetwork());
+
+    for (const key in counters) {
+      counters[key] = await persistenceHelper.load(databaseKeys[key]);
+    }
   };
 };
 
-const provideHandleTransaction = (provider) => async (txEvent) => {
+const provideHandleTransaction = (provider, counters) => async (txEvent) => {
   const findings = [];
 
   const { hash, timestamp, blockNumber, from: f } = txEvent;
@@ -108,6 +181,8 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
 
   await Promise.all(
     permitFunctions.map(async (func) => {
+      counters.totalPermits += 1;
+
       const { address: asset } = func;
       const { owner, spender, deadline, expiry, value } = func.args;
 
@@ -149,7 +224,9 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
             value: value ? value : 0,
           });
           if (spenderType !== AddressType.ScamAddress && msgSenderType !== AddressType.ScamAddress) {
-            findings.push(createPermitAlert(txFrom, spender, owner, asset));
+            counters.detectedPermits += 1;
+            const anomalyScore = counters.detectedPermits / counters.totalPermits;
+            findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
           } else {
             const scamSnifferDB = await axios.get(
               "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
@@ -166,7 +243,11 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
             if (msgSenderType === AddressType.ScamAddress) {
               _scamAddresses.push(txFrom);
             }
-            findings.push(createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains));
+            counters.detectedScamPermits += 1;
+            const anomalyScore = counters.detectedScamPermits / counters.totalPermits;
+            findings.push(
+              createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+            );
           }
         } else if (
           spenderType === AddressType.LowNumTxsVerifiedContract ||
@@ -176,7 +257,19 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
             (contract) => contract.address === spender || contract.creator === spender
           );
           if (suspiciousContractFound) {
-            findings.push(createPermitSuspiciousContractAlert(txFrom, spender, owner, asset, suspiciousContractFound));
+            counters.detectedSuspiciousPermits += 1;
+            const anomalyScore = counters.detectedSuspiciousPermits / counters.totalPermits;
+            findings.push(
+              createPermitSuspiciousContractAlert(
+                txFrom,
+                spender,
+                owner,
+                asset,
+                suspiciousContractFound,
+                anomalyScore,
+                hash
+              )
+            );
           }
 
           if (spenderType === AddressType.LowNumTxsVerifiedContract) {
@@ -203,8 +296,19 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
                 scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
               );
               if (scamDomains.length > 0) {
+                counters.detectedScamCreatorPermits += 1;
+                const anomalyScore = counters.detectedScamCreatorPermits / counters.totalPermits;
                 findings.push(
-                  createPermitScamCreatorAlert(txFrom, spender, owner, asset, spenderContractCreator, scamDomains)
+                  createPermitScamCreatorAlert(
+                    txFrom,
+                    spender,
+                    owner,
+                    asset,
+                    spenderContractCreator,
+                    scamDomains,
+                    anomalyScore,
+                    hash
+                  )
                 );
               }
             }
@@ -218,7 +322,9 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
             deadline: deadline ? deadline : expiry,
             value: value ? value : 0,
           });
-          findings.push(createPermitInfoAlert(txFrom, spender, owner, asset));
+          counters.detectedPermitsInfo += 1;
+          const anomalyScore = counters.detectedPermitsInfo / counters.totalPermits;
+          findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, hash));
         }
       }
     })
@@ -226,6 +332,8 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
 
   await Promise.all(
     approvalEvents.map(async (event) => {
+      counters.totalApprovals += 1;
+
       const { address: asset, name } = event;
       const { owner, spender, value, tokenId, approved } = event.args;
 
@@ -420,19 +528,25 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
           const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
             scamSnifferDB.data[key].includes(spender.toLowerCase())
           );
-          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains));
+          counters.detectedScamApprovals += 1;
+          const anomalyScore = counters.detectedScamApprovals / counters.totalApprovals;
+          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
         } else {
           const suspiciousContractFound = Array.from(suspiciousContracts).find(
             (contract) => contract.address === spender || contract.creator === spender
           );
           if (suspiciousContractFound) {
+            counters.detectedSuspiciousApprovals += 1;
+            const anomalyScore = counters.detectedSuspiciousApprovals / counters.totalApprovals;
             findings.push(
               createApprovalSuspiciousContractAlert(
                 spender,
                 owner,
                 asset,
                 suspiciousContractFound.address,
-                suspiciousContractFound.creator
+                suspiciousContractFound.creator,
+                anomalyScore,
+                hash
               )
             );
           }
@@ -447,8 +561,18 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
                 scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
               );
               if (scamDomains.length > 0) {
+                counters.detectedScamCreatorApprovals += 1;
+                const anomalyScore = counters.detectedScamCreatorApprovals / counters.totalApprovals;
                 findings.push(
-                  createApprovalScamCreatorAlert(spender, spenderContractCreator, owner, asset, scamDomains)
+                  createApprovalScamCreatorAlert(
+                    spender,
+                    spenderContractCreator,
+                    owner,
+                    asset,
+                    scamDomains,
+                    anomalyScore,
+                    hash
+                  )
                 );
               }
             }
@@ -469,14 +593,20 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
 
       if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
         if (approvalsERC20InfoSeverity[spender] && approvalsERC20InfoSeverity[spender].length > approveCountThreshold) {
-          findings.push(createHighNumApprovalsInfoAlertERC20(spender, approvalsInfoSeverity[spender]));
+          counters.totalERC20Approvals += 1;
+          counters.detectedERC20ApprovalsInfo += 1;
+          const anomalyScore = counters.detectedERC20ApprovalsInfo / counters.totalERC20Approvals;
+          findings.push(createHighNumApprovalsInfoAlertERC20(spender, approvalsInfoSeverity[spender], anomalyScore));
         }
 
         if (
           approvalsERC721InfoSeverity[spender] &&
           approvalsERC721InfoSeverity[spender].length > approveCountThreshold
         ) {
-          findings.push(createHighNumApprovalsInfoAlertERC721(spender, approvalsInfoSeverity[spender]));
+          counters.totalERC721Approvals += 1;
+          counters.detectedERC721ApprovalsInfo += 1;
+          const anomalyScore = counters.detectedERC721ApprovalsInfo / counters.totalERC721Approvals;
+          findings.push(createHighNumApprovalsInfoAlertERC721(spender, approvalsInfoSeverity[spender], anomalyScore));
         }
 
         if (isApprovalForAll) {
@@ -484,31 +614,49 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
             approvalsForAll721InfoSeverity[spender] &&
             approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
-            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset));
+            counters.totalERC721ApprovalsForAll += 1;
+            counters.detectedERC721ApprovalsForAllInfo += 1;
+            const anomalyScore = counters.detectedERC721ApprovalsForAllInfo / counters.totalERC721ApprovalsForAll;
+            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
           } else if (
             approvalsForAll1155InfoSeverity[spender] &&
             approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
-            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset));
+            counters.totalERC1155ApprovalsForAll += 1;
+            counters.detectedERC1155ApprovalsForAllInfo += 1;
+            const anomalyScore = counters.detectedERC1155ApprovalsForAllInfo / counters.totalERC1155ApprovalsForAll;
+            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
           }
         }
       } else {
         if (approvalsERC20[spender] && approvalsERC20[spender].length > approveCountThreshold) {
-          findings.push(createHighNumApprovalsAlertERC20(spender, approvals[spender]));
+          counters.totalERC20Approvals += 1;
+          counters.detectedERC20Approvals += 1;
+          const anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
+          findings.push(createHighNumApprovalsAlertERC20(spender, approvals[spender], anomalyScore));
         }
 
         if (approvalsERC721[spender] && approvalsERC721[spender].length > approveCountThreshold) {
-          findings.push(createHighNumApprovalsAlertERC721(spender, approvals[spender]));
+          counters.totalERC721Approvals += 1;
+          counters.detectedERC721Approvals += 1;
+          const anomalyScore = counters.detectedERC721Approvals / counters.totalERC721Approvals;
+          findings.push(createHighNumApprovalsAlertERC721(spender, approvals[spender], anomalyScore));
         }
 
         if (isApprovalForAll) {
           if (approvalsForAll721[spender] && approvalsForAll721[spender].length > approveForAllCountThreshold) {
-            findings.push(createApprovalForAllAlertERC721(spender, owner, asset));
+            counters.totalERC721ApprovalsForAll += 1;
+            counters.detectedERC721ApprovalsForAll += 1;
+            const anomalyScore = counters.detectedERC721ApprovalsForAll / counters.totalERC721ApprovalsForAll;
+            findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
           } else if (
             approvalsForAll1155[spender] &&
             approvalsForAll1155[spender].length > approveForAllCountThreshold
           ) {
-            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset));
+            counters.totalERC1155ApprovalsForAll += 1;
+            counters.detectedERC1155ApprovalsForAll += 1;
+            const anomalyScore = counters.detectedERC1155ApprovalsForAll / counters.totalERC1155ApprovalsForAll;
+            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
           }
         }
       }
@@ -517,6 +665,8 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
 
   await Promise.all(
     transferEvents.map(async (event) => {
+      counters.totalTransfers += 1;
+
       const asset = event.address;
       const { from, to, value, values, tokenId, tokenIds } = event.args;
 
@@ -548,7 +698,11 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
         if (txFromType === AddressType.ScamAddress) {
           _scamAddresses.push(txFrom);
         }
-        findings.push(createTransferScamAlert(txFrom, from, to, asset, _scamAddresses, scamDomains));
+        counters.detectedScamTransfers += 1;
+        const anomalyScore = counters.detectedScamTransfers / counters.totalTransfers;
+        findings.push(
+          createTransferScamAlert(txFrom, from, to, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+        );
       }
 
       if (
@@ -562,7 +716,11 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
           (contract) => contract.address === to || contract.creator === to
         );
         if (suspiciousContractFound) {
-          findings.push(createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound));
+          counters.detectedSuspiciousTransfers += 1;
+          const anomalyScore = counters.detectedSuspiciousTransfers / counters.totalTransfers;
+          findings.push(
+            createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound, anomalyScore, hash)
+          );
         }
 
         if (toType === AddressType.LowNumTxsVerifiedContract || toType === AddressType.LowNumTxsUnverifiedContract) {
@@ -587,7 +745,20 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
               scamSnifferDB.data[key].includes(toContractCreator.toLowerCase())
             );
             if (scamDomains.length > 0) {
-              findings.push(createTransferScamCreatorAlert(txFrom, from, to, asset, toContractCreator, scamDomains));
+              counters.detectedScamCreatorTransfers += 1;
+              const anomalyScore = counters.detectedScamCreatorTransfers / counters.totalTransfers;
+              findings.push(
+                createTransferScamCreatorAlert(
+                  txFrom,
+                  from,
+                  to,
+                  asset,
+                  toContractCreator,
+                  scamDomains,
+                  anomalyScore,
+                  hash
+                )
+              );
             }
           }
         }
@@ -604,7 +775,9 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
       spenderPermissions?.forEach((permission) => {
         if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
           if (!permission.value || permission.value.toString() === value.toString()) {
-            findings.push(createPermitTransferAlert(txFrom, from, to, asset, value));
+            counters.detectedPermittedTransfers += 1;
+            const anomalyScore = counters.detectedPermittedTransfers / counters.totalTransfers;
+            findings.push(createPermitTransferAlert(txFrom, from, to, asset, value, anomalyScore, hash));
           }
         }
       });
@@ -612,7 +785,9 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
       spenderPermissionsInfoSeverity?.forEach((permission) => {
         if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
           if (!permission.value || permission.value.toString() === value.toString()) {
-            findings.push(createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value));
+            counters.detectedPermittedTransfersMedium += 1;
+            const anomalyScore = counters.detectedPermittedTransfersMedium / counters.totalTransfers;
+            findings.push(createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash));
           }
         }
       });
@@ -667,7 +842,9 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
               if (!balance.eq(0)) return;
             }
           }
-          findings.push(createHighNumTransfersAlert(txFrom, transfers[txFrom]));
+          counters.detectedTransfers += 1;
+          const anomalyScore = counters.detectedTransfers / counters.totalTransfers;
+          findings.push(createHighNumTransfersAlert(txFrom, transfers[txFrom], anomalyScore));
         }
       }
 
@@ -723,7 +900,9 @@ const provideHandleTransaction = (provider) => async (txEvent) => {
               if (!balance.eq(0)) return;
             }
           }
-          findings.push(createHighNumTransfersLowSeverityAlert(txFrom, transfersLowSeverity[txFrom]));
+          counters.detectedTransfersLow += 1;
+          const anomalyScore = counters.detectedTransfersLow / counters.totalTransfers;
+          findings.push(createHighNumTransfersLowSeverityAlert(txFrom, transfersLowSeverity[txFrom], anomalyScore));
         }
       }
     })
@@ -736,189 +915,202 @@ let lastTimestamp = 0;
 let init = false;
 let suspiciousContracts = new Set();
 
-const provideHandleBlock = (getSuspiciousContracts) => async (blockEvent) => {
-  const { timestamp, number } = blockEvent.block;
-  if (!init) {
-    suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
-  } else {
-    const newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
-    newSuspiciousContracts.forEach((contract) => suspiciousContracts.add(contract));
-  }
-  init = true;
+const provideHandleBlock =
+  (getSuspiciousContracts, persistenceHelper, databaseKeys, counters) => async (blockEvent) => {
+    const { timestamp, number } = blockEvent.block;
+    if (!init) {
+      suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+    } else {
+      const newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+      newSuspiciousContracts.forEach((contract) => suspiciousContracts.add(contract));
+    }
+    init = true;
 
-  const scamSnifferResponse = await axios.get(
-    "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
-  );
-  scamAddresses = scamSnifferResponse.data;
-  // Convert to checksum addresses
-  scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
+    const scamSnifferResponse = await axios.get(
+      "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
+    );
+    scamAddresses = scamSnifferResponse.data;
+    // Convert to checksum addresses
+    scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
 
-  // Clean the data every timePeriodDays
-  if (timestamp - lastTimestamp > TIME_PERIOD) {
-    console.log("Cleaning");
-    console.log(`Approvals before: ${Object.keys(approvals).length}`);
-    console.log(`Approvals ERC20 before: ${Object.keys(approvalsERC20).length}`);
-    console.log(`Approvals ERC721 before: ${Object.keys(approvalsERC721).length}`);
-    console.log(`ApprovalsForAll ERC721 before: ${Object.keys(approvalsForAll721).length}`);
-    console.log(`ApprovalsForAll ERC1155 before: ${Object.keys(approvalsForAll1155).length}`);
-    console.log(`Permissions before: ${Object.keys(permissions).length}`);
-    console.log(`Transfers before: ${Object.keys(transfers).length}`);
-    console.log(`Approvals Info Severity before: ${Object.keys(approvalsInfoSeverity).length}`);
-    console.log(`Approvals ERC20 Info Severity before: ${Object.keys(approvalsERC20InfoSeverity).length}`);
-    console.log(`Approvals ERC721 Info Severity before: ${Object.keys(approvalsERC721InfoSeverity).length}`);
-    console.log(`ApprovalsForAll ERC721 Info Severity before: ${Object.keys(approvalsForAll721InfoSeverity).length}`);
-    console.log(`ApprovalsForAll ERC1155 Info Severity before: ${Object.keys(approvalsForAll1155InfoSeverity).length}`);
-    console.log(`Permissions Info Severity before: ${Object.keys(permissionsInfoSeverity).length}`);
-    console.log(`Transfers Low Severity before: ${Object.keys(transfersLowSeverity).length}`);
-
-    Object.entries(approvals).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvals[spender];
+    if (number % 240 === 0) {
+      for (const key in counters) {
+        await persistenceHelper.persist(counters[key], databaseKeys[key]);
       }
-    });
+    }
 
-    Object.entries(approvalsERC20).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsERC20[spender];
-      }
-    });
+    // Clean the data every timePeriodDays
+    if (timestamp - lastTimestamp > TIME_PERIOD) {
+      console.log("Cleaning");
+      console.log(`Approvals before: ${Object.keys(approvals).length}`);
+      console.log(`Approvals ERC20 before: ${Object.keys(approvalsERC20).length}`);
+      console.log(`Approvals ERC721 before: ${Object.keys(approvalsERC721).length}`);
+      console.log(`ApprovalsForAll ERC721 before: ${Object.keys(approvalsForAll721).length}`);
+      console.log(`ApprovalsForAll ERC1155 before: ${Object.keys(approvalsForAll1155).length}`);
+      console.log(`Permissions before: ${Object.keys(permissions).length}`);
+      console.log(`Transfers before: ${Object.keys(transfers).length}`);
+      console.log(`Approvals Info Severity before: ${Object.keys(approvalsInfoSeverity).length}`);
+      console.log(`Approvals ERC20 Info Severity before: ${Object.keys(approvalsERC20InfoSeverity).length}`);
+      console.log(`Approvals ERC721 Info Severity before: ${Object.keys(approvalsERC721InfoSeverity).length}`);
+      console.log(`ApprovalsForAll ERC721 Info Severity before: ${Object.keys(approvalsForAll721InfoSeverity).length}`);
+      console.log(
+        `ApprovalsForAll ERC1155 Info Severity before: ${Object.keys(approvalsForAll1155InfoSeverity).length}`
+      );
+      console.log(`Permissions Info Severity before: ${Object.keys(permissionsInfoSeverity).length}`);
+      console.log(`Transfers Low Severity before: ${Object.keys(transfersLowSeverity).length}`);
 
-    Object.entries(approvalsERC721).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsERC721[spender];
-      }
-    });
+      Object.entries(approvals).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvals[spender];
+        }
+      });
 
-    Object.entries(approvalsForAll721).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsForAll721[spender];
-      }
-    });
+      Object.entries(approvalsERC20).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsERC20[spender];
+        }
+      });
 
-    Object.entries(approvalsForAll1155).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsForAll1155[spender];
-      }
-    });
+      Object.entries(approvalsERC721).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsERC721[spender];
+        }
+      });
 
-    Object.keys(permissions).forEach((spender) => {
-      permissions[spender] = permissions[spender].filter((entry) => entry.deadline > timestamp);
-      if (!(permissions[spender].length > 0)) {
-        delete permissions[spender];
-      }
-    });
+      Object.entries(approvalsForAll721).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsForAll721[spender];
+        }
+      });
 
-    Object.entries(transfers).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the transfers if the last transfer from a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete transfers[spender];
-      }
-    });
+      Object.entries(approvalsForAll1155).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsForAll1155[spender];
+        }
+      });
 
-    Object.entries(approvalsInfoSeverity).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsInfoSeverity[spender];
-      }
-    });
+      Object.keys(permissions).forEach((spender) => {
+        permissions[spender] = permissions[spender].filter((entry) => entry.deadline > timestamp);
+        if (!(permissions[spender].length > 0)) {
+          delete permissions[spender];
+        }
+      });
 
-    Object.entries(approvalsERC20InfoSeverity).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsERC20InfoSeverity[spender];
-      }
-    });
+      Object.entries(transfers).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the transfers if the last transfer from a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete transfers[spender];
+        }
+      });
 
-    Object.entries(approvalsERC721InfoSeverity).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsERC721InfoSeverity[spender];
-      }
-    });
+      Object.entries(approvalsInfoSeverity).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsInfoSeverity[spender];
+        }
+      });
 
-    Object.entries(approvalsForAll721InfoSeverity).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsForAll721InfoSeverity[spender];
-      }
-    });
+      Object.entries(approvalsERC20InfoSeverity).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsERC20InfoSeverity[spender];
+        }
+      });
 
-    Object.entries(approvalsForAll1155InfoSeverity).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete approvalsForAll1155InfoSeverity[spender];
-      }
-    });
+      Object.entries(approvalsERC721InfoSeverity).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsERC721InfoSeverity[spender];
+        }
+      });
 
-    Object.keys(permissionsInfoSeverity).forEach((spender) => {
-      permissionsInfoSeverity[spender] = permissionsInfoSeverity[spender].filter((entry) => entry.deadline > timestamp);
-      if (!(permissionsInfoSeverity[spender].length > 0)) {
-        delete permissionsInfoSeverity[spender];
-      }
-    });
+      Object.entries(approvalsForAll721InfoSeverity).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsForAll721InfoSeverity[spender];
+        }
+      });
 
-    Object.entries(transfersLowSeverity).forEach(([spender, data]) => {
-      const { length } = data;
-      // Clear the transfers if the last transfer from a spender is more than timePeriodDays ago
-      if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
-        delete transfersLowSeverity[spender];
-      }
-    });
+      Object.entries(approvalsForAll1155InfoSeverity).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete approvalsForAll1155InfoSeverity[spender];
+        }
+      });
 
-    console.log(`Approvals after: ${Object.keys(approvals).length}`);
-    console.log(`Approvals ERC20 after: ${Object.keys(approvalsERC20).length}`);
-    console.log(`Approvals ERC721 after: ${Object.keys(approvalsERC721).length}`);
-    console.log(`ApprovalsForAll ERC721 after: ${Object.keys(approvalsForAll721).length}`);
-    console.log(`ApprovalsForAll ERC1155 after: ${Object.keys(approvalsForAll1155).length}`);
-    console.log(`Permissions after: ${Object.keys(permissions).length}`);
-    console.log(`Transfers after: ${Object.keys(transfers).length}`);
-    console.log(`Approvals Info Severity after: ${Object.keys(approvalsInfoSeverity).length}`);
-    console.log(`Approvals ERC20 Info Severity after: ${Object.keys(approvalsERC20InfoSeverity).length}`);
-    console.log(`Approvals ERC721 Info Severity after: ${Object.keys(approvalsERC721InfoSeverity).length}`);
-    console.log(`ApprovalsForAll ERC721 Info Severity after: ${Object.keys(approvalsForAll721InfoSeverity).length}`);
-    console.log(`ApprovalsForAll ERC1155 Info Severity after: ${Object.keys(approvalsForAll1155InfoSeverity).length}`);
-    console.log(`Permissions Info Severity after: ${Object.keys(permissionsInfoSeverity).length}`);
-    console.log(`Transfers Low Severity after: ${Object.keys(transfersLowSeverity).length}`);
+      Object.keys(permissionsInfoSeverity).forEach((spender) => {
+        permissionsInfoSeverity[spender] = permissionsInfoSeverity[spender].filter(
+          (entry) => entry.deadline > timestamp
+        );
+        if (!(permissionsInfoSeverity[spender].length > 0)) {
+          delete permissionsInfoSeverity[spender];
+        }
+      });
 
-    // Reset ignored addresses
-    cachedAddresses.entries(([address, type]) => {
-      if (type === AddressType.IgnoredEoa) {
-        cachedAddresses.set(address, AddressType.EoaWithLowNonce);
-      }
+      Object.entries(transfersLowSeverity).forEach(([spender, data]) => {
+        const { length } = data;
+        // Clear the transfers if the last transfer from a spender is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete transfersLowSeverity[spender];
+        }
+      });
 
-      if (type === AddressType.IgnoredContract) {
-        cachedAddresses.set(address, AddressType.LowNumTxsUnverifiedContract);
-      }
-    });
+      console.log(`Approvals after: ${Object.keys(approvals).length}`);
+      console.log(`Approvals ERC20 after: ${Object.keys(approvalsERC20).length}`);
+      console.log(`Approvals ERC721 after: ${Object.keys(approvalsERC721).length}`);
+      console.log(`ApprovalsForAll ERC721 after: ${Object.keys(approvalsForAll721).length}`);
+      console.log(`ApprovalsForAll ERC1155 after: ${Object.keys(approvalsForAll1155).length}`);
+      console.log(`Permissions after: ${Object.keys(permissions).length}`);
+      console.log(`Transfers after: ${Object.keys(transfers).length}`);
+      console.log(`Approvals Info Severity after: ${Object.keys(approvalsInfoSeverity).length}`);
+      console.log(`Approvals ERC20 Info Severity after: ${Object.keys(approvalsERC20InfoSeverity).length}`);
+      console.log(`Approvals ERC721 Info Severity after: ${Object.keys(approvalsERC721InfoSeverity).length}`);
+      console.log(`ApprovalsForAll ERC721 Info Severity after: ${Object.keys(approvalsForAll721InfoSeverity).length}`);
+      console.log(
+        `ApprovalsForAll ERC1155 Info Severity after: ${Object.keys(approvalsForAll1155InfoSeverity).length}`
+      );
+      console.log(`Permissions Info Severity after: ${Object.keys(permissionsInfoSeverity).length}`);
+      console.log(`Transfers Low Severity after: ${Object.keys(transfersLowSeverity).length}`);
 
-    lastTimestamp = timestamp;
-  }
-  return [];
-};
+      // Reset ignored addresses
+      cachedAddresses.entries(([address, type]) => {
+        if (type === AddressType.IgnoredEoa) {
+          cachedAddresses.set(address, AddressType.EoaWithLowNonce);
+        }
+
+        if (type === AddressType.IgnoredContract) {
+          cachedAddresses.set(address, AddressType.LowNumTxsUnverifiedContract);
+        }
+      });
+
+      lastTimestamp = timestamp;
+    }
+    return [];
+  };
 
 module.exports = {
-  initialize: provideInitialize(getEthersProvider()),
+  initialize: provideInitialize(getEthersProvider(), new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters),
   provideInitialize,
   provideHandleTransaction,
-  handleTransaction: provideHandleTransaction(getEthersProvider()),
+  handleTransaction: provideHandleTransaction(getEthersProvider(), counters),
   provideHandleBlock,
-  handleBlock: provideHandleBlock(getSuspiciousContracts),
+  handleBlock: provideHandleBlock(getSuspiciousContracts, new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters),
   getApprovals: () => approvals, // Exported for unit tests
   getERC20Approvals: () => approvalsERC20, // Exported for unit tests
   getERC721Approvals: () => approvalsERC721, // Exported for unit tests
