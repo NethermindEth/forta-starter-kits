@@ -339,6 +339,23 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
 
       const isApprovalForAll = name === "ApprovalForAll";
 
+      let isAssetERC1155 = false;
+
+      if (!isApprovalForAll) {
+        if (tokenId) {
+          counters.totalERC721Approvals += 1;
+        } else {
+          counters.totalERC20Approvals += 1;
+        }
+      } else {
+        const assetCode = await provider.getCode(asset);
+        isAssetERC1155 = assetCode.includes(safeBatchTransferFrom1155Sig);
+        if (isAssetERC1155) {
+          counters.totalERC1155ApprovalsForAll += 1;
+        } else {
+          counters.totalERC721ApprovalsForAll += 1;
+        }
+      }
       // Filter out approval revokes
       if (isApprovalForAll && !approved) return;
       if (value?.eq(0)) return;
@@ -401,8 +418,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
 
       if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
         if (isApprovalForAll) {
-          const assetCode = await provider.getCode(asset);
-          if (assetCode.includes(safeBatchTransferFrom1155Sig)) {
+          if (isAssetERC1155) {
             if (!approvalsForAll1155InfoSeverity[spender]) approvalsForAll1155InfoSeverity[spender] = [];
             approvalsForAll1155InfoSeverity[spender].push({
               asset,
@@ -448,8 +464,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
         });
       } else {
         if (isApprovalForAll) {
-          const assetCode = await provider.getCode(asset);
-          if (assetCode.includes(safeBatchTransferFrom1155Sig)) {
+          if (isAssetERC1155) {
             if (!approvalsForAll1155[spender]) approvalsForAll1155[spender] = [];
             approvalsForAll1155[spender].push({
               asset,
@@ -593,8 +608,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
 
       if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
         if (approvalsERC20InfoSeverity[spender] && approvalsERC20InfoSeverity[spender].length > approveCountThreshold) {
-          counters.totalERC20Approvals += 1;
-          counters.detectedERC20ApprovalsInfo += 1;
+          counters.detectedERC20ApprovalsInfo += approvalsERC20InfoSeverity[spender].length;
           const anomalyScore = counters.detectedERC20ApprovalsInfo / counters.totalERC20Approvals;
           findings.push(createHighNumApprovalsInfoAlertERC20(spender, approvalsInfoSeverity[spender], anomalyScore));
         }
@@ -603,8 +617,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
           approvalsERC721InfoSeverity[spender] &&
           approvalsERC721InfoSeverity[spender].length > approveCountThreshold
         ) {
-          counters.totalERC721Approvals += 1;
-          counters.detectedERC721ApprovalsInfo += 1;
+          counters.detectedERC721ApprovalsInfo += approvalsERC721InfoSeverity[spender].length;
           const anomalyScore = counters.detectedERC721ApprovalsInfo / counters.totalERC721Approvals;
           findings.push(createHighNumApprovalsInfoAlertERC721(spender, approvalsInfoSeverity[spender], anomalyScore));
         }
@@ -614,47 +627,42 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             approvalsForAll721InfoSeverity[spender] &&
             approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
-            counters.totalERC721ApprovalsForAll += 1;
-            counters.detectedERC721ApprovalsForAllInfo += 1;
+            counters.detectedERC721ApprovalsForAllInfo += approvalsForAll721InfoSeverity[spender].length;
             const anomalyScore = counters.detectedERC721ApprovalsForAllInfo / counters.totalERC721ApprovalsForAll;
             findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
           } else if (
             approvalsForAll1155InfoSeverity[spender] &&
             approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
-            counters.totalERC1155ApprovalsForAll += 1;
-            counters.detectedERC1155ApprovalsForAllInfo += 1;
+            counters.detectedERC1155ApprovalsForAllInfo += approvalsForAll1155InfoSeverity[spender].length;
             const anomalyScore = counters.detectedERC1155ApprovalsForAllInfo / counters.totalERC1155ApprovalsForAll;
             findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
           }
         }
       } else {
         if (approvalsERC20[spender] && approvalsERC20[spender].length > approveCountThreshold) {
-          counters.totalERC20Approvals += 1;
-          counters.detectedERC20Approvals += 1;
+          counters.detectedERC20Approvals += approvalsERC20[spender].length;
+          console.log(approvalsERC20[spender], counters.detectedERC20Approvals, counters.totalERC20Approvals);
           const anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
           findings.push(createHighNumApprovalsAlertERC20(spender, approvals[spender], anomalyScore));
         }
 
         if (approvalsERC721[spender] && approvalsERC721[spender].length > approveCountThreshold) {
-          counters.totalERC721Approvals += 1;
-          counters.detectedERC721Approvals += 1;
+          counters.detectedERC721Approvals += approvalsERC721[spender].length;
           const anomalyScore = counters.detectedERC721Approvals / counters.totalERC721Approvals;
           findings.push(createHighNumApprovalsAlertERC721(spender, approvals[spender], anomalyScore));
         }
 
         if (isApprovalForAll) {
           if (approvalsForAll721[spender] && approvalsForAll721[spender].length > approveForAllCountThreshold) {
-            counters.totalERC721ApprovalsForAll += 1;
-            counters.detectedERC721ApprovalsForAll += 1;
+            counters.detectedERC721ApprovalsForAll += approvalsForAll721[spender].length;
             const anomalyScore = counters.detectedERC721ApprovalsForAll / counters.totalERC721ApprovalsForAll;
             findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
           } else if (
             approvalsForAll1155[spender] &&
             approvalsForAll1155[spender].length > approveForAllCountThreshold
           ) {
-            counters.totalERC1155ApprovalsForAll += 1;
-            counters.detectedERC1155ApprovalsForAll += 1;
+            counters.detectedERC1155ApprovalsForAll += approvalsForAll1155[spender].length;
             const anomalyScore = counters.detectedERC1155ApprovalsForAll / counters.totalERC1155ApprovalsForAll;
             findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
           }

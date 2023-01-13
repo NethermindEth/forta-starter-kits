@@ -27,7 +27,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS` out of the total number of ERC-20 approvals detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS` alerts out of the total number of ERC-20 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
     - Label 1:
@@ -55,7 +55,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS` out of the total number of ERC-721 approvals detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS` alerts out of the total number of ERC-721 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
     - Label 1:
@@ -83,7 +83,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-ERC721-APPROVAL-FOR-ALL` out of the total number of ERC-721 `ApprovalForAll`s detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC721-APPROVAL-FOR-ALL` alerts out of the total number of ERC-721 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
     - Label 1:
@@ -106,7 +106,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL` out of the total number of ERC-1155 `ApprovalForAll`s detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL` alerts out of the total number of ERC-1155 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
     - Label 1:
@@ -129,7 +129,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO` out of the total number of ERC-20 approvals detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO` alerts out of the total number of ERC-20 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
     - Label 1:
@@ -157,7 +157,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO` out of the total number of ERC-721 approvals detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO` alerts out of the total number of ERC-721 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
     - Label 1:
@@ -185,7 +185,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO` out of the total number of ERC-721 `ApprovalForAll`s detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO` alerts out of the total number of ERC-721 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
     - Label 1:
@@ -208,7 +208,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO` out of the total number of ERC-1155 `ApprovalForAll`s detected by this bot.
+      - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO` alerts out of the total number of ERC-1155 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
     - Label 1:

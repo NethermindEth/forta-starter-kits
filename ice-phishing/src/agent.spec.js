@@ -809,7 +809,7 @@ describe("ice-phishing bot", () => {
         timestamp: 0,
         from: spender,
       };
-      mockProvider.getCode.mockReturnValueOnce("0x").mockReturnValueOnce("0x").mockReturnValueOnce("0x992eb2c2d699");
+      mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValueOnce("0x").mockReturnValueOnce("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
       await handleTransaction(tempTxEvent0);
 
@@ -829,7 +829,7 @@ describe("ice-phishing bot", () => {
         timestamp: 1000,
         from: spender,
       };
-      mockProvider.getCode.mockReturnValueOnce("0x").mockReturnValueOnce("0x992eb2c2d699");
+      mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValueOnce("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
       await handleTransaction(tempTxEvent1);
 
@@ -843,13 +843,13 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
-      mockProvider.getCode.mockReturnValueOnce("0x").mockReturnValueOnce("0x992eb2c2d699");
+      mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValueOnce("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(5);
       const findings = await handleTransaction(mockTxEvent);
 
       const mockAnomalyScore =
-        (mockCounters.detectedERC1155ApprovalsForAll + 1) / (mockCounters.totalERC1155ApprovalsForAll + 1);
+        (mockCounters.detectedERC1155ApprovalsForAll + 3) / (mockCounters.totalERC1155ApprovalsForAll + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -918,7 +918,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       const mockAnomalyScore =
-        (mockCounters.detectedERC721ApprovalsForAll + 1) / (mockCounters.totalERC721ApprovalsForAll + 1);
+        (mockCounters.detectedERC721ApprovalsForAll + 3) / (mockCounters.totalERC721ApprovalsForAll + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1016,7 +1016,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       const mockAnomalyScore =
-        (mockCounters.detectedERC721ApprovalsForAllInfo + 1) / (mockCounters.totalERC721ApprovalsForAll + 1);
+        (mockCounters.detectedERC721ApprovalsForAllInfo + 3) / (mockCounters.totalERC721ApprovalsForAll + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1085,7 +1085,7 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(3);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedERC20Approvals + 1) / (mockCounters.totalERC20Approvals + 1);
+      const mockAnomalyScore = (mockCounters.detectedERC20Approvals + 3) / (mockCounters.totalERC20Approvals + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1156,7 +1156,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedERC721Approvals + 1) / (mockCounters.totalERC721Approvals + 1);
+      const mockAnomalyScore = (mockCounters.detectedERC721Approvals + 3) / (mockCounters.totalERC721Approvals + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1270,7 +1270,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedERC721ApprovalsInfo + 1) / (mockCounters.totalERC721Approvals + 1);
+      const mockAnomalyScore = (mockCounters.detectedERC721ApprovalsInfo + 4) / (mockCounters.totalERC721Approvals + 4);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1440,7 +1440,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1593,7 +1593,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1649,7 +1649,8 @@ describe("ice-phishing bot", () => {
           timestamp: 1000 * i,
           from: spender,
         };
-        mockProvider.getCode.mockReturnValue("0x");
+        // First call includes 1155 sig "2eb2c2d6"
+        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValue("0x");
 
         await handleTransaction(tempTxEvent);
       }
@@ -1669,7 +1670,7 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-
+        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
         await handleTransaction(tempTxEvent);
       }
 
@@ -1682,12 +1683,13 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferSingleEvents[2]]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(8);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(10);
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1743,7 +1745,7 @@ describe("ice-phishing bot", () => {
           timestamp: 1000 * i,
           from: spender,
         };
-        mockProvider.getCode.mockReturnValue("0x");
+        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValue("0x");
 
         await handleTransaction(tempTxEvent);
       }
@@ -1763,7 +1765,7 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-
+        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
         await handleTransaction(tempTxEvent);
       }
 
@@ -1776,12 +1778,13 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferBatchEvents[2]]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(8);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(10);
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1867,7 +1870,7 @@ describe("ice-phishing bot", () => {
           timestamp: 1000 * i,
           from: spender,
         };
-        mockProvider.getCode.mockReturnValue("0x");
+        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValue("0x");
         mockProvider.getTransactionCount.mockReturnValue(123);
         await handleTransaction(tempTxEvent);
       }
@@ -1887,7 +1890,7 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-
+        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
         await handleTransaction(tempTxEvent);
       }
       const mockTxEvent = {
@@ -1907,12 +1910,13 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferBatchEvents[2]]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(9);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(10);
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfersLow + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = (mockCounters.detectedTransfersLow + 3) / (mockCounters.totalTransfers + 3);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
