@@ -1670,7 +1670,6 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
         await handleTransaction(tempTxEvent);
       }
 
@@ -1685,7 +1684,7 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(10);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(8);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1765,7 +1764,7 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-        mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
+
         await handleTransaction(tempTxEvent);
       }
 
@@ -1780,7 +1779,7 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(10);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(8);
 
       const findings = await handleTransaction(mockTxEvent);
 

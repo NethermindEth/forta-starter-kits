@@ -339,6 +339,17 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
 
       const isApprovalForAll = name === "ApprovalForAll";
 
+      // Filter out approval revokes
+      if (isApprovalForAll && !approved) return;
+      if (value?.eq(0)) return;
+      if (spender === ADDRESS_ZERO) return;
+
+      // When transfering ERC20 tokens an Approval event is emitted with lower value
+      // We should ignore these Approval events because they are duplicates
+      const isAlreadyApproved = tokenId ? false : approvals[spender]?.some((a) => a.owner === owner);
+
+      if (isAlreadyApproved) return;
+
       let isAssetERC1155 = false;
 
       if (!isApprovalForAll) {
@@ -356,16 +367,6 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
           counters.totalERC721ApprovalsForAll += 1;
         }
       }
-      // Filter out approval revokes
-      if (isApprovalForAll && !approved) return;
-      if (value?.eq(0)) return;
-      if (spender === ADDRESS_ZERO) return;
-
-      // When transfering ERC20 tokens an Approval event is emitted with lower value
-      // We should ignore these Approval events because they are duplicates
-      const isAlreadyApproved = tokenId ? false : approvals[spender]?.some((a) => a.owner === owner);
-
-      if (isAlreadyApproved) return;
 
       // Skip if the owner is not EOA
       const ownerType = await getAddressType(
@@ -642,7 +643,6 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
       } else {
         if (approvalsERC20[spender] && approvalsERC20[spender].length > approveCountThreshold) {
           counters.detectedERC20Approvals += approvalsERC20[spender].length;
-          console.log(approvalsERC20[spender], counters.detectedERC20Approvals, counters.totalERC20Approvals);
           const anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
           findings.push(createHighNumApprovalsAlertERC20(spender, approvals[spender], anomalyScore));
         }
@@ -691,6 +691,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
         false
       );
       const toType = await getAddressType(to, scamAddresses, cachedAddresses, provider, blockNumber, chainId, false);
+
       if (txFromType === AddressType.ScamAddress || toType === AddressType.ScamAddress) {
         const scamSnifferDB = await axios.get(
           "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
