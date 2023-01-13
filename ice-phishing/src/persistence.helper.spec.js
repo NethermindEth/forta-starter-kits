@@ -35,20 +35,7 @@ jest.mock("forta-agent", () => {
   };
 });
 
-const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
-const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
-const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
-
 const removePersistentState = () => {
-  if (existsSync(DETECT_FLASHLOANS_KEY)) {
-    unlinkSync(DETECT_FLASHLOANS_KEY);
-  }
-  if (existsSync(DETECT_FLASHLOANS_HIGH_KEY)) {
-    unlinkSync(DETECT_FLASHLOANS_HIGH_KEY);
-  }
-  if (existsSync(TOTAL_TXNS_KEY)) {
-    unlinkSync(TOTAL_TXNS_KEY);
-  }
   if (existsSync(mockKey)) {
     unlinkSync(mockKey);
   }
