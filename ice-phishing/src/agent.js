@@ -842,7 +842,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
               if (!balance.eq(0)) return;
             }
           }
-          counters.detectedTransfers += 1;
+          counters.detectedTransfers += transfers[txFrom].length;
           const anomalyScore = counters.detectedTransfers / counters.totalTransfers;
           findings.push(createHighNumTransfersAlert(txFrom, transfers[txFrom], anomalyScore));
         }
@@ -900,7 +900,7 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
               if (!balance.eq(0)) return;
             }
           }
-          counters.detectedTransfersLow += 1;
+          counters.detectedTransfersLow += transfersLowSeverity[txFrom].length;
           const anomalyScore = counters.detectedTransfersLow / counters.totalTransfers;
           findings.push(createHighNumTransfersLowSeverityAlert(txFrom, transfersLowSeverity[txFrom], anomalyScore));
         }

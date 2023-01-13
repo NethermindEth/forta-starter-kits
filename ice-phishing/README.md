@@ -513,7 +513,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `firstTxHash` - hash of the first transfer tx
     - `lastTxHash` - hash of the last transfer tx
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS` out of the total number of token transfers detected by this bot.
+      - Score calculated by amount of transfers resulting in `ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS` alerts out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
     - Label 1:
@@ -541,7 +541,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `firstTxHash` - hash of the first transfer tx
     - `lastTxHash` - hash of the last transfer tx
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW` out of the total number of token transfers detected by this bot.
+      - Score calculated by amount of transfers resulting in `ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW` alerts out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
     - Label 1:
