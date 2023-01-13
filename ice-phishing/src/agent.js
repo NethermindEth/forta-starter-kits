@@ -610,7 +610,8 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
       if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
         if (approvalsERC20InfoSeverity[spender] && approvalsERC20InfoSeverity[spender].length > approveCountThreshold) {
           counters.detectedERC20ApprovalsInfo += approvalsERC20InfoSeverity[spender].length;
-          const anomalyScore = counters.detectedERC20ApprovalsInfo / counters.totalERC20Approvals;
+          let anomalyScore = counters.detectedERC20ApprovalsInfo / counters.totalERC20Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
           findings.push(createHighNumApprovalsInfoAlertERC20(spender, approvalsInfoSeverity[spender], anomalyScore));
         }
 
@@ -619,7 +620,8 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
           approvalsERC721InfoSeverity[spender].length > approveCountThreshold
         ) {
           counters.detectedERC721ApprovalsInfo += approvalsERC721InfoSeverity[spender].length;
-          const anomalyScore = counters.detectedERC721ApprovalsInfo / counters.totalERC721Approvals;
+          let anomalyScore = counters.detectedERC721ApprovalsInfo / counters.totalERC721Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
           findings.push(createHighNumApprovalsInfoAlertERC721(spender, approvalsInfoSeverity[spender], anomalyScore));
         }
 
@@ -629,41 +631,47 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
             counters.detectedERC721ApprovalsForAllInfo += approvalsForAll721InfoSeverity[spender].length;
-            const anomalyScore = counters.detectedERC721ApprovalsForAllInfo / counters.totalERC721ApprovalsForAll;
+            let anomalyScore = counters.detectedERC721ApprovalsForAllInfo / counters.totalERC721ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
             findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
           } else if (
             approvalsForAll1155InfoSeverity[spender] &&
             approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
             counters.detectedERC1155ApprovalsForAllInfo += approvalsForAll1155InfoSeverity[spender].length;
-            const anomalyScore = counters.detectedERC1155ApprovalsForAllInfo / counters.totalERC1155ApprovalsForAll;
+            let anomalyScore = counters.detectedERC1155ApprovalsForAllInfo / counters.totalERC1155ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
             findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
           }
         }
       } else {
         if (approvalsERC20[spender] && approvalsERC20[spender].length > approveCountThreshold) {
           counters.detectedERC20Approvals += approvalsERC20[spender].length;
-          const anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
+          let anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
           findings.push(createHighNumApprovalsAlertERC20(spender, approvals[spender], anomalyScore));
         }
 
         if (approvalsERC721[spender] && approvalsERC721[spender].length > approveCountThreshold) {
           counters.detectedERC721Approvals += approvalsERC721[spender].length;
-          const anomalyScore = counters.detectedERC721Approvals / counters.totalERC721Approvals;
+          let anomalyScore = counters.detectedERC721Approvals / counters.totalERC721Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
           findings.push(createHighNumApprovalsAlertERC721(spender, approvals[spender], anomalyScore));
         }
 
         if (isApprovalForAll) {
           if (approvalsForAll721[spender] && approvalsForAll721[spender].length > approveForAllCountThreshold) {
             counters.detectedERC721ApprovalsForAll += approvalsForAll721[spender].length;
-            const anomalyScore = counters.detectedERC721ApprovalsForAll / counters.totalERC721ApprovalsForAll;
+            let anomalyScore = counters.detectedERC721ApprovalsForAll / counters.totalERC721ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
             findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
           } else if (
             approvalsForAll1155[spender] &&
             approvalsForAll1155[spender].length > approveForAllCountThreshold
           ) {
             counters.detectedERC1155ApprovalsForAll += approvalsForAll1155[spender].length;
-            const anomalyScore = counters.detectedERC1155ApprovalsForAll / counters.totalERC1155ApprovalsForAll;
+            let anomalyScore = counters.detectedERC1155ApprovalsForAll / counters.totalERC1155ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
             findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
           }
         }
@@ -852,7 +860,8 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             }
           }
           counters.detectedTransfers += transfers[txFrom].length;
-          const anomalyScore = counters.detectedTransfers / counters.totalTransfers;
+          let anomalyScore = counters.detectedTransfers / counters.totalTransfers;
+          anomalyScore = Math.min(anomalyScore, 1);
           findings.push(createHighNumTransfersAlert(txFrom, transfers[txFrom], anomalyScore));
         }
       }
@@ -910,7 +919,8 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             }
           }
           counters.detectedTransfersLow += transfersLowSeverity[txFrom].length;
-          const anomalyScore = counters.detectedTransfersLow / counters.totalTransfers;
+          let anomalyScore = counters.detectedTransfersLow / counters.totalTransfers;
+          anomalyScore = Math.min(anomalyScore, 1);
           findings.push(createHighNumTransfersLowSeverityAlert(txFrom, transfersLowSeverity[txFrom], anomalyScore));
         }
       }
