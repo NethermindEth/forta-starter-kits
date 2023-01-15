@@ -26,9 +26,9 @@ function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detec
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
 
-    detectedFlashloans = await persistenceHelper.load(detectFlashloansKey);
-    detectedFlashloansHighProfit = await persistenceHelper.load(detectFlashloansHighKey);
-    totalFlashloans = await persistenceHelper.load(totalFlashloansKey);
+    detectedFlashloans = await persistenceHelper.load(detectFlashloansKey.concat("-", chainId));
+    detectedFlashloansHighProfit = await persistenceHelper.load(detectFlashloansHighKey.concat("-", chainId));
+    totalFlashloans = await persistenceHelper.load(totalFlashloansKey.concat("-", chainId));
   };
 }
 
@@ -212,7 +212,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
 
     if (percentage > PERCENTAGE_THRESHOLD && totalProfit > PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE) {
       detectedFlashloansHighProfit += 1;
-      const anomalyScore = detectedFlashloansHighProfit / totalTxns;
+      const anomalyScore = detectedFlashloansHighProfit / totalFlashloans;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -238,7 +238,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
       );
     } else if (percentage > PERCENTAGE_THRESHOLD) {
       detectedFlashloans += 1;
-      const anomalyScore = detectedFlashloans / totalTxns;
+      const anomalyScore = detectedFlashloans / totalFlashloans;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -264,7 +264,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
       );
     } else if (totalProfit > PROFIT_THRESHOLD) {
       detectedFlashloansHighProfit += 1;
-      const anomalyScore = detectedFlashloansHighProfit / totalTxns;
+      const anomalyScore = detectedFlashloansHighProfit / totalFlashloans;
       findings.push(
         Finding.fromObject({
           name: "Flashloan detected",
@@ -302,9 +302,9 @@ function provideHandleBlock(persistenceHelper, detectFlashloansKey, detectFlashl
     const findings = [];
 
     if (blockEvent.blockNumber % 240 === 0) {
-      await persistenceHelper.persist(detectedFlashloans, detectFlashloansKey);
-      await persistenceHelper.persist(detectedFlashloansHighProfit, detectFlashloansHighKey);
-      await persistenceHelper.persist(totalFlashloans, totalFlashloansKey);
+      await persistenceHelper.persist(detectedFlashloans, detectFlashloansKey.concat("-", chainId));
+      await persistenceHelper.persist(detectedFlashloansHighProfit, detectFlashloansHighKey.concat("-", chainId));
+      await persistenceHelper.persist(totalFlashloans, totalFlashloansKey.concat("-", chainId));
     }
 
     return findings;
