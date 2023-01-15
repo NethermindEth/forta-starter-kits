@@ -14,21 +14,21 @@ const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
 
 const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
-const TOTAL_TXNS_KEY = "nm-flashloans-bot-total-txns-key";
+const TOTAL_FLASHLOANS_KEY = "nm-flashloans-bot-total-flashloans-key";
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 let detectedFlashloans = 0;
 let detectedFlashloansHighProfit = 0;
-let totalTxns = 0;
+let totalFlashloans = 0;
 
-function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
+function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalFlashloansKey) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
 
     detectedFlashloans = await persistenceHelper.load(detectFlashloansKey);
     detectedFlashloansHighProfit = await persistenceHelper.load(detectFlashloansHighKey);
-    totalTxns = await persistenceHelper.load(totalTxnsKey);
+    totalFlashloans = await persistenceHelper.load(totalFlashloansKey);
   };
 }
 
@@ -45,11 +45,11 @@ const transferFunctionSigs = [
 function provideHandleTransaction(helper, getFlashloans, provider) {
   return async function handleTransaction(txEvent) {
     const findings = [];
-    totalTxns += 1;
     const initiator = txEvent.from;
 
     const flashloans = await getFlashloans(txEvent);
     const numOfFlashloans = flashloans.length;
+    totalFlashloans += numOfFlashloans;
     if (numOfFlashloans === 0) return findings;
 
     const calledContract = txEvent.to.toLowerCase();
@@ -297,14 +297,14 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
   };
 }
 
-function provideHandleBlock(persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalTxnsKey) {
+function provideHandleBlock(persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalFlashloansKey) {
   return async (blockEvent) => {
     const findings = [];
 
     if (blockEvent.blockNumber % 240 === 0) {
       await persistenceHelper.persist(detectedFlashloans, detectFlashloansKey);
       await persistenceHelper.persist(detectedFlashloansHighProfit, detectFlashloansHighKey);
-      await persistenceHelper.persist(totalTxns, totalTxnsKey);
+      await persistenceHelper.persist(totalFlashloans, totalFlashloansKey);
     }
 
     return findings;
@@ -318,7 +318,7 @@ module.exports = {
     new PersistenceHelper(DATABASE_URL),
     DETECT_FLASHLOANS_KEY,
     DETECT_FLASHLOANS_HIGH_KEY,
-    TOTAL_TXNS_KEY
+    TOTAL_FLASHLOANS_KEY
   ),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(helperModule, getFlashloansFn, getEthersProvider()),
@@ -327,6 +327,6 @@ module.exports = {
     new PersistenceHelper(DATABASE_URL),
     DETECT_FLASHLOANS_KEY,
     DETECT_FLASHLOANS_HIGH_KEY,
-    TOTAL_TXNS_KEY
+    TOTAL_FLASHLOANS_KEY
   ),
 };
