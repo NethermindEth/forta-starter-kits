@@ -27,7 +27,8 @@ Describe each of the type of alerts fired by this agent
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `FLASHLOAN-ATTACK` transactions out of the total number of transactions processed by this bot.
+      - Score calculated by finding amount of `FLASHLOAN-ATTACK` transactions out of the total number of flashloans processed by this bot.
+        - Note: score differs based on chain.
   - Labels
     - Label 1:
       - `entityType`: The type of the entity, always set to "Address"
@@ -49,7 +50,8 @@ Describe each of the type of alerts fired by this agent
     - `profit` - profit made from the flashloan
     - `tokens` - array of all tokens involved in the transaction
     - `anomalyScore` - score of how anomalous the alert is (0-1)
-      - Score calculated by finding amount of `FLASHLOAN-ATTACK-WITH-HIGH-PROFIT` transactions out of the total number of transactions processed by this bot.
+      - Score calculated by finding amount of `FLASHLOAN-ATTACK-WITH-HIGH-PROFIT` transactions out of the total number of flashloans processed by this bot.
+        - Note: score differs based on chain.
   - Labels
     - Label 1:
       - `entityType`: The type of the entity, always set to "Address"
