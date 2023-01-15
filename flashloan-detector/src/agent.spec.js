@@ -13,11 +13,11 @@ const nativeProfit = ethers.utils.parseEther("1");
 
 const mockFlashloansKey = "mock-flashloans-bot-key";
 const mockFlashloansHighKey = "mock-flashloans-high-profit-bot-key";
-const mockTotalTxnsKey = "mock-flashloans-bot-total-txns-key";
+const mockTotalFlashloansKey = "mock-flashloans-bot-total-flashloans-key";
 
 const mockDetectedFlashloans = 12;
 const mockDetectedHighProfitFlashloans = 2;
-const mockTotalTxns = 136;
+const mockTotalFlashloans = 26;
 
 const lowTokenUsdProfit = 1000;
 const lowNativeUsdProfit = 1000;
@@ -94,12 +94,12 @@ describe("flashloan detector agent", () => {
         mockPersistenceHelper,
         mockFlashloansKey,
         mockFlashloansHighKey,
-        mockTotalTxnsKey
+        mockTotalFlashloansKey
       );
       mockPersistenceHelper.load
         .mockReturnValueOnce(mockDetectedFlashloans)
         .mockReturnValueOnce(mockDetectedHighProfitFlashloans)
-        .mockReturnValueOnce(mockTotalTxns);
+        .mockReturnValueOnce(mockTotalFlashloans);
       await initialize();
       handleTransaction = provideHandleTransaction(mockHelper, mockGetFlashloans, mockProvider);
     });
@@ -129,8 +129,8 @@ describe("flashloan detector agent", () => {
         transaction: { gasPrice: 0 },
       };
 
-      // Adding one for both the current transaction and high profit flashloan
-      const mockHighProfitAnomalyScore = (mockDetectedHighProfitFlashloans + 1) / (mockTotalTxns + 1);
+      // Adding one to both for the current high profit flashloan
+      const mockHighProfitAnomalyScore = (mockDetectedHighProfitFlashloans + 1) / (mockTotalFlashloans + 1);
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
@@ -178,8 +178,8 @@ describe("flashloan detector agent", () => {
         transaction: { gasPrice: 0 },
       };
 
-      // Adding one for both the current transaction and high profit flashloan
-      const mockHighProfitAnomalyScore = (mockDetectedHighProfitFlashloans + 1) / (mockTotalTxns + 1);
+      // Adding one to both for both the current high profit flashloan
+      const mockHighProfitAnomalyScore = (mockDetectedHighProfitFlashloans + 1) / (mockTotalFlashloans + 1);
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
@@ -233,8 +233,8 @@ describe("flashloan detector agent", () => {
         transaction: { gasPrice: 0 },
       };
 
-      // Adding one for both the current transaction and high profit flashloan
-      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalTxns + 1);
+      // Adding one to both for the current flashloan
+      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalFlashloans + 1);
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
@@ -290,8 +290,8 @@ describe("flashloan detector agent", () => {
         transaction: { gasPrice: 0 },
       };
 
-      // Adding one for both the current transaction and high profit flashloan
-      const mockHighProfitAnomalyScore = (mockDetectedHighProfitFlashloans + 1) / (mockTotalTxns + 1);
+      // Adding one to both for the current high profit flashloan
+      const mockHighProfitAnomalyScore = (mockDetectedHighProfitFlashloans + 1) / (mockTotalFlashloans + 1);
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
@@ -354,8 +354,8 @@ describe("flashloan detector agent", () => {
         transaction: { gasPrice: 0 },
       };
 
-      // Adding one for both the current transaction and high profit flashloan
-      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalTxns + 1);
+      // Adding one to both for the current flashloan
+      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalFlashloans + 1);
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockTxEvent.filterLog.mockReturnValueOnce([diffMockTransferEvent]);
@@ -422,8 +422,8 @@ describe("flashloan detector agent", () => {
         transaction: { gasPrice: 0 },
       };
 
-      // Adding one for both the current transaction and high profit flashloan
-      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalTxns + 1);
+      // Adding one to both for the current flashloan
+      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalFlashloans + 1);
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockProvider.getCode.mockReturnValueOnce("0x");
@@ -474,14 +474,14 @@ describe("flashloan detector agent", () => {
         mockPersistenceHelper,
         mockFlashloansKey,
         mockFlashloansHighKey,
-        mockTotalTxnsKey
+        mockTotalFlashloansKey
       );
       await initialize();
       handleBlock = provideHandleBlock(
         mockPersistenceHelper,
         mockFlashloansKey,
         mockFlashloansHighKey,
-        mockTotalTxnsKey
+        mockTotalFlashloansKey
       );
     });
     afterEach(async () => {
