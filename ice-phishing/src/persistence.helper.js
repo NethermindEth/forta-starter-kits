@@ -13,7 +13,7 @@ class PersistenceHelper {
   async persist(value, key) {
     const hasLocalNode = process.env.hasOwnProperty("LOCAL_NODE");
     if (!hasLocalNode) {
-      const token = await fetchJwt({});
+      const token = (await fetchJwt({})).token;
 
       const headers = { Authorization: `Bearer ${token}` };
       try {
@@ -40,15 +40,16 @@ class PersistenceHelper {
   async load(key) {
     const hasLocalNode = process.env.hasOwnProperty("LOCAL_NODE");
     if (!hasLocalNode) {
-      const token = await fetchJwt({});
+      const token = (await fetchJwt({})).token;
       const headers = { Authorization: `Bearer ${token}` };
       try {
         const response = await fetch(`${this.databaseUrl}${key}`, { headers });
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`successfully fetched value from database`);
-          return parseInt(data);
+          const value = parseInt(data);
+          console.log(`successfully fetched ${value} from database`);
+          return value;
         } else {
           console.log(`${key} has no database entry`);
           // If this is the first bot instance that is deployed,

@@ -148,6 +148,10 @@ const provideInitialize = (provider, persistenceHelper, databaseKeys, counters) 
   return async () => {
     ({ chainId } = await provider.getNetwork());
 
+    Object.keys(databaseKeys).forEach((key) => {
+      databaseKeys[key] = `${databaseKeys[key]}-${chainId}`;
+    });
+
     for (const key in counters) {
       counters[key] = await persistenceHelper.load(databaseKeys[key]);
     }
