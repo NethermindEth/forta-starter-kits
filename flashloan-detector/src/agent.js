@@ -22,7 +22,13 @@ let detectedFlashloans = 0;
 let detectedFlashloansHighProfit = 0;
 let totalFlashloans = 0;
 
-function provideInitialize(helper, persistenceHelper, detectFlashloansKey, detectFlashloansHighKey, totalFlashloansKey) {
+function provideInitialize(
+  helper,
+  persistenceHelper,
+  detectFlashloansKey,
+  detectFlashloansHighKey,
+  totalFlashloansKey
+) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
 
