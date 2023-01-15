@@ -562,7 +562,7 @@ describe("ice-phishing bot", () => {
 
     it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
@@ -679,7 +679,7 @@ describe("ice-phishing bot", () => {
 
     it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
@@ -1197,7 +1197,7 @@ describe("ice-phishing bot", () => {
 
     it("should return findings if there is a high number of ERC721 Approval events regarding a verified contract", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
       const spender = createAddress("0xeded");
       const thisMockApprovalERC721Events = [
@@ -1311,7 +1311,7 @@ describe("ice-phishing bot", () => {
 
     it("should not return findings if there is a high number of ERC721 Approval events regarding a verified contract with high number of past transactions", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
       const spender = createAddress("0xabeded");
       const thisMockApprovalERC721Events = [
@@ -2161,7 +2161,7 @@ describe("ice-phishing bot", () => {
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set());
 
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
 
       const mockBlockEvent = { block: { timestamp: 1000121 } };
@@ -2402,7 +2402,7 @@ describe("ice-phishing bot", () => {
     it("should return findings if a suspicious contract is involved in a transfer", async () => {
       resetInit();
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
       const suspiciousReceiver = createChecksumAddress("0xabcdabcd");
       const suspiciousContractCreator = createChecksumAddress("0xfefefe");
@@ -2499,7 +2499,7 @@ describe("ice-phishing bot", () => {
     it("should return findings if a creator of a suspicious contract is involved in a transfer", async () => {
       resetInit();
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
-      const initialize = provideInitialize(mockProvider);
+      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
       await initialize();
       const suspiciousContract = createChecksumAddress("0xabcdabcd");
       const suspiciousContractCreator = createChecksumAddress("0xfefefe");
