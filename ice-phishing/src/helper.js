@@ -1,4 +1,4 @@
-const { Finding, FindingSeverity, FindingType, ethers, getAlerts } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, ethers, getAlerts, Label, EntityType } = require("forta-agent");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
 const { nonceThreshold, contractTxsThreshold, verifiedContractTxsThreshold } = require("../bot-config.json");
@@ -27,7 +27,7 @@ function getEventInformation(eventsArray) {
   };
 }
 
-function createHighNumApprovalsAlertERC20(spender, approvalsArray) {
+function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
@@ -38,12 +38,33 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray) {
     metadata: {
       firstTxHash,
       lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.3,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray) {
+function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
@@ -54,12 +75,33 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray) {
     metadata: {
       firstTxHash,
       lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.25,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createHighNumApprovalsAlertERC721(spender, approvalsArray) {
+function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
@@ -70,12 +112,33 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray) {
     metadata: {
       firstTxHash,
       lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.3,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray) {
+function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
@@ -86,12 +149,33 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray) {
     metadata: {
       firstTxHash,
       lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.25,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalForAllAlertERC721(spender, owner, asset) {
+function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-721 tokens",
     description: `${spender} obtained transfer approval for all ERC-721 tokens from ${owner}`,
@@ -101,12 +185,27 @@ function createApprovalForAllAlertERC721(spender, owner, asset) {
     metadata: {
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.2,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalForAllInfoAlertERC721(spender, owner, asset) {
+function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-721 tokens",
     description: `${spender} obtained transfer approval for all ERC-721 tokens from ${owner}`,
@@ -116,12 +215,27 @@ function createApprovalForAllInfoAlertERC721(spender, owner, asset) {
     metadata: {
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.15,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalForAllAlertERC1155(spender, owner, asset) {
+function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-1155 tokens",
     description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner}`,
@@ -131,12 +245,27 @@ function createApprovalForAllAlertERC1155(spender, owner, asset) {
     metadata: {
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.2,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalForAllInfoAlertERC1155(spender, owner, asset) {
+function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-1155 tokens",
     description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner}`,
@@ -146,12 +275,27 @@ function createApprovalForAllInfoAlertERC1155(spender, owner, asset) {
     metadata: {
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.15,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createPermitAlert(msgSender, spender, owner, asset) {
+function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Account got permission for ERC-20 tokens",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -162,12 +306,27 @@ function createPermitAlert(msgSender, spender, owner, asset) {
       msgSender,
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.3,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Permit",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createPermitInfoAlert(msgSender, spender, owner, asset) {
+function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Account got permission for ERC-20 tokens",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -178,12 +337,46 @@ function createPermitInfoAlert(msgSender, spender, owner, asset) {
       msgSender,
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.2,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Permit",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, scamDomains) {
+function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, scamDomains, anomalyScore, txHash) {
+  let labels = [];
+  scamAddresses.map((scamAddress) => {
+    labels.push(
+      Label.fromObject({
+        entity: scamAddress,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.9,
+      })
+    );
+  });
+  labels.push(
+    Label.fromObject({
+      entity: txHash,
+      entityType: EntityType.Transaction,
+      label: "Permit",
+      confidence: 1,
+    })
+  );
   return Finding.fromObject({
     name: "Known scam address was involved in an ERC-20 permission",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -196,12 +389,23 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
       msgSender,
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: labels,
   });
 }
 
-function createPermitScamCreatorAlert(msgSender, spender, owner, asset, scamAddress, scamDomains) {
+function createPermitScamCreatorAlert(
+  msgSender,
+  spender,
+  owner,
+  asset,
+  scamAddress,
+  scamDomains,
+  anomalyScore,
+  txHash
+) {
   return Finding.fromObject({
     name: "Contract created by a known scam address was involved in an ERC-20 permission",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -214,12 +418,35 @@ function createPermitScamCreatorAlert(msgSender, spender, owner, asset, scamAddr
       msgSender,
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.9,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Permit",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createPermitSuspiciousContractAlert(msgSender, spender, owner, asset, suspiciousContract) {
+function createPermitSuspiciousContractAlert(
+  msgSender,
+  spender,
+  owner,
+  asset,
+  suspiciousContract,
+  anomalyScore,
+  txHash
+) {
   return Finding.fromObject({
     name: "Suspicious contract (creator) was involved in an ERC-20 permission",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -232,12 +459,27 @@ function createPermitSuspiciousContractAlert(msgSender, spender, owner, asset, s
       msgSender,
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.5,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Permit",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalScamAlert(scamSpender, owner, asset, scamDomains) {
+function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Known scam address got approval to spend assets",
     description: `Scam address ${scamSpender} got approval for ${owner}'s assets`,
@@ -248,12 +490,35 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains) {
       scamDomains,
       scamSpender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: scamSpender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.9,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalSuspiciousContractAlert(suspiciousSpender, owner, asset, contract, creator) {
+function createApprovalSuspiciousContractAlert(
+  suspiciousSpender,
+  owner,
+  asset,
+  contract,
+  creator,
+  anomalyScore,
+  txHash
+) {
   return Finding.fromObject({
     name: "Suspicious contract (creator) got approval to spend assets",
     description: `Suspicious address ${suspiciousSpender} got approval for ${owner}'s assets`,
@@ -265,12 +530,27 @@ function createApprovalSuspiciousContractAlert(suspiciousSpender, owner, asset, 
       suspiciousContract: contract,
       suspiciousContractCreator: creator,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: suspiciousSpender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.5,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scamDomains) {
+function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scamDomains, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Contract, created by a known scam address, got approval to spend assets",
     description: `${spender}, created by the scam address ${scamCreator}, got approval for ${owner}'s assets`,
@@ -282,12 +562,47 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
       scamCreator,
       spender,
       owner,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: scamCreator,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.9,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Approval",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresses, scamDomains) {
+function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresses, scamDomains, anomalyScore, txHash) {
+  let labels = [];
+  scamAddresses.map((scamAddress) => {
+    labels.push(
+      Label.fromObject({
+        entity: scamAddress,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.95,
+      })
+    );
+  });
+  labels.push(
+    Label.fromObject({
+      entity: txHash,
+      entityType: EntityType.Transaction,
+      label: "Transfer",
+      confidence: 1,
+    })
+  );
+
   return Finding.fromObject({
     name: "Known scam address was involved in an asset transfer",
     description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
@@ -300,12 +615,22 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
       msgSender,
       owner,
       receiver,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: labels,
   });
 }
 
-function createTransferSuspiciousContractAlert(msgSender, owner, receiver, asset, suspiciousContract) {
+function createTransferSuspiciousContractAlert(
+  msgSender,
+  owner,
+  receiver,
+  asset,
+  suspiciousContract,
+  anomalyScore,
+  txHash
+) {
   return Finding.fromObject({
     name: "Suspicious contract (creator) was involved in an asset transfer",
     description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
@@ -318,12 +643,42 @@ function createTransferSuspiciousContractAlert(msgSender, owner, receiver, asset
       msgSender,
       owner,
       receiver,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: suspiciousContract.address,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.6,
+      }),
+      Label.fromObject({
+        entity: suspiciousContract.creator,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.6,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createTransferScamCreatorAlert(msgSender, owner, receiver, asset, scamAddress, scamDomains) {
+function createTransferScamCreatorAlert(
+  msgSender,
+  owner,
+  receiver,
+  asset,
+  scamAddress,
+  scamDomains,
+  anomalyScore,
+  txHash
+) {
   return Finding.fromObject({
     name: "Contract, created by a known scam address, was involved in an asset transfer",
     description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
@@ -336,12 +691,27 @@ function createTransferScamCreatorAlert(msgSender, owner, receiver, asset, scamA
       msgSender,
       owner,
       receiver,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: scamAddress,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.95,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createHighNumTransfersAlert(spender, transfersArray) {
+function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
   return Finding.fromObject({
     name: "Previously approved assets transferred",
@@ -352,12 +722,33 @@ function createHighNumTransfersAlert(spender, transfersArray) {
     metadata: {
       firstTxHash,
       lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.4,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createHighNumTransfersLowSeverityAlert(spender, transfersArray) {
+function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
   return Finding.fromObject({
     name: "Previously approved assets transferred",
@@ -368,12 +759,33 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray) {
     metadata: {
       firstTxHash,
       lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.25,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createPermitTransferAlert(spender, owner, receiver, asset, value) {
+function createPermitTransferAlert(spender, owner, receiver, asset, value, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Previously permitted assets transferred",
     description: `${spender} transferred ${value} tokens from ${owner} to ${receiver}`,
@@ -384,12 +796,27 @@ function createPermitTransferAlert(spender, owner, receiver, asset, value) {
       spender,
       owner,
       receiver,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: asset,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.4,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
-function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset, value) {
+function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset, value, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Previously permitted assets transferred",
     description: `${spender} transferred ${value} tokens from ${owner} to ${receiver}`,
@@ -400,8 +827,23 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
       spender,
       owner,
       receiver,
+      anomalyScore: anomalyScore.toFixed(2),
     },
     addresses: asset,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Ice Phishing Attacker",
+        confidence: 0.3,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
   });
 }
 
