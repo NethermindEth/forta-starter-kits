@@ -1,4 +1,4 @@
-const { FindingType, FindingSeverity, Finding, createTransactionEvent } = require("forta-agent");
+const { FindingType, FindingSeverity, Finding, Label, EntityType, createTransactionEvent } = require("forta-agent");
 const { provideHandleTranscation, provideHandleBlock, provideInitialize } = require("./agent");
 
 const mockPersistenceHelper = {
@@ -8,7 +8,10 @@ const mockPersistenceHelper = {
 
 const mockDetectTcFundedAccountContractInteractionsKey =
   "mock-tc-funded-account-bot-detected-contract-interactions-key";
-const mockTotalContractInteractions = "mock-tc-funded-account-bot-total-contract-interactions-key";
+const mockTotalContractInteractionsKey = "mock-tc-funded-account-bot-total-contract-interactions-key";
+
+const mockDetectedTcFundedAccountContractInteractions = 121;
+const mockTotalContractInteractions = 8756;
 
 const mockEthersProvider = { getCode: jest.fn(), getNetwork: jest.fn() };
 
@@ -24,15 +27,21 @@ describe("TornadoCash contract interactions", () => {
       mockEthersProvider,
       mockPersistenceHelper,
       mockDetectTcFundedAccountContractInteractionsKey,
-      mockTotalContractInteractions
+      mockTotalContractInteractionsKey
     );
     mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
+    mockPersistenceHelper.load
+      .mockReturnValueOnce(mockDetectedTcFundedAccountContractInteractions)
+      .mockReturnValueOnce(mockTotalContractInteractions);
+
     await initialize();
   });
 
   it("returns empty findings if there are no contract interactions with an account that was funded from TornadoCash", async () => {
     mockTxEvent.filterLog.mockReturnValue([]);
-    mockTxEvent.transaction = {};
+    mockTxEvent.transaction = {
+      to: "0xb",
+    };
     const findings = await handleTransaction(mockTxEvent);
 
     expect(findings).toStrictEqual([]);
@@ -52,9 +61,14 @@ describe("TornadoCash contract interactions", () => {
     mockTxEvent.transaction = {
       from: "0xa",
       to: "0xb",
+      hash: "0xc",
       data: "0x1234567Test",
     };
     mockEthersProvider.getCode.mockReturnValue("0x1234");
+
+    const mockAnomalyScore =
+      (mockDetectedTcFundedAccountContractInteractions + 1) / (mockTotalContractInteractions + 1);
+
     const findings = await handleTransaction(mockTxEvent);
 
     expect(findings).toStrictEqual([
@@ -64,6 +78,23 @@ describe("TornadoCash contract interactions", () => {
         alertId: "TORNADO-CASH-FUNDED-ACCOUNT-INTERACTION",
         severity: FindingSeverity.Low,
         type: FindingType.Suspicious,
+        metadata: {
+          anomalyScore: mockAnomalyScore.toFixed(2),
+        },
+        labels: [
+          Label.fromObject({
+            entity: mockTxEvent.transaction.from,
+            entityType: EntityType.Address,
+            label: "Tornado.Cash funding recipient",
+            confidence: 1,
+          }),
+          Label.fromObject({
+            entity: mockTxEvent.transaction.hash,
+            entityType: EntityType.Transaction,
+            label: "Suspicious Transaction",
+            confidence: 0.7,
+          }),
+        ],
       }),
     ]);
   });
@@ -116,13 +147,13 @@ describe("Block handler test suite", () => {
       mockEthersProvider,
       mockPersistenceHelper,
       mockDetectTcFundedAccountContractInteractionsKey,
-      mockTotalContractInteractions
+      mockTotalContractInteractionsKey
     );
     await initialize();
     handleBlock = provideHandleBlock(
       mockPersistenceHelper,
       mockDetectTcFundedAccountContractInteractionsKey,
-      mockTotalContractInteractions
+      mockTotalContractInteractionsKey
     );
     mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
   });
