@@ -28,11 +28,10 @@
   },
   "dependencies": {
     "@types/jest": "^27.4.1",
-    "forta-agent": "^0.1.6",
+    "forta-agent": "^0.1.16",
     "dotenv": "^16.0.3",
     "node-fetch": "^2.6.7"
   },
-
   "devDependencies": {
     "jest": "^27.0.6",
     "nodemon": "^2.0.8",

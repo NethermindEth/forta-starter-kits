@@ -1,16 +1,31 @@
 const { FindingType, FindingSeverity, Finding, createTransactionEvent } = require("forta-agent");
-const { provideHandleTranscation, provideInitialize } = require("./agent");
+const { provideHandleTranscation, provideHandleBlock, provideInitialize } = require("./agent");
+
+const mockPersistenceHelper = {
+  persist: jest.fn(),
+  load: jest.fn(),
+};
+
+const mockDetectTcFundedAccountContractInteractionsKey =
+  "mock-tc-funded-account-bot-detected-contract-interactions-key";
+const mockTotalContractInteractions = "mock-tc-funded-account-bot-total-contract-interactions-key";
+
+const mockEthersProvider = { getCode: jest.fn(), getNetwork: jest.fn() };
 
 describe("TornadoCash contract interactions", () => {
   let initialize;
   const mockTxEvent = createTransactionEvent({});
   mockTxEvent.filterLog = jest.fn();
-  const mockEthersProvider = { getCode: jest.fn(), getNetwork: jest.fn() };
   const handleTransaction = provideHandleTranscation(mockEthersProvider);
 
   beforeEach(async () => {
     mockTxEvent.filterLog.mockReset();
-    initialize = provideInitialize(mockEthersProvider);
+    initialize = provideInitialize(
+      mockEthersProvider,
+      mockPersistenceHelper,
+      mockDetectTcFundedAccountContractInteractionsKey,
+      mockTotalContractInteractions
+    );
     mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
     await initialize();
   });
@@ -90,5 +105,48 @@ describe("TornadoCash contract interactions", () => {
     const findings = await handleTransaction(mockTxEvent);
 
     expect(findings).toStrictEqual([]);
+  });
+});
+
+describe("Block handler test suite", () => {
+  beforeEach(async () => {
+    mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
+
+    initialize = provideInitialize(
+      mockEthersProvider,
+      mockPersistenceHelper,
+      mockDetectTcFundedAccountContractInteractionsKey,
+      mockTotalContractInteractions
+    );
+    await initialize();
+    handleBlock = provideHandleBlock(
+      mockPersistenceHelper,
+      mockDetectTcFundedAccountContractInteractionsKey,
+      mockTotalContractInteractions
+    );
+    mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
+  });
+  afterEach(async () => {
+    mockPersistenceHelper.persist.mockClear();
+  });
+
+  it("should persist the value in a block evenly divisible by 240", async () => {
+    const mockBlockEvent = {
+      blockNumber: 720,
+    };
+
+    await handleBlock(mockBlockEvent);
+
+    expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(2);
+  });
+
+  it("should not persist values because block is not evenly divisible by 240", async () => {
+    const mockBlockEvent = {
+      blockNumber: 600,
+    };
+
+    await handleBlock(mockBlockEvent);
+
+    expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
   });
 });
