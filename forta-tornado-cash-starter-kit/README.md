@@ -18,6 +18,21 @@ This bot detects when an account that was funded by Tornado Cash interacts with 
   - Fired when a transaction contains contract interactions from a Tornado Cash funded account
   - Severity is always set to "low"
   - Type is always set to "suspicious"
+  - Metadata:
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of TORNADO-CASH-FUNDED-ACCOUNT-INTERACTION transactions out of the total number of contract interactions processed by this bot.
+        - Note: score differs based on chain.
+  - Labels:
+    - Label 1:
+      - `entity`: The Tornado Cash funded account's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Tornado.Cash funding recipient"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to 1.
+    - Label 2:
+      - `entity`: The transaction hash of the Tornado Cash funded account contract interaction
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Suspicious Transaction"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to 0.7.
 
 ## Test Data
 

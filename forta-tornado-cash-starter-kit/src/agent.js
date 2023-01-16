@@ -1,4 +1,4 @@
-const { Finding, FindingSeverity, FindingType, getEthersProvider } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, Label, EntityType, getEthersProvider } = require("forta-agent");
 const { getContractsByChainId, getInitialFundedByTornadoCash, eventABI, addressLimit } = require("./helper");
 const { PersistenceHelper } = require("./persistence.helper");
 
@@ -35,12 +35,6 @@ const provideInitialize =
 function provideHandleTranscation(ethersProvider) {
   return async function handleTransaction(txEvent) {
     const findings = [];
-
-    const contractCode = await ethersProvider.getCode(txEvent.to);
-    if (contractCode !== "0x") {
-      totalContractInteractions += 1;
-    }
-
     const filteredForFunded = txEvent.filterLog(eventABI, tornadoCashAddresses);
 
     filteredForFunded.forEach((tx) => {
@@ -55,25 +49,52 @@ function provideHandleTranscation(ethersProvider) {
       fundedByTornadoCash.add(to.toLowerCase());
     });
 
-    if (tornadoCashAddresses.includes(txEvent.to) || !txEvent.to) {
+    if (!txEvent.to) {
+      return findings;
+    }
+
+    const contractCode = await ethersProvider.getCode(txEvent.to);
+    if (contractCode !== "0x") {
+      totalContractInteractions += 1;
+    } else {
+      return findings;
+    }
+
+    if (tornadoCashAddresses.includes(txEvent.to)) {
       return findings;
     }
 
     const hasInteractedWith = fundedByTornadoCash.has(txEvent.from);
     if (hasInteractedWith) {
-      if (contractCode != "0x") {
-        detectedTcFundedAcctInteractions += 1;
+      detectedTcFundedAcctInteractions += 1;
+      const anomalyScore = detectedTcFundedAcctInteractions / totalContractInteractions;
 
-        findings.push(
-          Finding.fromObject({
-            name: "Tornado Cash funded account interacted with contract",
-            description: `${txEvent.from} interacted with contract ${txEvent.to}`,
-            alertId: "TORNADO-CASH-FUNDED-ACCOUNT-INTERACTION",
-            severity: FindingSeverity.Low,
-            type: FindingType.Suspicious,
-          })
-        );
-      }
+      findings.push(
+        Finding.fromObject({
+          name: "Tornado Cash funded account interacted with contract",
+          description: `${txEvent.from} interacted with contract ${txEvent.to}`,
+          alertId: "TORNADO-CASH-FUNDED-ACCOUNT-INTERACTION",
+          severity: FindingSeverity.Low,
+          type: FindingType.Suspicious,
+          metadata: {
+            anomalyScore: anomalyScore.toFixed(2),
+          },
+          labels: [
+            Label.fromObject({
+              entity: txEvent.from,
+              entityType: EntityType.Address,
+              label: "Tornado.Cash funding recipient",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entity: txEvent.hash,
+              entityType: EntityType.Transaction,
+              label: "Suspicious Transaction",
+              confidence: 0.7,
+            }),
+          ],
+        })
+      );
     }
     return findings;
   };
