@@ -26,7 +26,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS` alerts out of the total number of ERC-20 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -54,7 +54,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS` alerts out of the total number of ERC-721 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -82,7 +82,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC721-APPROVAL-FOR-ALL` alerts out of the total number of ERC-721 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
@@ -105,7 +105,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL` alerts out of the total number of ERC-1155 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
@@ -128,7 +128,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO` alerts out of the total number of ERC-20 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -156,7 +156,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first approval tx
     - `lastTxHash` - hash of the last approval tx
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO` alerts out of the total number of ERC-721 approvals detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -184,7 +184,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO` alerts out of the total number of ERC-721 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
@@ -207,7 +207,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of approvals resulting in `ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO` alerts out of the total number of ERC-1155 `ApprovalForAll`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
@@ -231,7 +231,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `msgSender` - the account that called the asset's `permit` function
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ICE-PHISHING-ERC20-PERMIT` out of the total number of `Permit`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
@@ -255,7 +255,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `msgSender` - the account that called the asset's `permit` function
     - `spender` - the account that received the approval
     - `owner` - the owner of the assets
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ICE-PHISHING-ERC20-PERMIT-INFO` out of the total number of `Permit`s detected by this bot.
   - Addresses contain the approved asset address
   - Labels:
@@ -281,7 +281,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - the account that called the asset's `permit` function
       - `spender` - the account that received the permission
       - `owner` - the owner of the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-ERC20-SCAM-PERMIT` out of the total number of `Permit`s detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -307,7 +307,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - the account that called the asset's `permit` function
       - `spender` - the account that received the permission
       - `owner` - the owner of the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT` out of the total number of `Permit`s detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -333,7 +333,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - the account that called the asset's `permit` function
       - `spender` - the account that received the permission
       - `owner` - the owner of the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT` out of the total number of `Permit`s detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -357,7 +357,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `scamDomains` - The list of domains related to the scam addresses
       - `scamSpender` - the account that received the approval
       - `owner` - the owner of the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-SCAM-APPROVAL` out of the total number of token approvals detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -382,7 +382,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `scamCreator` - The scam address that created the contract
       - `spender` - the contract that received the approval
       - `owner` - the owner of the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-SCAM-CREATOR-APPROVAL` out of the total number of token approvals detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -406,7 +406,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `suspiciousSpender` - the address of the suspicious spender
       - `suspiciousContractCreator` - the address of the suspicious contract creator
       - `owner` - the owner of the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-SUSPICIOUS-APPROVAL` out of the total number of token approvals detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -432,7 +432,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - The account that initiated the transfer
       - `owner` - The owner of the assets
       - `receiver` - The account that received the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-SCAM-TRANSFERS` out of the total number of token transfers detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -458,7 +458,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - The account that initiated the transfer
       - `owner` - The owner of the assets
       - `receiver` - The account that received the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-SCAM-CREATOR-TRANSFERS` out of the total number of token transfers detected by this bot.
     - Addresses contain the approved asset address
     - Labels:
@@ -484,7 +484,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `msgSender` - The account that initiated the transfer
       - `owner` - The owner of the assets
       - `receiver` - The account that received the assets
-      - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - `anomalyScore`^ - score of how anomalous the alert is (0-1)
         - Score calculated by finding amount of `ICE-PHISHING-SUSPICIOUS-TRANSFERS` out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -512,7 +512,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first transfer tx
     - `lastTxHash` - hash of the last transfer tx
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of transfers resulting in `ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS` alerts out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -540,7 +540,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Metadata:
     - `firstTxHash` - hash of the first transfer tx
     - `lastTxHash` - hash of the last transfer tx
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by amount of transfers resulting in `ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW` alerts out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -569,7 +569,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that transferred the tokens
     - `owner` - the owner of the assets
     - `receiver` - the account that received the tokens
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ICE-PHISHING-PERMITTED-ERC20-TRANSFER` out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -593,7 +593,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `spender` - the account that transferred the tokens
     - `owner` - the owner of the assets
     - `receiver` - the account that received the tokens
-    - `anomalyScore` - score of how anomalous the alert is (0-1)
+    - `anomalyScore`^ - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ICE-PHISHING-PERMITTED-ERC20-TRANSFER-MEDIUM` out of the total number of token transfers detected by this bot.
   - Addresses contain an array of the impacted assets
   - Labels:
@@ -607,6 +607,8 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `entityType`: The type of the entity, always set to "Transaction"
       - `label`: The type of the label, always set to "Transfer"
       - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+
+> `^` Anomaly Score differs based on chain.
 
 ## Test Data
 
