@@ -155,8 +155,8 @@ describe("Block handler test suite", () => {
       mockDetectTcFundedAccountContractInteractionsKey,
       mockTotalContractInteractionsKey
     );
-    mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
   });
+
   afterEach(async () => {
     mockPersistenceHelper.persist.mockClear();
   });
