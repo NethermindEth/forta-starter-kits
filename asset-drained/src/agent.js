@@ -26,9 +26,9 @@ const cachedAssetSymbols = new LRU({ max: 100_000 });
 
 let transfersObj = {};
 
-const provideInitialize = (ethCallProvider, provider, persistenceHelper, assetDrainedTxnKey, allTransfersKey) => {
+const provideInitialize = (provider, persistenceHelper, assetDrainedTxnKey, allTransfersKey) => {
   return async () => {
-    await ethCallProvider.init();
+    await ethcallProvider.init();
 
     chainId = (await provider.getNetwork()).chainId.toString();
     assetDrainedTransactions = await persistenceHelper.load(
@@ -218,9 +218,15 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
           },
           labels: [
             Label.fromObject({
-              entityType: EntityType.Transaction,
-              entity: txEvent.hash,
-              label: "Asset Drained Transaction",
+              entityType: EntityType.Address,
+              entity: t.address,
+              label: "Asset Drained Victim",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Block,
+              entity: blockNumber - 1,
+              label: "Asset Drained Block",
               confidence: 1,
             }),
           ],
@@ -238,7 +244,6 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
 
 module.exports = {
   initialize: provideInitialize(
-    ethcallProvider,
     getEthersProvider(),
     new PersistenceHelper(DATABASE_URL),
     ASSET_DRAINED_TXN_KEY,
