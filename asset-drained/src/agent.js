@@ -26,9 +26,9 @@ const cachedAssetSymbols = new LRU({ max: 100_000 });
 
 let transfersObj = {};
 
-const provideInitialize = (provider, persistenceHelper, assetDrainedTxnKey, allTransfersKey) => {
+const provideInitialize = (ethCallProvider, provider, persistenceHelper, assetDrainedTxnKey, allTransfersKey) => {
   return async () => {
-    await ethcallProvider.init();
+    await ethCallProvider.init();
 
     chainId = (await provider.getNetwork()).chainId.toString();
     assetDrainedTransactions = await persistenceHelper.load(
@@ -42,89 +42,91 @@ const provideInitialize = (provider, persistenceHelper, assetDrainedTxnKey, allT
   };
 };
 
-const provideHandleTransaction = async (txEvent) => {
-  const { hash, from: txFrom, blockNumber } = txEvent;
-  txEvent
-    .filterLog(ERC20_TRANSFER_EVENT)
-    .filter((event) => !event.args.value.eq(ZERO))
-    .filter((event) => event.address !== event.args.from.toLowerCase())
-    .forEach((event) => {
-      totalTransferTransactions += 1;
-      const asset = event.address;
-      const { from, to, value } = event.args;
-      const hashFrom = hashCode(from, asset);
-      const hashTo = hashCode(to, asset);
+const provideHandleTransaction = () => {
+  return async (txEvent) => {
+    const { hash, from: txFrom, blockNumber } = txEvent;
+    txEvent
+      .filterLog(ERC20_TRANSFER_EVENT)
+      .filter((event) => !event.args.value.eq(ZERO))
+      .filter((event) => event.address !== event.args.from.toLowerCase())
+      .forEach((event) => {
+        totalTransferTransactions += 1;
+        const asset = event.address;
+        const { from, to, value } = event.args;
+        const hashFrom = hashCode(from, asset);
+        const hashTo = hashCode(to, asset);
 
-      if (!transfersObj[hashFrom]) {
-        transfersObj[hashFrom] = {
-          asset,
-          address: from,
-          value: ZERO,
-          blockNumber,
-          txs: {},
-        };
+        if (!transfersObj[hashFrom]) {
+          transfersObj[hashFrom] = {
+            asset,
+            address: from,
+            value: ZERO,
+            blockNumber,
+            txs: {},
+          };
+        }
+        if (!transfersObj[hashTo]) {
+          transfersObj[hashTo] = {
+            asset,
+            address: to,
+            value: ZERO,
+            blockNumber,
+            txs: {},
+          };
+        }
+
+        transfersObj[hashFrom].value = transfersObj[hashFrom].value.sub(value);
+
+        if (!transfersObj[hashFrom].txs[to]) {
+          transfersObj[hashFrom].txs[to] = [{ hash, txFrom }];
+        } else {
+          transfersObj[hashFrom].txs[to].push({ hash, txFrom });
+        }
+
+        transfersObj[hashTo].value = transfersObj[hashTo].value.add(value);
+      });
+
+    txEvent.traces.forEach((trace) => {
+      const { from, to, value, callType } = trace.action;
+
+      if (value && value !== "0x0" && callType === "call") {
+        const hashFrom = hashCode(from, "native");
+        const hashTo = hashCode(to, "native");
+
+        if (!transfersObj[hashFrom]) {
+          transfersObj[hashFrom] = {
+            asset: "native",
+            address: from,
+            value: ZERO,
+            blockNumber,
+            txs: {},
+          };
+        }
+
+        if (!transfersObj[hashTo]) {
+          transfersObj[hashTo] = {
+            asset: "native",
+            address: to,
+            value: ZERO,
+            blockNumber,
+            txs: {},
+          };
+        }
+
+        transfersObj[hashFrom].value = transfersObj[hashFrom].value.sub(value);
+
+        if (!transfersObj[hashFrom].txs[to]) {
+          transfersObj[hashFrom].txs[to] = [{ hash, txFrom }];
+        } else {
+          transfersObj[hashFrom].txs[to].push({ hash, txFrom });
+        }
+
+        transfersObj[hashTo].value = transfersObj[hashTo].value.add(value);
       }
-      if (!transfersObj[hashTo]) {
-        transfersObj[hashTo] = {
-          asset,
-          address: to,
-          value: ZERO,
-          blockNumber,
-          txs: {},
-        };
-      }
-
-      transfersObj[hashFrom].value = transfersObj[hashFrom].value.sub(value);
-
-      if (!transfersObj[hashFrom].txs[to]) {
-        transfersObj[hashFrom].txs[to] = [{ hash, txFrom }];
-      } else {
-        transfersObj[hashFrom].txs[to].push({ hash, txFrom });
-      }
-
-      transfersObj[hashTo].value = transfersObj[hashTo].value.add(value);
     });
 
-  txEvent.traces.forEach((trace) => {
-    const { from, to, value, callType } = trace.action;
-
-    if (value && value !== "0x0" && callType === "call") {
-      const hashFrom = hashCode(from, "native");
-      const hashTo = hashCode(to, "native");
-
-      if (!transfersObj[hashFrom]) {
-        transfersObj[hashFrom] = {
-          asset: "native",
-          address: from,
-          value: ZERO,
-          blockNumber,
-          txs: {},
-        };
-      }
-
-      if (!transfersObj[hashTo]) {
-        transfersObj[hashTo] = {
-          asset: "native",
-          address: to,
-          value: ZERO,
-          blockNumber,
-          txs: {},
-        };
-      }
-
-      transfersObj[hashFrom].value = transfersObj[hashFrom].value.sub(value);
-
-      if (!transfersObj[hashFrom].txs[to]) {
-        transfersObj[hashFrom].txs[to] = [{ hash, txFrom }];
-      } else {
-        transfersObj[hashFrom].txs[to].push({ hash, txFrom });
-      }
-
-      transfersObj[hashTo].value = transfersObj[hashTo].value.add(value);
-    }
-  });
-
-  return [];
+    return [];
+  };
 };
 
 const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersKey) => {
@@ -236,6 +238,7 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
 
 module.exports = {
   initialize: provideInitialize(
+    ethcallProvider,
     getEthersProvider(),
     new PersistenceHelper(DATABASE_URL),
     ASSET_DRAINED_TXN_KEY,
