@@ -1,4 +1,4 @@
-const { FindingType, FindingSeverity, Finding } = require("forta-agent");
+const { FindingType, FindingSeverity, Finding, Label, EntityType } = require("forta-agent");
 const axios = require("axios");
 const { provideHandleBlock, resetLastBlockNumber, provideInitialize } = require("./agent");
 const { createAddress } = require("forta-agent-tools");
@@ -177,6 +177,14 @@ describe("flashbots transactions detection bot", () => {
           blockNumber: block1.block_number,
           anomalyScore: mockAnomalyScore.toFixed(2),
         },
+        labels: [
+          Label.fromObject({
+            entity: "0x1",
+            entityType: EntityType.Transaction,
+            label: "Flashbots Transaction",
+            confidence: 1,
+          }),
+        ],
       }),
     ]);
     expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(1);
@@ -227,6 +235,14 @@ describe("flashbots transactions detection bot", () => {
           blockNumber: block2.block_number,
           anomalyScore: mockAnomalyScore1.toFixed(2),
         },
+        labels: [
+          Label.fromObject({
+            entity: "0x2",
+            entityType: EntityType.Transaction,
+            label: "Flashbots Transaction",
+            confidence: 1,
+          }),
+        ],
       }),
       Finding.fromObject({
         name: "Flashbots transactions",
@@ -242,6 +258,14 @@ describe("flashbots transactions detection bot", () => {
           blockNumber: block2.block_number,
           anomalyScore: mockAnomalyScore2.toFixed(2),
         },
+        labels: [
+          Label.fromObject({
+            entity: "0x3",
+            entityType: EntityType.Transaction,
+            label: "Flashbots Transaction",
+            confidence: 1,
+          }),
+        ],
       }),
     ]);
     expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(3);
@@ -280,6 +304,14 @@ describe("flashbots transactions detection bot", () => {
           blockNumber: block3.block_number,
           anomalyScore: mockAnomalyScore1.toFixed(2),
         },
+        labels: [
+          Label.fromObject({
+            entity: "0x2",
+            entityType: EntityType.Transaction,
+            label: "Flashbots Transaction",
+            confidence: 1,
+          }),
+        ],
       }),
       Finding.fromObject({
         name: "Flashbots transactions",
@@ -295,6 +327,14 @@ describe("flashbots transactions detection bot", () => {
           blockNumber: block3.block_number,
           anomalyScore: mockAnomalyScore2.toFixed(2),
         },
+        labels: [
+          Label.fromObject({
+            entity: "0x3",
+            entityType: EntityType.Transaction,
+            label: "Flashbots Transaction",
+            confidence: 1,
+          }),
+        ],
       }),
     ]);
     expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(2);

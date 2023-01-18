@@ -1,4 +1,4 @@
-const { Finding, FindingSeverity, FindingType, getTransactionReceipt } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, getTransactionReceipt, Label, EntityType } = require("forta-agent");
 const { PersistenceHelper } = require("./persistence.helper");
 const { default: axios } = require("axios");
 
@@ -74,6 +74,14 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
                     hash,
                     blockNumber,
                   },
+                  labels: [
+                    Label.fromObject({
+                      entity: hash,
+                      entityType: EntityType.Transaction,
+                      label: "Flashbots Transaction",
+                      confidence: 1,
+                    }),
+                  ],
                 });
               })
           );
