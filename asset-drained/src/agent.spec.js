@@ -42,7 +42,7 @@ jest.mock("forta-agent-tools", () => {
     ...original,
     MulticallProvider: jest.fn().mockImplementation(() => ({
       tryAll: mockEthcallProviderTryAll,
-      init: jest.fn()
+      init: jest.fn(),
     })),
   };
 });
@@ -173,12 +173,7 @@ describe("Asset drained bot test suite", () => {
     beforeEach(async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: 1 });
 
-      initialize = provideInitialize(
-        mockProvider,
-        mockPersistenceHelper,
-        mockAssetDrainedTxnKey,
-        mockAllTransfersKey
-      );
+      initialize = provideInitialize(mockProvider, mockPersistenceHelper, mockAssetDrainedTxnKey, mockAllTransfersKey);
 
       mockPersistenceHelper.load
         .mockReturnValueOnce(assetDrainedTransactions)
@@ -188,11 +183,7 @@ describe("Asset drained bot test suite", () => {
 
       handleTransaction = provideHandleTransaction();
 
-      handleBlock = provideHandleBlock(
-        mockPersistenceHelper,
-        mockAssetDrainedTxnKey,
-        mockAssetDrainedTxnKey
-      );
+      handleBlock = provideHandleBlock(mockPersistenceHelper, mockAssetDrainedTxnKey, mockAssetDrainedTxnKey);
 
       mockTxEvent.filterLog.mockReset();
       mockTxEvent2.filterLog.mockReset();
@@ -232,7 +223,7 @@ describe("Asset drained bot test suite", () => {
         ]);
 
         // Adding one to each for the current transaction
-        const mockAnomalyScore = (assetDrainedTransactions + 1) / (totalTransferTransactions + 1)
+        const mockAnomalyScore = (assetDrainedTransactions + 1) / (totalTransferTransactions + 1);
 
         await handleTransaction(mockTxEvent);
         const findings = await handleBlock(mockBlockEvent);
@@ -305,7 +296,7 @@ describe("Asset drained bot test suite", () => {
         ]);
 
         // Adding one for the asset drained transaction, but two because it is handling two transactions
-        const mockAnomalyScore = (assetDrainedTransactions + 1) / (totalTransferTransactions + 2)
+        const mockAnomalyScore = (assetDrainedTransactions + 1) / (totalTransferTransactions + 2);
 
         await handleTransaction(mockTxEvent);
         await handleTransaction(mockTxEvent2);
@@ -322,7 +313,10 @@ describe("Asset drained bot test suite", () => {
               contract: address1,
               asset,
               initiators: [address4, address5],
-              txHashes: [ethers.utils.formatBytes32String("0x2352352"), ethers.utils.formatBytes32String("0x442352352")],
+              txHashes: [
+                ethers.utils.formatBytes32String("0x2352352"),
+                ethers.utils.formatBytes32String("0x442352352"),
+              ],
               blockNumber: 9999,
               anomalyScore: mockAnomalyScore.toFixed(2),
             },
@@ -350,14 +344,14 @@ describe("Asset drained bot test suite", () => {
       afterEach(async () => {
         mockPersistenceHelper.persist.mockClear();
       });
-      
+
       it("should persist the value in a block evenly divisible by 240", async () => {
         const mockBlockEvent = {
           blockNumber: 720,
         };
-  
+
         await handleBlock(mockBlockEvent);
-  
+
         expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(2);
       });
 
@@ -365,9 +359,9 @@ describe("Asset drained bot test suite", () => {
         const mockBlockEvent = {
           blockNumber: 600,
         };
-  
+
         await handleBlock(mockBlockEvent);
-  
+
         expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
       });
     });
