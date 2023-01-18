@@ -1,6 +1,6 @@
 const { FindingType, FindingSeverity, Finding } = require("forta-agent");
 const axios = require("axios");
-const { provideHandleBlock, resetLastBlockNumber } = require("./agent");
+const { provideHandleBlock, resetLastBlockNumber, provideInitialize } = require("./agent");
 const { createAddress } = require("forta-agent-tools");
 
 const from0 = createAddress("0xf0");
@@ -78,11 +78,36 @@ jest.mock("axios");
 
 const mockGetTransactionReceipt = jest.fn();
 
+const mockFlashbotsTxnsKey = "mock-nm-flashbots-bot-txs-key";
+const mockTotalTxnsKey = "mock-nm-flashbots-bot-total-txs-key";
+
+let mockTotalFlashbotsTxns = 121;
+let mockTotalTxns = 2420;
+
 describe("flashbots transactions detection bot", () => {
-  beforeEach(() => {
-    handleBlock = provideHandleBlock(mockGetTransactionReceipt);
+  let handleBlock;
+  let initialize;
+  const mockPersistenceHelper = {
+    persist: jest.fn(),
+    load: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    initialize = provideInitialize(mockPersistenceHelper, mockFlashbotsTxnsKey, mockTotalTxnsKey);
+    mockPersistenceHelper.load.mockReturnValueOnce(mockTotalFlashbotsTxns).mockReturnValueOnce(mockTotalTxns);
+    await initialize();
+    handleBlock = provideHandleBlock(
+      mockGetTransactionReceipt,
+      mockPersistenceHelper,
+      mockFlashbotsTxnsKey,
+      mockTotalTxnsKey
+    );
     mockGetTransactionReceipt.mockReset();
     resetLastBlockNumber();
+  });
+
+  afterEach(() => {
+    mockPersistenceHelper.persist.mockClear();
   });
 
   it("should return empty findings if there are no new flashbots blocks", async () => {
@@ -93,10 +118,21 @@ describe("flashbots transactions detection bot", () => {
 
     axios.get.mockResolvedValueOnce(response);
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs });
-    await handleBlock();
+    const mockBlockEvent1 = {
+      block: {
+        transactions: ["0x1"],
+      },
+    };
+    await handleBlock(mockBlockEvent1);
 
     axios.get.mockResolvedValueOnce(response);
-    const findings = await handleBlock();
+
+    const mockBlockEvent2 = {
+      block: {
+        transactions: ["0x2"],
+      },
+    };
+    const findings = await handleBlock(mockBlockEvent2);
 
     expect(findings).toStrictEqual([]);
     expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(1);
@@ -108,11 +144,24 @@ describe("flashbots transactions detection bot", () => {
     const response = { data: { blocks: [block1] } };
 
     axios.get.mockRejectedValueOnce(error);
-    await handleBlock();
+    const mockBlockEvent1 = {
+      block: {
+        transactions: ["0x1", "0x2"],
+      },
+    };
+    await handleBlock(mockBlockEvent1);
 
     axios.get.mockResolvedValueOnce(response);
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs });
-    const findings = await handleBlock();
+
+    const mockBlockEvent2 = {
+      block: {
+        transactions: ["0x3", "0x4"],
+      },
+    };
+    const mockAnomalyScore = (mockTotalFlashbotsTxns + 1) / (mockTotalTxns + 4);
+
+    const findings = await handleBlock(mockBlockEvent2);
 
     expect(findings).toStrictEqual([
       Finding.fromObject({
@@ -126,6 +175,7 @@ describe("flashbots transactions detection bot", () => {
           to: to1,
           hash: "0x1",
           blockNumber: block1.block_number,
+          anomalyScore: mockAnomalyScore.toFixed(2),
         },
       }),
     ]);
@@ -137,7 +187,12 @@ describe("flashbots transactions detection bot", () => {
     const logs1 = [];
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs1 });
     axios.get.mockResolvedValueOnce(response1);
-    await handleBlock();
+    const mockBlockEvent1 = {
+      block: {
+        transactions: ["0x1", "0x2", "0x3"],
+      },
+    };
+    await handleBlock(mockBlockEvent1);
 
     // Only block2 should be processed
     const response2 = { data: { blocks: [block1, block2] } };
@@ -146,7 +201,16 @@ describe("flashbots transactions detection bot", () => {
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs2 });
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs3 });
     axios.get.mockResolvedValueOnce(response2);
-    const findings = await handleBlock();
+
+    const mockBlockEvent2 = {
+      block: {
+        transactions: ["0x4", "0x5", "0x6", "0x7"],
+      },
+    };
+    const mockAnomalyScore1 = (mockTotalFlashbotsTxns + 2) / (mockTotalTxns + 7);
+    const mockAnomalyScore2 = (mockTotalFlashbotsTxns + 3) / (mockTotalTxns + 7);
+
+    const findings = await handleBlock(mockBlockEvent2);
 
     expect(findings).toStrictEqual([
       Finding.fromObject({
@@ -161,6 +225,7 @@ describe("flashbots transactions detection bot", () => {
           to: to2,
           hash: "0x2",
           blockNumber: block2.block_number,
+          anomalyScore: mockAnomalyScore1.toFixed(2),
         },
       }),
       Finding.fromObject({
@@ -175,6 +240,7 @@ describe("flashbots transactions detection bot", () => {
           to: to3,
           hash: "0x3",
           blockNumber: block2.block_number,
+          anomalyScore: mockAnomalyScore2.toFixed(2),
         },
       }),
     ]);
@@ -188,7 +254,16 @@ describe("flashbots transactions detection bot", () => {
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs });
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs2 });
     axios.get.mockResolvedValueOnce(response);
-    const findings = await handleBlock();
+    const mockBlockEvent1 = {
+      block: {
+        transactions: ["0x1", "0x2", "0x3"],
+      },
+    };
+
+    const mockAnomalyScore1 = (mockTotalFlashbotsTxns + 1) / (mockTotalTxns + 3);
+    const mockAnomalyScore2 = (mockTotalFlashbotsTxns + 2) / (mockTotalTxns + 3);
+
+    const findings = await handleBlock(mockBlockEvent1);
 
     expect(findings).toStrictEqual([
       Finding.fromObject({
@@ -203,6 +278,7 @@ describe("flashbots transactions detection bot", () => {
           to: to2,
           hash: "0x2",
           blockNumber: block3.block_number,
+          anomalyScore: mockAnomalyScore1.toFixed(2),
         },
       }),
       Finding.fromObject({
@@ -217,9 +293,44 @@ describe("flashbots transactions detection bot", () => {
           to: to3,
           hash: "0x3",
           blockNumber: block3.block_number,
+          anomalyScore: mockAnomalyScore2.toFixed(2),
         },
       }),
     ]);
     expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(2);
+  });
+
+  it("should persist the value in a block evenly divisible by 240", async () => {
+    const response1 = { data: { blocks: [block1] } };
+    const logs1 = [];
+    mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs1 });
+    axios.get.mockResolvedValueOnce(response1);
+    const mockBlockEvent = {
+      blockNumber: 720,
+      block: {
+        transactions: [],
+      },
+    };
+
+    await handleBlock(mockBlockEvent);
+
+    expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(2);
+  });
+
+  it("should not persist values because block is not evenly divisible by 240", async () => {
+    const response1 = { data: { blocks: [block1] } };
+    const logs1 = [];
+    mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs1 });
+    axios.get.mockResolvedValueOnce(response1);
+    const mockBlockEvent = {
+      blockNumber: 600,
+      block: {
+        transactions: [],
+      },
+    };
+
+    await handleBlock(mockBlockEvent);
+
+    expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
   });
 });
