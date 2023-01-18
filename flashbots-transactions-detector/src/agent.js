@@ -103,8 +103,6 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
 
     cachedFindings.push(...findings);
 
-    // totalFlashbotsTxns += cachedFindings.length >= 10 ? 10 : cachedFindings.length;
-
     if (blockEvent.blockNumber % 240 === 0) {
       await persistenceHelper.persist(totalFlashbotsTxns, flashbotsKey);
       await persistenceHelper.persist(totalTxns, totalTxnsKey);
