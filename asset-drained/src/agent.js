@@ -31,14 +31,8 @@ const provideInitialize = (provider, persistenceHelper, assetDrainedTxnKey, allT
     await ethcallProvider.init();
 
     chainId = (await provider.getNetwork()).chainId.toString();
-    assetDrainedTransactions = await persistenceHelper.load(
-      assetDrainedTransactions,
-      assetDrainedTxnKey.concat("-", chainId)
-    );
-    totalTransferTransactions = await persistenceHelper.load(
-      totalTransferTransactions,
-      allTransfersKey.concat("-", chainId)
-    );
+    assetDrainedTransactions = await persistenceHelper.load(assetDrainedTxnKey.concat("-", chainId));
+    totalTransferTransactions = await persistenceHelper.load(allTransfersKey.concat("-", chainId));
   };
 };
 
