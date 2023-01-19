@@ -1,6 +1,4 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-plusplus */
-const { FindingType, FindingSeverity, Finding, ethers, getEthersProvider } = require("forta-agent");
+const { FindingType, FindingSeverity, Finding, ethers, getEthersProvider, Label, EntityType } = require("forta-agent");
 const {
   handleTransaction,
   provideInitialize,
@@ -192,6 +190,20 @@ describe("large balance decrease bot", () => {
             assetImpacted: asset,
             anomalyScore: mockAnomalyScore.toFixed(2),
           },
+          labels: [
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txHash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txHash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+          ],
         }),
       ]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(1);
@@ -227,6 +239,20 @@ describe("large balance decrease bot", () => {
             assetImpacted: "native",
             anomalyScore: mockAnomalyScore.toFixed(2),
           },
+          labels: [
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txHash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txHash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+          ],
         }),
       ]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(1);
@@ -333,6 +359,20 @@ describe("large balance decrease bot", () => {
             assetVolumeDecreasePercentage: 1000 / 100,
             anomalyScore: mockAnomalyScore.toFixed(2),
           },
+          labels: [
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txHash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txHash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+          ],
         }),
       ]);
 

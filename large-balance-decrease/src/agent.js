@@ -1,4 +1,4 @@
-const { Finding, FindingSeverity, FindingType, getEthersProvider, ethers } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, getEthersProvider, ethers, Label, EntityType } = require("forta-agent");
 const ARIMA = require("arima");
 const { aggregationTimePeriod, contractAddress: a } = require("../bot-config.json");
 const { PersistenceHelper } = require("./persistence.helper");
@@ -171,6 +171,20 @@ const handleTransaction = async (txEvent) => {
             assetImpacted: asset,
             anomalyScore: anomalyScore.toFixed(2),
           },
+          labels: [
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: currentPeriodTxs[asset][0],
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: txEvent.hash,
+              label: "Balance Decrease Transaction",
+              confidence: 1,
+            }),
+          ],
         })
       );
     }
@@ -233,6 +247,20 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
                 assetVolumeDecreasePercentage: percentage,
                 anomalyScore: anomalyScore.toFixed(2),
               },
+              labels: [
+                Label.fromObject({
+                  entityType: EntityType.Transaction,
+                  entity: currentPeriodTxs[asset][0],
+                  label: "Balance Decrease Transaction",
+                  confidence: 1,
+                }),
+                Label.fromObject({
+                  entityType: EntityType.Transaction,
+                  entity: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
+                  label: "Balance Decrease Transaction",
+                  confidence: 1,
+                }),
+              ],
             })
           );
         }
