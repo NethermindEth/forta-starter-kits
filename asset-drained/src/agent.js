@@ -132,7 +132,16 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
     let transfers = Object.values(transfersObj)
       .filter((t) => t.value.lt(ZERO))
       .filter((t) => t.address !== ethers.constants.AddressZero);
-    if (transfers.length === 0) return [];
+    // If there are no transfers, but still a block in which the bot
+    // should persist the values, push the values to the database
+    // despite there being no transfers
+    if (transfers.length === 0 && blockEvent.blockNumber % 240 === 0) {
+      await persistenceHelper.persist(assetDrainedTransactions, assetDrainedTxnKey.concat("-", chainId));
+      await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
+      return [];
+    } else if (transfers.length === 0) {
+      return [];
+    }
 
     const st = new Date();
     console.log(`processing block ${blockNumber}`);
@@ -224,6 +233,9 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       );
     });
 
+    // Persist values here if there were transfers
+    // to futher process (This will have the updated
+    // `assetDrainedTransactions` that were incremented)
     if (blockEvent.blockNumber % 240 === 0) {
       await persistenceHelper.persist(assetDrainedTransactions, assetDrainedTxnKey.concat("-", chainId));
       await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
