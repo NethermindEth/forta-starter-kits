@@ -12,7 +12,7 @@ The following steps will take you from a completely blank template to a function
   - `aggregationTimePeriod` (required) - The duration of one period (in seconds). Most of the big treasuries send assets less than once a week so we recommend a period of at least one week (604800 seconds).
   - `contractAddress` (required) - The monitored contract
 - Set in `agent.js`:
-  - `ALL_REMOVED_KEY` and `PORTION_REMOVED_KEY` should be uniquely set for each deployed instance of the bot.
+  - `ALL_REMOVED_KEY`, `PORTION_REMOVED_KEY` and `TOTAL_TRANSFERS_KEY` should be uniquely set for each deployed instance of the bot.
 - Set in `package.json`:
   - `chainIds` array should only include the monitored chains per instance.
 
