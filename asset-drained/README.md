@@ -21,11 +21,25 @@ This bot detects if a contract has had 99% or more of one of its assets drained 
   - Severity is always set to "high"
   - Type is always set to "suspicious"
   - Metadata:
-    - contract - the contract's address
-    - asset - the asset's address
-    - initiators - the EOA(s) that initiated the transaction(s)
-    - txHashes - the hash(es) of the transaction(s) in which the contract was drained
-    - blockNumber - the block number at the time of the contract drain
+    - `contract` - the contract's address
+    - `asset` - the asset's address
+    - `initiators` - the EOA(s) that initiated the transaction(s)
+    - `txHashes` - the hash(es) of the transaction(s) in which the contract was drained
+    - `blockNumber` - the block number at the time of the contract drain
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `ASSET-DRAINED` transactions out of the total number of ERC20 transfers processed by this bot.
+        - Note: score differs based on chain.
+  - Labels:
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The victim's address
+      - `label`: The type of the label, always set to "Asset Drained Victim"
+      - `confidence`: The confidence level of it being an asset draining transaction (0-1). Always set to `1`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Block"
+      - `entity`: The block at the time of the contract drain
+      - `label`: The type of the label, always set to "Asset Drained Block"
+      - `confidence`: The confidence level of it being an asset draining transaction (0-1). Always set to `1`.
   - Addresses contain the list of addresses that received the assets from the drained contract
 
 ## Test Data

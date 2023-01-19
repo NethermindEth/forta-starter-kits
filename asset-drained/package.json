@@ -1,6 +1,6 @@
 {
   "name": "asset-drained",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Detects if an asset is fully drained from a contract",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/asset-drained",
   "chainIds": [
@@ -31,9 +31,11 @@
     "format": "prettier --write \"src/**/*.js\""
   },
   "dependencies": {
-    "forta-agent": "0.1.9",
+    "forta-agent": "^0.1.16",
     "forta-agent-tools": "^3.1.2",
-    "lru-cache": "^7.14.0"
+    "lru-cache": "^7.14.0",
+    "node-fetch": "^2.6.7",
+    "dotenv": "^16.0.3"
   },
   "devDependencies": {
     "prettier": "^2.7.1",
