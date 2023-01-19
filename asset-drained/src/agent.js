@@ -128,11 +128,6 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
     const { blockNumber } = blockEvent;
     const findings = [];
 
-    if (blockEvent.blockNumber % 240 === 0) {
-      await persistenceHelper.persist(assetDrainedTransactions, assetDrainedTxnKey.concat("-", chainId));
-      await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
-    }
-
     // Only process addresses that had more funds withdrawn than deposited
     let transfers = Object.values(transfersObj)
       .filter((t) => t.value.lt(ZERO))
@@ -228,6 +223,11 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
         })
       );
     });
+
+    if (blockEvent.blockNumber % 240 === 0) {
+      await persistenceHelper.persist(assetDrainedTransactions, assetDrainedTxnKey.concat("-", chainId));
+      await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
+    }
 
     const et = new Date();
     console.log(`previous block processed in ${et - st}ms`);
