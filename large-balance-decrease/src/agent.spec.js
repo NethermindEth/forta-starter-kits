@@ -203,6 +203,12 @@ describe("large balance decrease bot", () => {
               label: "Balance Decrease Transaction",
               confidence: 1,
             }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: contractAddress,
+              label: "Victim",
+              confidence: 0.9,
+            }),
           ],
         }),
       ]);
@@ -251,6 +257,12 @@ describe("large balance decrease bot", () => {
               entity: txHash,
               label: "Balance Decrease Transaction",
               confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: contractAddress,
+              label: "Victim",
+              confidence: 0.9,
             }),
           ],
         }),
@@ -371,6 +383,12 @@ describe("large balance decrease bot", () => {
               entity: txHash,
               label: "Balance Decrease Transaction",
               confidence: 1,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: contractAddress,
+              label: "Victim",
+              confidence: 0.7,
             }),
           ],
         }),

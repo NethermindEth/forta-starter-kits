@@ -184,6 +184,12 @@ const handleTransaction = async (txEvent) => {
               label: "Balance Decrease Transaction",
               confidence: 1,
             }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: contractAddress,
+              label: "Victim",
+              confidence: 0.9,
+            }),
           ],
         })
       );
@@ -259,6 +265,12 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
                   entity: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
                   label: "Balance Decrease Transaction",
                   confidence: 1,
+                }),
+                Label.fromObject({
+                  entityType: EntityType.Address,
+                  entity: contractAddress,
+                  label: "Victim",
+                  confidence: 0.7,
                 }),
               ],
             })
