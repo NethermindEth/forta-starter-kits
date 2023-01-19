@@ -341,7 +341,7 @@ describe("Asset drained bot test suite", () => {
     });
 
     describe("Persistence functionality", () => {
-      afterEach(async () => {
+      afterEach(() => {
         mockPersistenceHelper.persist.mockClear();
       });
 
