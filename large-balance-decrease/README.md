@@ -47,10 +47,10 @@ Describe each of the type of alerts fired by this bot
   - Severity is always set to "medium"
   - Type is always set to "exploit"
   - Metadata:
-    - firstTxHash - the hash of the first transaction for the period
-    - lastTxHash - the hash of the last transaction for the period
-    - assetImpacted - the impacted asset
-    - assetVolumeDecreasePercentage - the decrease percentage
+    - `firstTxHash` - the hash of the first transaction for the period
+    - `lastTxHash` - the hash of the last transaction for the period
+    - `assetImpacted` - the impacted asset
+    - `assetVolumeDecreasePercentage` - the decrease percentage
     - `anomalyScore` - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `BALANCE-DECREASE-ASSETS-PORTION-REMOVED` transactions out of the total number of token transfers in which the monitored address was involved.
         - Note: score differs based on chain.
