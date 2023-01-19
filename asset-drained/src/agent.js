@@ -124,9 +124,16 @@ const provideHandleTransaction = () => {
 };
 
 const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersKey) => {
+  let cachedFindings = [];
   return async (blockEvent) => {
     const { blockNumber } = blockEvent;
     const findings = [];
+
+    if (cachedFindings.length >= 10) {
+      cachedFindings.splice(0, 10);
+    } else {
+      cachedFindings = [];
+    }
 
     // Only process addresses that had more funds withdrawn than deposited
     let transfers = Object.values(transfersObj)
@@ -241,10 +248,12 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
     }
 
+    cachedFindings.push(...findings);
+
     const et = new Date();
     console.log(`previous block processed in ${et - st}ms`);
     transfersObj = {};
-    return findings;
+    return cachedFindings.slice(0, 10);
   };
 };
 
