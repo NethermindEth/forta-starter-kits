@@ -1,7 +1,13 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-plusplus */
 const { FindingType, FindingSeverity, Finding, ethers, getEthersProvider } = require("forta-agent");
-const { handleTransaction, handleBlock, getContractAssets, resetLastTimestamp } = require("./agent");
+const {
+  handleTransaction,
+  provideInitialize,
+  provideHandleBlock,
+  getContractAssets,
+  resetLastTimestamp,
+} = require("./agent");
 
 const contractAddress = "0xcontract";
 const asset = "0xasset";
@@ -44,7 +50,25 @@ function resetState() {
   resetLastTimestamp();
 }
 
+const mockAllRemovedKey = "mock-all-removed-key";
+const mockPortionRemovedKey = "mock-portion-removed-key";
+const mockAllTransfersKey = "mock-all-transfers-bot-key";
+
+const allRemovedTransfers = 6;
+const portionRemovedTransfers = 9;
+const totalTransferTransactions = 33;
+
 describe("large balance decrease bot", () => {
+  const mockProvider = {
+    getNetwork: jest.fn(),
+  };
+  const mockPersistenceHelper = {
+    persist: jest.fn(),
+    load: jest.fn(),
+  };
+
+  let initialize;
+  let handleBlock;
   describe("handleTransaction", () => {
     const mockTxEvent = {
       blockNumber: 1000,
@@ -53,11 +77,28 @@ describe("large balance decrease bot", () => {
       traces: [],
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
       resetState();
       mockTxEvent.filterLog.mockReset();
       mockBalanceOf.mockReset();
       mockGetBalance.mockReset();
+
+      mockProvider.getNetwork.mockReturnValueOnce({ chainId: 1 });
+
+      initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        mockAllRemovedKey,
+        mockPortionRemovedKey,
+        mockAllTransfersKey
+      );
+
+      mockPersistenceHelper.load
+        .mockReturnValueOnce(allRemovedTransfers)
+        .mockReturnValueOnce(portionRemovedTransfers)
+        .mockReturnValueOnce(totalTransferTransactions);
+
+      await initialize();
     });
 
     it("should return empty findings if there are no Transfer events", async () => {
@@ -134,6 +175,8 @@ describe("large balance decrease bot", () => {
       mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
       mockTxEvent.filterLog.mockReturnValueOnce([event]);
 
+      const mockAnomalyScore = (allRemovedTransfers + 1) / (totalTransferTransactions + 1);
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -147,6 +190,7 @@ describe("large balance decrease bot", () => {
             firstTxHash: txHash,
             lastTxHash: txHash,
             assetImpacted: asset,
+            anomalyScore: mockAnomalyScore.toFixed(2),
           },
         }),
       ]);
@@ -166,6 +210,8 @@ describe("large balance decrease bot", () => {
       });
       mockTxEvent.filterLog.mockReturnValueOnce([]);
 
+      const mockAnomalyScore = (allRemovedTransfers + 1) / (totalTransferTransactions + 1);
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -179,6 +225,7 @@ describe("large balance decrease bot", () => {
             firstTxHash: txHash,
             lastTxHash: txHash,
             assetImpacted: "native",
+            anomalyScore: mockAnomalyScore.toFixed(2),
           },
         }),
       ]);
@@ -188,9 +235,33 @@ describe("large balance decrease bot", () => {
 
   // handle block
   describe("handleBlock", () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       resetState();
       mockBalanceOf.mockReset();
+
+      mockProvider.getNetwork.mockReturnValueOnce({ chainId: 1 });
+
+      initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        mockAllRemovedKey,
+        mockPortionRemovedKey,
+        mockAllTransfersKey
+      );
+
+      mockPersistenceHelper.load
+        .mockReturnValueOnce(allRemovedTransfers)
+        .mockReturnValueOnce(portionRemovedTransfers)
+        .mockReturnValueOnce(totalTransferTransactions);
+
+      await initialize();
+
+      handleBlock = provideHandleBlock(
+        mockPersistenceHelper,
+        mockAllRemovedKey,
+        mockPortionRemovedKey,
+        mockAllTransfersKey
+      );
     });
 
     it("should return empty findings if not enough time has passed", async () => {
@@ -245,6 +316,8 @@ describe("large balance decrease bot", () => {
 
       // Handle the block
       const mockBlockEvent = { block: { timestamp: 1000 } };
+      const mockAnomalyScore = (portionRemovedTransfers + 1) / (totalTransferTransactions + 1);
+
       const findings = await handleBlock(mockBlockEvent);
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -258,12 +331,43 @@ describe("large balance decrease bot", () => {
             lastTxHash: txHash,
             assetImpacted: asset,
             assetVolumeDecreasePercentage: 1000 / 100,
+            anomalyScore: mockAnomalyScore.toFixed(2),
           },
         }),
       ]);
 
       // Reset the contractAssets
       delete getContractAssets()[asset];
+    });
+  });
+
+  describe("Persistence functionality", () => {
+    afterEach(() => {
+      mockPersistenceHelper.persist.mockClear();
+    });
+
+    it("should persist the value in a block evenly divisible by 240", async () => {
+      const mockBlockEvent = {
+        block: {
+          number: 720,
+        },
+      };
+
+      await handleBlock(mockBlockEvent);
+
+      expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(3);
+    });
+
+    it("should not persist values because block is not evenly divisible by 240", async () => {
+      const mockBlockEvent = {
+        block: {
+          number: 600,
+        },
+      };
+
+      await handleBlock(mockBlockEvent);
+
+      expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
     });
   });
 });

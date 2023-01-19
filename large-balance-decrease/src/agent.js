@@ -1,6 +1,20 @@
 const { Finding, FindingSeverity, FindingType, getEthersProvider, ethers } = require("forta-agent");
 const ARIMA = require("arima");
 const { aggregationTimePeriod, contractAddress: a } = require("../bot-config.json");
+const { PersistenceHelper } = require("./persistence.helper");
+
+const DATABASE_URL = "https://research.forta.network/database/bot/";
+
+// Keys need to be modified to be unique for each instance of the bot before deployment
+const ALL_REMOVED_KEY = "nm-large-balance-decrease-bot-all-removed-key";
+const PORTION_REMOVED_KEY = "nm-large-balance-decrease-bot-portion-removed-key";
+const TOTAL_TRANSFERS_KEY = "nm-large-balance-decrease-bot-total-transfers-key";
+
+let allRemovedTransactions = 0;
+let portionRemovedTransactions = 0;
+let totalTransferTransactions = 0;
+
+let chainId;
 
 const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address indexed to, uint256 value)";
 const ABI = [
@@ -30,6 +44,16 @@ const contractAssets = {};
 const currentPeriodDecreaseAmounts = {};
 const currentPeriodTxs = {};
 
+const provideInitialize = (provider, persistenceHelper, allRemovedKey, portionRemovedKey, totalTransfersKey) => {
+  return async () => {
+    chainId = (await provider.getNetwork()).chainId.toString();
+
+    allRemovedTransactions = await persistenceHelper.load(allRemovedKey.concat("-", chainId));
+    portionRemovedTransactions = await persistenceHelper.load(portionRemovedKey.concat("-", chainId));
+    totalTransferTransactions = await persistenceHelper.load(totalTransfersKey.concat("-", chainId));
+  };
+};
+
 const handleTransaction = async (txEvent) => {
   const findings = [];
   const balanceChanges = {};
@@ -48,6 +72,8 @@ const handleTransaction = async (txEvent) => {
     if (contractAddress === address) {
       return false;
     }
+
+    totalTransferTransactions += 1;
 
     return true;
   });
@@ -110,11 +136,15 @@ const handleTransaction = async (txEvent) => {
       const val = ethers.BigNumber.from(value);
 
       if (contractAddress === from) {
+        totalTransferTransactions += 1;
+
         currentPeriodTxs.native.push(txEvent.hash);
 
         balanceChanges.native = balanceChanges.native ? balanceChanges.native.sub(val) : val.mul(-1);
       }
       if (contractAddress === to) {
+        totalTransferTransactions += 1;
+
         balanceChanges.native = balanceChanges.native ? balanceChanges.native.sub(val) : val;
       }
     }
@@ -125,6 +155,9 @@ const handleTransaction = async (txEvent) => {
 
     // Only alert if the current balance is zero and there is a balance change
     if (contractAssets[asset].balance.eq(zero) && !balanceChange.eq(zero)) {
+      allRemovedTransactions += 1;
+      const anomalyScore = allRemovedTransactions / totalTransferTransactions;
+
       findings.push(
         Finding.fromObject({
           name: "Assets removed",
@@ -136,6 +169,7 @@ const handleTransaction = async (txEvent) => {
             firstTxHash: currentPeriodTxs[asset][0],
             lastTxHash: txEvent.hash,
             assetImpacted: asset,
+            anomalyScore: anomalyScore.toFixed(2),
           },
         })
       );
@@ -145,72 +179,105 @@ const handleTransaction = async (txEvent) => {
   return findings;
 };
 
-const handleBlock = async (blockEvent) => {
-  const findings = [];
-  const { timestamp } = blockEvent.block;
+const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey, totalTransfersKey) => {
+  return async (blockEvent) => {
+    const findings = [];
+    const { timestamp, number } = blockEvent.block;
 
-  if (timestamp - lastTimestamp < aggregationTimePeriod) return findings;
-
-  Object.entries(contractAssets).forEach(([asset, data]) => {
-    const { timeSeries, balance, decimals } = data;
-
-    const decrease = ethers.utils.formatUnits(currentPeriodDecreaseAmounts[asset], decimals);
-
-    // Only train if we have enough data
-    if (timeSeries.length > 10) {
-      arima.train(timeSeries);
-      const [pred, err] = arima.predict(1).flat();
-
-      // Calculate the 95% confidence interval
-      const threshold = pred + 1.96 * Math.sqrt(err);
-
-      console.log(`Balance decrease for the period: ${decrease}`);
-      console.log(`Balance decrease threshold     : ${threshold}`);
-
-      if (decrease > threshold) {
-        // Calculate the percentage
-        const balanceAmount = ethers.utils.formatUnits(balance, decimals);
-
-        // Return maximum 100%
-        const percentage = Math.min((decrease / balanceAmount) * 100, 100);
-
-        findings.push(
-          Finding.fromObject({
-            name: "Assets significantly decreased",
-            description: `A significant amount ${asset} tokens have been removed from ${contractAddress}.`,
-            alertId: "BALANCE-DECREASE-ASSETS-PORTION-REMOVED",
-            severity: FindingSeverity.Medium,
-            type: FindingType.Exploit,
-            metadata: {
-              firstTxHash: currentPeriodTxs[asset][0],
-              lastTxHash: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
-              assetImpacted: asset,
-              assetVolumeDecreasePercentage: percentage,
-            },
-          })
-        );
+    if (timestamp - lastTimestamp < aggregationTimePeriod) {
+      if (number % 240 === 0) {
+        await persistenceHelper.persist(allRemovedTransactions, allRemovedKey.concat("-", chainId));
+        await persistenceHelper.persist(portionRemovedTransactions, portionRemovedKey.concat("-", chainId));
+        await persistenceHelper.persist(totalTransferTransactions, totalTransfersKey.concat("-", chainId));
       }
-    } else {
-      console.log(`Not enough data. ${timeSeries.length}/10 training periods have passed.`);
+      return findings;
     }
 
-    // Add the decrease of this period to the time series and reset it
-    timeSeries.push(decrease);
-    currentPeriodDecreaseAmounts[asset] = zero;
-    currentPeriodTxs[asset] = [];
+    Object.entries(contractAssets).forEach(([asset, data]) => {
+      const { timeSeries, balance, decimals } = data;
 
-    // Only keep data for the last 1 year
-    if (timeSeries.length > periodsPerYear) timeSeries.shift();
-  });
+      const decrease = ethers.utils.formatUnits(currentPeriodDecreaseAmounts[asset], decimals);
 
-  lastTimestamp = timestamp;
+      // Only train if we have enough data
+      if (timeSeries.length > 10) {
+        arima.train(timeSeries);
+        const [pred, err] = arima.predict(1).flat();
 
-  return findings;
+        // Calculate the 95% confidence interval
+        const threshold = pred + 1.96 * Math.sqrt(err);
+
+        console.log(`Balance decrease for the period: ${decrease}`);
+        console.log(`Balance decrease threshold     : ${threshold}`);
+
+        if (decrease > threshold) {
+          // Calculate the percentage
+          const balanceAmount = ethers.utils.formatUnits(balance, decimals);
+
+          // Return maximum 100%
+          const percentage = Math.min((decrease / balanceAmount) * 100, 100);
+
+          portionRemovedTransactions += 1;
+          const anomalyScore = portionRemovedTransactions / totalTransferTransactions;
+
+          findings.push(
+            Finding.fromObject({
+              name: "Assets significantly decreased",
+              description: `A significant amount ${asset} tokens have been removed from ${contractAddress}.`,
+              alertId: "BALANCE-DECREASE-ASSETS-PORTION-REMOVED",
+              severity: FindingSeverity.Medium,
+              type: FindingType.Exploit,
+              metadata: {
+                firstTxHash: currentPeriodTxs[asset][0],
+                lastTxHash: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
+                assetImpacted: asset,
+                assetVolumeDecreasePercentage: percentage,
+                anomalyScore: anomalyScore.toFixed(2),
+              },
+            })
+          );
+        }
+      } else {
+        console.log(`Not enough data. ${timeSeries.length}/10 training periods have passed.`);
+      }
+
+      // Add the decrease of this period to the time series and reset it
+      timeSeries.push(decrease);
+      currentPeriodDecreaseAmounts[asset] = zero;
+      currentPeriodTxs[asset] = [];
+
+      // Only keep data for the last 1 year
+      if (timeSeries.length > periodsPerYear) timeSeries.shift();
+    });
+
+    lastTimestamp = timestamp;
+
+    if (number % 240 === 0) {
+      await persistenceHelper.persist(allRemovedTransactions, allRemovedKey.concat("-", chainId));
+      await persistenceHelper.persist(portionRemovedTransactions, portionRemovedKey.concat("-", chainId));
+      await persistenceHelper.persist(totalTransferTransactions, totalTransfersKey.concat("-", chainId));
+    }
+
+    return findings;
+  };
 };
 
 module.exports = {
+  initialize: provideInitialize(
+    getEthersProvider(),
+    new PersistenceHelper(DATABASE_URL),
+    ALL_REMOVED_KEY,
+    PORTION_REMOVED_KEY,
+    TOTAL_TRANSFERS_KEY
+  ),
+  provideInitialize,
   handleTransaction,
-  handleBlock,
+  provideHandleBlock,
+  handleBlock: provideHandleBlock(
+    new PersistenceHelper(DATABASE_URL),
+    ALL_REMOVED_KEY,
+    PORTION_REMOVED_KEY,
+    TOTAL_TRANSFERS_KEY
+  ),
   getContractAssets: () => contractAssets, // Used in the unit tests
   resetLastTimestamp: () => {
     lastTimestamp = 0;
