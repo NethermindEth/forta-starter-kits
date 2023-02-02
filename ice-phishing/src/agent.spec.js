@@ -482,7 +482,7 @@ describe("ice-phishing bot", () => {
       mockProvider.getCode.mockReturnValue("0x");
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedPermits + 1) / (mockCounters.totalPermits + 1);
+      const mockAnomalyScore = mockCounters.detectedPermits / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -495,14 +495,15 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             owner: owner1,
             spender,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.3,
             }),
             Label.fromObject({
@@ -524,7 +525,7 @@ describe("ice-phishing bot", () => {
       mockProvider.getCode.mockReturnValue("0x");
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedPermits + 1) / (mockCounters.totalPermits + 1);
+      const mockAnomalyScore = mockCounters.detectedPermits / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -537,14 +538,15 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             owner: owner1,
             spender,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.3,
             }),
             Label.fromObject({
@@ -563,6 +565,9 @@ describe("ice-phishing bot", () => {
     it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
       const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
@@ -606,8 +611,8 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore1 = (mockCounters.detectedSuspiciousPermits + 1) / (mockCounters.totalPermits + 1);
-      const mockAnomalyScore2 = (mockCounters.detectedPermitsInfo + 1) / (mockCounters.totalPermits + 1);
+      const mockAnomalyScore1 = mockCounters.detectedSuspiciousPermits / mockCounters.totalPermits;
+      const mockAnomalyScore2 = mockCounters.detectedPermitsInfo / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -624,14 +629,15 @@ describe("ice-phishing bot", () => {
             spender: createAddress("0xabcdabcd"),
             suspiciousContract: createAddress("0xabcdabcd"),
             suspiciousContractCreator: createAddress("0xeeffeeff"),
-            anomalyScore: mockAnomalyScore1.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore1.toFixed(2) === "0.00" ? mockAnomalyScore1.toString() : mockAnomalyScore1.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0xabcdabcd"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.5,
             }),
             Label.fromObject({
@@ -654,14 +660,15 @@ describe("ice-phishing bot", () => {
             msgSender: createAddress("0x4567"),
             owner: owner1,
             spender: createAddress("0xabcdabcd"),
-            anomalyScore: mockAnomalyScore2.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0xabcdabcd"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.2,
             }),
             Label.fromObject({
@@ -680,6 +687,9 @@ describe("ice-phishing bot", () => {
     it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
       const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
@@ -723,8 +733,8 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore1 = (mockCounters.detectedSuspiciousPermits + 1) / (mockCounters.totalPermits + 1);
-      const mockAnomalyScore2 = (mockCounters.detectedPermitsInfo + 1) / (mockCounters.totalPermits + 1);
+      const mockAnomalyScore1 = mockCounters.detectedSuspiciousPermits / mockCounters.totalPermits;
+      const mockAnomalyScore2 = mockCounters.detectedPermitsInfo / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -741,14 +751,15 @@ describe("ice-phishing bot", () => {
             spender: createAddress("0xeeffeeff"),
             suspiciousContract: createAddress("0xabcdabcd"),
             suspiciousContractCreator: createAddress("0xeeffeeff"),
-            anomalyScore: mockAnomalyScore1.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore1.toFixed(2) === "0.00" ? mockAnomalyScore1.toString() : mockAnomalyScore1.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0xeeffeeff"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.5,
             }),
             Label.fromObject({
@@ -771,14 +782,15 @@ describe("ice-phishing bot", () => {
             msgSender: createAddress("0x4567"),
             owner: owner1,
             spender: createAddress("0xeeffeeff"),
-            anomalyScore: mockAnomalyScore2.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0xeeffeeff"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.2,
             }),
             Label.fromObject({
@@ -848,8 +860,7 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(5);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore =
-        (mockCounters.detectedERC1155ApprovalsForAll + 3) / (mockCounters.totalERC1155ApprovalsForAll + 3);
+      const mockAnomalyScore = mockCounters.detectedERC1155ApprovalsForAll / mockCounters.totalERC1155ApprovalsForAll;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -861,14 +872,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.2,
             }),
             Label.fromObject({
@@ -917,8 +929,7 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(5);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore =
-        (mockCounters.detectedERC721ApprovalsForAll + 3) / (mockCounters.totalERC721ApprovalsForAll + 3);
+      const mockAnomalyScore = mockCounters.detectedERC721ApprovalsForAll / mockCounters.totalERC721ApprovalsForAll;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -930,14 +941,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.2,
             }),
             Label.fromObject({
@@ -1015,8 +1027,7 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(5);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore =
-        (mockCounters.detectedERC721ApprovalsForAllInfo + 3) / (mockCounters.totalERC721ApprovalsForAll + 3);
+      const mockAnomalyScore = mockCounters.detectedERC721ApprovalsForAllInfo / mockCounters.totalERC721ApprovalsForAll;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1030,14 +1041,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender: createAddress("0xcdcd"),
             owner: createAddress("0xcccdcd"),
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0xcdcd"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.15,
             }),
             Label.fromObject({
@@ -1085,7 +1097,7 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(3);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedERC20Approvals + 3) / (mockCounters.totalERC20Approvals + 3);
+      const mockAnomalyScore = mockCounters.detectedERC20Approvals / mockCounters.totalERC20Approvals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1097,14 +1109,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.3,
             }),
             Label.fromObject({
@@ -1156,7 +1169,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedERC721Approvals + 3) / (mockCounters.totalERC721Approvals + 3);
+      const mockAnomalyScore = mockCounters.detectedERC721Approvals / mockCounters.totalERC721Approvals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1168,14 +1181,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.3,
             }),
             Label.fromObject({
@@ -1198,6 +1212,9 @@ describe("ice-phishing bot", () => {
     it("should return findings if there is a high number of ERC721 Approval events regarding a verified contract", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
       const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       await initialize();
       const spender = createAddress("0xeded");
       const thisMockApprovalERC721Events = [
@@ -1270,7 +1287,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedERC721ApprovalsInfo + 4) / (mockCounters.totalERC721Approvals + 4);
+      const mockAnomalyScore = mockCounters.detectedERC721ApprovalsInfo / mockCounters.totalERC721Approvals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1282,14 +1299,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.25,
             }),
             Label.fromObject({
@@ -1312,6 +1330,9 @@ describe("ice-phishing bot", () => {
     it("should not return findings if there is a high number of ERC721 Approval events regarding a verified contract with high number of past transactions", async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
       const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       await initialize();
       const spender = createAddress("0xabeded");
       const thisMockApprovalERC721Events = [
@@ -1440,7 +1461,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
+      const mockAnomalyScore = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1452,14 +1473,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.4,
             }),
             Label.fromObject({
@@ -1593,7 +1615,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
+      const mockAnomalyScore = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1605,14 +1627,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.4,
             }),
             Label.fromObject({
@@ -1688,7 +1711,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
+      const mockAnomalyScore = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1700,14 +1723,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.4,
             }),
             Label.fromObject({
@@ -1783,7 +1807,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfers + 3) / (mockCounters.totalTransfers + 3);
+      const mockAnomalyScore = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1795,14 +1819,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.4,
             }),
             Label.fromObject({
@@ -1915,7 +1940,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedTransfersLow + 3) / (mockCounters.totalTransfers + 3);
+      const mockAnomalyScore = mockCounters.detectedTransfersLow / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1927,14 +1952,15 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.25,
             }),
             Label.fromObject({
@@ -1987,7 +2013,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedPermittedTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = mockCounters.detectedPermittedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2000,14 +2026,15 @@ describe("ice-phishing bot", () => {
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
             spender: spender,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: asset,
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.4,
             }),
             Label.fromObject({
@@ -2054,7 +2081,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedPermittedTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = mockCounters.detectedPermittedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2067,14 +2094,15 @@ describe("ice-phishing bot", () => {
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
             spender: spender,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: asset,
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.4,
             }),
             Label.fromObject({
@@ -2120,7 +2148,7 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse2);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedScamPermits + 1) / (mockCounters.totalPermits + 1);
+      const mockAnomalyScore = mockCounters.detectedScamPermits / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2135,14 +2163,15 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x5050"),
             owner: owner1,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0x5050"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.9,
             }),
             Label.fromObject({
@@ -2203,8 +2232,8 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore1 = (mockCounters.detectedScamCreatorPermits + 1) / (mockCounters.totalPermits + 1);
-      const mockAnomalyScore2 = (mockCounters.detectedPermitsInfo + 1) / (mockCounters.totalPermits + 1);
+      const mockAnomalyScore1 = mockCounters.detectedScamCreatorPermits / mockCounters.totalPermits;
+      const mockAnomalyScore2 = mockCounters.detectedPermitsInfo / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2219,14 +2248,15 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x23325050"),
             owner: owner1,
-            anomalyScore: mockAnomalyScore1.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore1.toFixed(2) === "0.00" ? mockAnomalyScore1.toString() : mockAnomalyScore1.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0x23325050"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.9,
             }),
             Label.fromObject({
@@ -2247,14 +2277,15 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x23325050"),
             owner: owner1,
-            anomalyScore: mockAnomalyScore2.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: createAddress("0x23325050"),
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.2,
             }),
             Label.fromObject({
@@ -2297,7 +2328,7 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse2);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedScamApprovals + 1) / (mockCounters.totalApprovals + 1);
+      const mockAnomalyScore = mockCounters.detectedScamApprovals / mockCounters.totalApprovals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2310,14 +2341,15 @@ describe("ice-phishing bot", () => {
             scamDomains: ["www.scamDomain.com"],
             scamSpender: spender,
             owner: owner1,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.9,
             }),
             Label.fromObject({
@@ -2363,7 +2395,7 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse2);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedScamTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = mockCounters.detectedScamTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2378,14 +2410,15 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.95,
             }),
             Label.fromObject({
@@ -2403,22 +2436,32 @@ describe("ice-phishing bot", () => {
       resetInit();
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
       const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       await initialize();
+
       const suspiciousReceiver = createChecksumAddress("0xabcdabcd");
       const suspiciousContractCreator = createChecksumAddress("0xfefefe");
+
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters
       );
+
       mockGetSuspiciousContracts.mockResolvedValueOnce(
         new Set([{ address: suspiciousReceiver, creator: suspiciousContractCreator }])
       );
+
       const mockBlockEvent = { block: { timestamp: 1000 } };
+
       const axiosResponse = { data: [] };
       axios.get.mockResolvedValueOnce(axiosResponse);
+
       await handleBlock(mockBlockEvent);
+
       const mockTxEvent = {
         filterLog: jest.fn(),
         filterFunction: jest.fn(),
@@ -2454,7 +2497,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedSuspiciousTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = mockCounters.detectedSuspiciousTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2469,20 +2512,21 @@ describe("ice-phishing bot", () => {
             receiver: suspiciousReceiver,
             suspiciousContract: suspiciousReceiver,
             suspiciousContractCreator,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: suspiciousReceiver,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.6,
             }),
             Label.fromObject({
               entity: suspiciousContractCreator,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.6,
             }),
             Label.fromObject({
@@ -2500,6 +2544,9 @@ describe("ice-phishing bot", () => {
       resetInit();
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: "1" });
       const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       await initialize();
       const suspiciousContract = createChecksumAddress("0xabcdabcd");
       const suspiciousContractCreator = createChecksumAddress("0xfefefe");
@@ -2551,7 +2598,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedSuspiciousTransfers + 1) / (mockCounters.totalTransfers + 1);
+      const mockAnomalyScore = mockCounters.detectedSuspiciousTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2566,20 +2613,21 @@ describe("ice-phishing bot", () => {
             receiver: suspiciousContractCreator,
             suspiciousContract,
             suspiciousContractCreator,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: suspiciousContract,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.6,
             }),
             Label.fromObject({
               entity: suspiciousContractCreator,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.6,
             }),
             Label.fromObject({
@@ -2624,7 +2672,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = (mockCounters.detectedSuspiciousApprovals + 1) / (mockCounters.totalApprovals + 1);
+      const mockAnomalyScore = mockCounters.detectedSuspiciousApprovals / mockCounters.totalApprovals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2638,14 +2686,15 @@ describe("ice-phishing bot", () => {
             suspiciousContractCreator: spender,
             owner: owner1,
             suspiciousSpender: spender,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           addresses: [asset],
           labels: [
             Label.fromObject({
               entity: spender,
               entityType: EntityType.Address,
-              label: "Ice Phishing Attacker",
+              label: "Attacker",
               confidence: 0.5,
             }),
             Label.fromObject({

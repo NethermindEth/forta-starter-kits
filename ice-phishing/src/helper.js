@@ -38,14 +38,14 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.3,
       }),
       Label.fromObject({
@@ -75,14 +75,14 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.25,
       }),
       Label.fromObject({
@@ -112,14 +112,14 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.3,
       }),
       Label.fromObject({
@@ -149,14 +149,14 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.25,
       }),
       Label.fromObject({
@@ -185,14 +185,14 @@ function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, tx
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.2,
       }),
       Label.fromObject({
@@ -215,14 +215,14 @@ function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.15,
       }),
       Label.fromObject({
@@ -245,14 +245,14 @@ function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, t
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.2,
       }),
       Label.fromObject({
@@ -275,14 +275,14 @@ function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScor
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.15,
       }),
       Label.fromObject({
@@ -306,14 +306,14 @@ function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txHas
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.3,
       }),
       Label.fromObject({
@@ -337,14 +337,14 @@ function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, t
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.2,
       }),
       Label.fromObject({
@@ -364,7 +364,7 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
       Label.fromObject({
         entity: scamAddress,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.9,
       })
     );
@@ -389,7 +389,7 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: labels,
@@ -418,14 +418,14 @@ function createPermitScamCreatorAlert(
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.9,
       }),
       Label.fromObject({
@@ -459,14 +459,14 @@ function createPermitSuspiciousContractAlert(
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.5,
       }),
       Label.fromObject({
@@ -490,14 +490,14 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
       scamDomains,
       scamSpender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: scamSpender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.9,
       }),
       Label.fromObject({
@@ -530,14 +530,14 @@ function createApprovalSuspiciousContractAlert(
       suspiciousContract: contract,
       suspiciousContractCreator: creator,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: suspiciousSpender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.5,
       }),
       Label.fromObject({
@@ -562,14 +562,14 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
       scamCreator,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: scamCreator,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.9,
       }),
       Label.fromObject({
@@ -589,7 +589,7 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
       Label.fromObject({
         entity: scamAddress,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.95,
       })
     );
@@ -615,7 +615,7 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: labels,
@@ -643,20 +643,20 @@ function createTransferSuspiciousContractAlert(
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: suspiciousContract.address,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.6,
       }),
       Label.fromObject({
         entity: suspiciousContract.creator,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.6,
       }),
       Label.fromObject({
@@ -691,14 +691,14 @@ function createTransferScamCreatorAlert(
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: [asset],
     labels: [
       Label.fromObject({
         entity: scamAddress,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.95,
       }),
       Label.fromObject({
@@ -722,14 +722,14 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.4,
       }),
       Label.fromObject({
@@ -759,14 +759,14 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.25,
       }),
       Label.fromObject({
@@ -796,14 +796,14 @@ function createPermitTransferAlert(spender, owner, receiver, asset, value, anoma
       spender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: asset,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.4,
       }),
       Label.fromObject({
@@ -827,14 +827,14 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
       spender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: asset,
     labels: [
       Label.fromObject({
         entity: spender,
         entityType: EntityType.Address,
-        label: "Ice Phishing Attacker",
+        label: "Attacker",
         confidence: 0.3,
       }),
       Label.fromObject({

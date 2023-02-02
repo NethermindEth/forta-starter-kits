@@ -33,7 +33,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
     - Label 2:
       - `entity`: The first approval transaction hash
@@ -61,7 +61,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
     - Label 2:
       - `entity`: The first approval transaction hash
@@ -89,7 +89,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.2"
     - Label 2:
       - `entity`: The `ApprovalForAll` transaction hash
@@ -112,7 +112,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.2"
     - Label 2:
       - `entity`: The `ApprovalForAll` transaction hash
@@ -135,7 +135,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.25"
     - Label 2:
       - `entity`: The first approval transaction hash
@@ -163,7 +163,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.25"
     - Label 2:
       - `entity`: The first approval transaction hash
@@ -191,7 +191,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.15"
     - Label 2:
       - `entity`: The `ApprovalForAll` transaction hash
@@ -214,7 +214,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.15"
     - Label 2:
       - `entity`: The `ApprovalForAll` transaction hash
@@ -238,7 +238,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
     - Label 2:
       - `entity`: The `Permit`'s transaction hash
@@ -262,7 +262,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.2"
     - Label 2:
       - `entity`: The `Permit`'s transaction hash
@@ -288,7 +288,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - First Label(s):
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
       - Last Label :
         - `entity`: The `Permit`'s transaction hash
@@ -314,7 +314,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - Label 1:
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
       - Label 2:
         - `entity`: The `Permit`'s transaction hash
@@ -340,7 +340,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - Label 1:
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.5"
       - Label 2:
         - `entity`: The `Permit`'s transaction hash
@@ -364,7 +364,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - Label 1:
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
       - Label 2:
         - `entity`: The approval transaction hash
@@ -389,7 +389,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - Label 1:
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
       - Label 2:
         - `entity`: The approval transaction hash
@@ -413,7 +413,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - Label 1:
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.5"
       - Label 2:
         - `entity`: The approval transaction hash
@@ -439,7 +439,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - First Label(s):
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.95"
       - Last Label :
         - `entity`: The transfer transaction hash
@@ -465,7 +465,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - First Label(s):
         - `entity`: The attacker's address
         - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Ice Phishing Attacker"
+        - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.95"
       - Last Label :
         - `entity`: The transfer transaction hash
@@ -491,12 +491,12 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's contract address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.6"
     - Label 2:
       - `entity`: The attacker's EOA address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.6"
     - Label 3:
       - `entity`: The transfer transaction hash
@@ -519,7 +519,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.4"
     - Label 2:
       - `entity`: The first transfer's transaction hash
@@ -547,7 +547,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.25"
     - Label 2:
       - `entity`: The first transfer's transaction hash
@@ -576,7 +576,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.4"
     - Label 2:
       - `entity`: The transfer transaction hash
@@ -600,7 +600,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - Label 1:
       - `entity`: The attacker's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Ice Phishing Attacker"
+      - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.3"
     - Label 2:
       - `entity`: The transfer transaction hash
