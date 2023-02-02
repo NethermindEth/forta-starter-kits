@@ -38,9 +38,8 @@ Describe each of the type of alerts fired by this agent
     - Label 2:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The transaction hash
-      - `label`: The type of the label, always set to "Flashloan Transaction"
-      - `confidence`: The confidence level of the transaction being a flashloan (0-1). Always set to `1`.
-      
+      - `label`: The type of the label, always set to "Exploit"
+      - `confidence`: The confidence level of the transaction being an exploit (0-1). Always set to `0.6`.
 
 - FLASHLOAN-ATTACK-WITH-HIGH-PROFIT
   - Fired when a transaction contains a flashoan and the borrower made significant profit
@@ -61,8 +60,8 @@ Describe each of the type of alerts fired by this agent
     - Label 2:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The transaction hash
-      - `label`: The type of the label, always set to "Flashloan Transaction"
-      - `confidence`: The confidence level of the transaction being a flashloan (0-1). Always set to `1`.
+      - `label`: The type of the label, always set to "Exploit"
+      - `confidence`: The confidence level of the transaction being an exploit (0-1). Always set to `0.9`.
 
 ## Test Data
 
