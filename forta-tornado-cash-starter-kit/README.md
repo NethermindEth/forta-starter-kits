@@ -26,13 +26,13 @@ This bot detects when an account that was funded by Tornado Cash interacts with 
     - Label 1:
       - `entity`: The Tornado Cash funded account's address
       - `entityType`: The type of the entity, always set to "Address"
-      - `label`: The type of the label, always set to "Tornado.Cash funding recipient"
-      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to 1.
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to 0.7.
     - Label 2:
       - `entity`: The transaction hash of the Tornado Cash funded account contract interaction
       - `entityType`: The type of the entity, always set to "Transaction"
-      - `label`: The type of the label, always set to "Suspicious Transaction"
-      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to 0.7.
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to 0.7.
 
 ## Test Data
 
