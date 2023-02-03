@@ -135,11 +135,15 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       cachedFindings = [];
     }
 
+    const st = new Date();
+    console.log(`processing block ${blockNumber}`);
+
     // Only process addresses that had more funds withdrawn than deposited
     let transfers = Object.values(transfersObj)
       .filter((t) => t.value.lt(ZERO))
       .filter((t) => t.address !== ethers.constants.AddressZero)
       .filter((t) => t.blockNumber === blockNumber - 1);
+
     // If there are no transfers, but still a block in which the bot
     // should persist the values, push the values to the database
     // despite there being no transfers
@@ -148,11 +152,10 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
       return [];
     } else if (transfers.length === 0) {
+      const et = new Date();
+      console.log(`previous block processed in ${et - st}ms`);
       return [];
     }
-
-    const st = new Date();
-    console.log(`processing block ${blockNumber}`);
 
     const balanceCalls = transfers.map((e) => {
       if (e.asset === "native") {
@@ -167,10 +170,10 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
     const balancesPreDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 2);
     const balancesPostDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
 
-    // Filter for transfers where the victim's post-drain balance
-    // is 1% or less of their pre-drain balance
     let balances = [];
 
+    // Filter for transfers where the victim's post-drain balance
+    // is less than 1% of their pre-drain balance
     transfers = transfers.filter((_, i) => {
       if (
         balancesPostDrain[i]["success"] &&
@@ -191,7 +194,6 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
           "balances:",
           balancesPostDrain[i]
         );
-        console.log(transfers[i]);
       } else if (!balancesPreDrain[i]["success"]) {
         console.log(
           "Failed to get balance for address",
@@ -227,7 +229,8 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       transfers[i].symbol = s;
     });
 
-    const anomalyScore = assetDrainedTransactions / totalTransferTransactions;
+    let anomalyScore = assetDrainedTransactions / totalTransferTransactions;
+    anomalyScore = Math.min(1, anomalyScore);
     transfers.forEach((t, i) => {
       findings.push(
         Finding.fromObject({
@@ -262,13 +265,7 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
             Label.fromObject({
               entityType: EntityType.Address,
               entity: t.address,
-              label: "victim",
-              confidence: 1,
-            }),
-            Label.fromObject({
-              entityType: EntityType.Block,
-              entity: blockNumber - 1,
-              label: "block",
+              label: "Victim",
               confidence: 1,
             }),
           ],
