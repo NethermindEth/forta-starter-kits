@@ -156,7 +156,8 @@ const handleTransaction = async (txEvent) => {
     // Only alert if the current balance is zero and there is a balance change
     if (contractAssets[asset].balance.eq(zero) && !balanceChange.eq(zero)) {
       allRemovedTransactions += 1;
-      const anomalyScore = allRemovedTransactions / totalTransferTransactions;
+      let anomalyScore = allRemovedTransactions / totalTransferTransactions;
+      anomalyScore = Math.min(1, anomalyScore);
 
       findings.push(
         Finding.fromObject({
@@ -169,20 +170,20 @@ const handleTransaction = async (txEvent) => {
             firstTxHash: currentPeriodTxs[asset][0],
             lastTxHash: txEvent.hash,
             assetImpacted: asset,
-            anomalyScore: anomalyScore.toFixed(2),
+            anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: currentPeriodTxs[asset][0],
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.9,
             }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txEvent.hash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.9,
             }),
             Label.fromObject({
               entityType: EntityType.Address,
@@ -237,7 +238,8 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
           const percentage = Math.min((decrease / balanceAmount) * 100, 100);
 
           portionRemovedTransactions += 1;
-          const anomalyScore = portionRemovedTransactions / totalTransferTransactions;
+          let anomalyScore = portionRemovedTransactions / totalTransferTransactions;
+          anomalyScore = Math.min(1, anomalyScore);
 
           findings.push(
             Finding.fromObject({
@@ -251,20 +253,20 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
                 lastTxHash: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
                 assetImpacted: asset,
                 assetVolumeDecreasePercentage: percentage,
-                anomalyScore: anomalyScore.toFixed(2),
+                anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
               },
               labels: [
                 Label.fromObject({
                   entityType: EntityType.Transaction,
                   entity: currentPeriodTxs[asset][0],
-                  label: "Balance Decrease Transaction",
-                  confidence: 1,
+                  label: "Suspicious",
+                  confidence: 0.7,
                 }),
                 Label.fromObject({
                   entityType: EntityType.Transaction,
                   entity: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
-                  label: "Balance Decrease Transaction",
-                  confidence: 1,
+                  label: "Suspicious",
+                  confidence: 0.7,
                 }),
                 Label.fromObject({
                   entityType: EntityType.Address,
