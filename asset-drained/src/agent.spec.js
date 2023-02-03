@@ -249,13 +249,7 @@ describe("Asset drained bot test suite", () => {
               Label.fromObject({
                 entityType: EntityType.Address,
                 entity: address1,
-                label: "victim",
-                confidence: 1,
-              }),
-              Label.fromObject({
-                entityType: EntityType.Block,
-                entity: 9999,
-                label: "block",
+                label: "Victim",
                 confidence: 1,
               }),
             ],
@@ -355,13 +349,7 @@ describe("Asset drained bot test suite", () => {
               Label.fromObject({
                 entityType: EntityType.Address,
                 entity: address1,
-                label: "victim",
-                confidence: 1,
-              }),
-              Label.fromObject({
-                entityType: EntityType.Block,
-                entity: 9999,
-                label: "block",
+                label: "Victim",
                 confidence: 1,
               }),
             ],
