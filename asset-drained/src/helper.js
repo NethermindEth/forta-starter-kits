@@ -6,6 +6,8 @@ const TOKEN_ABI = [
   "function symbol() external view returns (string memory)",
 ];
 
+const MKR_TOKEN_ABI = ["function symbol() external view returns (bytes32)"];
+
 function hashCode(address, asset) {
   const str = address + asset;
   let hash = 0;
@@ -36,10 +38,21 @@ async function getAssetSymbol(address, cachedAssetSymbols) {
     return cachedAssetSymbols.get(address);
   }
 
-  const contract = new ethers.Contract(address, TOKEN_ABI, getEthersProvider());
+  let symbol;
+  try {
+    const contract = new ethers.Contract(address, TOKEN_ABI, getEthersProvider());
+    symbol = await contract.symbol();
+    cachedAssetSymbols.set(address, symbol);
+  } catch {
+    try {
+      const contract = new ethers.Contract(address, MKR_TOKEN_ABI, getEthersProvider());
+      symbol = ethers.utils.parseBytes32String(await contract.symbol());
+      cachedAssetSymbols.set(address, symbol);
+    } catch {
+      symbol = "";
+    }
+  }
 
-  const symbol = await contract.symbol();
-  cachedAssetSymbols.set(address, symbol);
   return symbol;
 }
 
