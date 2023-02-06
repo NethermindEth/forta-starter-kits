@@ -76,6 +76,12 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
                   },
                   labels: [
                     Label.fromObject({
+                      entity: from,
+                      entityType: EntityType.Address,
+                      label: "Attacker",
+                      confidence: 0.6,
+                    }),
+                    Label.fromObject({
                       entity: hash,
                       entityType: EntityType.Transaction,
                       label: "Suspicious",

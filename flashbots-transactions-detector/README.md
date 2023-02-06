@@ -22,11 +22,17 @@ This bot detects flashbots transactions.
     - `anomalyScore` - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `FLASHBOTS-TRANSACTIONS` out of the total number of transactions processed by this bot.
   - Addresses contain the list of contracts that were impacted
-  - Label:
-    - `entityType`: The type of the entity, always set to "Transaction"
-    - `entity`: The Flashbots' transaction hash
-    - `label`: The type of the label, always set to "Suspicious"
-    - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
+  - Labels:
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The Flashbots' transaction initiator EOA.
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.6`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The Flashbots' transaction hash
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
 
 ## Test Data
 

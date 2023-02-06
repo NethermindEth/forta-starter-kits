@@ -179,6 +179,12 @@ describe("flashbots transactions detection bot", () => {
         },
         labels: [
           Label.fromObject({
+            entity: from1,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
+          Label.fromObject({
             entity: "0x1",
             entityType: EntityType.Transaction,
             label: "Suspicious",
@@ -237,6 +243,12 @@ describe("flashbots transactions detection bot", () => {
         },
         labels: [
           Label.fromObject({
+            entity: from2,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
+          Label.fromObject({
             entity: "0x2",
             entityType: EntityType.Transaction,
             label: "Suspicious",
@@ -259,6 +271,12 @@ describe("flashbots transactions detection bot", () => {
           anomalyScore: mockAnomalyScore2.toFixed(2),
         },
         labels: [
+          Label.fromObject({
+            entity: from3,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
           Label.fromObject({
             entity: "0x3",
             entityType: EntityType.Transaction,
@@ -306,6 +324,12 @@ describe("flashbots transactions detection bot", () => {
         },
         labels: [
           Label.fromObject({
+            entity: from2,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
+          Label.fromObject({
             entity: "0x2",
             entityType: EntityType.Transaction,
             label: "Suspicious",
@@ -328,6 +352,12 @@ describe("flashbots transactions detection bot", () => {
           anomalyScore: mockAnomalyScore2.toFixed(2),
         },
         labels: [
+          Label.fromObject({
+            entity: from3,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
           Label.fromObject({
             entity: "0x3",
             entityType: EntityType.Transaction,
