@@ -229,15 +229,15 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore: anomalyScore.toFixed(2),
+            anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.9,
             }),
           ],
         })
@@ -255,15 +255,15 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore: anomalyScore.toFixed(2),
+            anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.6,
             }),
           ],
         })
@@ -281,15 +281,15 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           metadata: {
             profit: totalProfit.toFixed(2),
             tokens: tokensArray,
-            anomalyScore: anomalyScore.toFixed(2),
+            anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.9,
             }),
           ],
         })

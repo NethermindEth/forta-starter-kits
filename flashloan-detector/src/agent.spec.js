@@ -149,15 +149,18 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: highNativeUsdProfit.toFixed(2),
             tokens: [],
-            anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockHighProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockHighProfitAnomalyScore.toString()
+                : mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.9,
             }),
           ],
         }),
@@ -199,15 +202,18 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: hightokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockHighProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockHighProfitAnomalyScore.toString()
+                : mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.9,
             }),
           ],
         }),
@@ -256,15 +262,18 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: lowTokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockLowProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockLowProfitAnomalyScore.toString()
+                : mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.6,
             }),
           ],
         }),
@@ -311,15 +320,18 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: veryHighTokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockHighProfitAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockHighProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockHighProfitAnomalyScore.toString()
+                : mockHighProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.9 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.9,
             }),
           ],
         }),
@@ -376,15 +388,18 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: lowTokenUsdProfit.toFixed(2),
             tokens: [asset],
-            anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockLowProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockLowProfitAnomalyScore.toString()
+                : mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.6,
             }),
           ],
         }),
@@ -443,15 +458,18 @@ describe("flashloan detector agent", () => {
           metadata: {
             profit: lowNativeUsdProfit.toFixed(2),
             tokens: [],
-            anomalyScore: mockLowProfitAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockLowProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockLowProfitAnomalyScore.toString()
+                : mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
-              label: "Flashloan Transaction",
-              confidence: 1,
+              label: "Exploit",
+              confidence: 0.6,
             }),
           ],
         }),
