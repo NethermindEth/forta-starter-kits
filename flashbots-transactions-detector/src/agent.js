@@ -78,8 +78,8 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
                     Label.fromObject({
                       entity: hash,
                       entityType: EntityType.Transaction,
-                      label: "Flashbots Transaction",
-                      confidence: 1,
+                      label: "Suspicious",
+                      confidence: 0.7,
                     }),
                   ],
                 });
@@ -98,7 +98,10 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
     findings.map((f) => {
       totalFlashbotsTxns += 1;
       const anomalyScore = totalFlashbotsTxns / totalTxns;
-      f.metadata.anomalyScore = Math.min(1, anomalyScore).toFixed(2);
+      f.metadata.anomalyScore =
+        Math.min(1, anomalyScore).toFixed(2) === "0.00"
+          ? Math.min(1, anomalyScore).toString()
+          : Math.min(1, anomalyScore).toFixed(2);
     });
 
     cachedFindings.push(...findings);
