@@ -24,6 +24,8 @@ This bot detects if a contract has had 99% or more of one of its assets drained 
     - `contract` - the contract's address
     - `asset` - the asset's address
     - `initiators` - the EOA(s) that initiated the transaction(s)
+    - `preDrainBalance` - the pre-drain balance
+    - `postDrainBalance` - the post-drain balance
     - `txHashes` - the hash(es) of the transaction(s) in which the contract was drained
     - `blockNumber` - the block number at the time of the contract drain
     - `anomalyScore` - score of how anomalous the alert is (0-1)
