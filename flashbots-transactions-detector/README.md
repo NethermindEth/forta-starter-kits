@@ -25,7 +25,7 @@ This bot detects flashbots transactions.
   - Label:
     - `entityType`: The type of the entity, always set to "Transaction"
     - `entity`: The Flashbots' transaction hash
-    - `label`: The type of the label, always set to "Flashbots Transaction"
+    - `label`: The type of the label, always set to "Suspicious"
     - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
 
 ## Test Data
