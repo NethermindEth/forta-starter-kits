@@ -77,19 +77,19 @@ function provideHandleTranscation(ethersProvider) {
           severity: FindingSeverity.Low,
           type: FindingType.Suspicious,
           metadata: {
-            anomalyScore: anomalyScore.toFixed(2),
+            anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({
               entity: txEvent.from,
               entityType: EntityType.Address,
-              label: "Tornado.Cash funding recipient",
-              confidence: 1,
+              label: "Attacker",
+              confidence: 0.7,
             }),
             Label.fromObject({
               entity: txEvent.hash,
               entityType: EntityType.Transaction,
-              label: "Suspicious Transaction",
+              label: "Suspicious",
               confidence: 0.7,
             }),
           ],

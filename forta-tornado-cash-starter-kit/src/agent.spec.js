@@ -79,19 +79,20 @@ describe("TornadoCash contract interactions", () => {
         severity: FindingSeverity.Low,
         type: FindingType.Suspicious,
         metadata: {
-          anomalyScore: mockAnomalyScore.toFixed(2),
+          anomalyScore:
+            mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
         },
         labels: [
           Label.fromObject({
             entity: mockTxEvent.transaction.from,
             entityType: EntityType.Address,
-            label: "Tornado.Cash funding recipient",
-            confidence: 1,
+            label: "Attacker",
+            confidence: 0.7,
           }),
           Label.fromObject({
             entity: mockTxEvent.transaction.hash,
             entityType: EntityType.Transaction,
-            label: "Suspicious Transaction",
+            label: "Suspicious",
             confidence: 0.7,
           }),
         ],
