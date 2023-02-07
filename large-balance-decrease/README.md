@@ -16,8 +16,6 @@ Detects if the balance of a protocol decreases significantly.
 
 ## Alerts
 
-Describe each of the type of alerts fired by this bot
-
 - BALANCE-DECREASE-ASSETS-ALL-REMOVED
 
   - Fired when the token balance of a protocol is completely drained
@@ -34,13 +32,13 @@ Describe each of the type of alerts fired by this bot
     - Label 1:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The `firstTxhash`
-      - `label`: The type of the label, always set to "Balance Decrease Transaction"
-      - `confidence`: The confidence level of it being a balance decreasing transaction (0-1). Always set to `1`.
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.9`.
     - Label 2:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The `lastTxHash`
-      - `label`: The type of the label, always set to "Balance Decrease Transaction"
-      - `confidence`: The confidence level of it being a balance decreasing transaction (0-1). Always set to `1`.
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.9`.
     - Label 3:
       - `entityType`: The type of the entity, always set to "Address"
       - `entity`: The monitored contract address
@@ -63,13 +61,13 @@ Describe each of the type of alerts fired by this bot
     - Label 1:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The `firstTxhash`
-      - `label`: The type of the label, always set to "Balance Decrease Transaction"
-      - `confidence`: The confidence level of it being a balance decreasing transaction (0-1). Always set to `1`.
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
     - Label 2:
       - `entityType`: The type of the entity, always set to "Transaction"
       - `entity`: The `lastTxHash`
-      - `label`: The type of the label, always set to "Balance Decrease Transaction"
-      - `confidence`: The confidence level of it being a balance decreasing transaction (0-1). Always set to `1`.
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
     - Label 3:
       - `entityType`: The type of the entity, always set to "Address"
       - `entity`: The monitored contract address

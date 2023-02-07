@@ -54,7 +54,7 @@ const mockAllTransfersKey = "mock-all-transfers-bot-key";
 
 const allRemovedTransfers = 6;
 const portionRemovedTransfers = 9;
-const totalTransferTransactions = 33;
+const totalTransferTransactions = 3300000;
 
 describe("large balance decrease bot", () => {
   const mockProvider = {
@@ -188,20 +188,21 @@ describe("large balance decrease bot", () => {
             firstTxHash: txHash,
             lastTxHash: txHash,
             assetImpacted: asset,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txHash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.9,
             }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txHash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.9,
             }),
             Label.fromObject({
               entityType: EntityType.Address,
@@ -243,20 +244,21 @@ describe("large balance decrease bot", () => {
             firstTxHash: txHash,
             lastTxHash: txHash,
             assetImpacted: "native",
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txHash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.9,
             }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txHash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.9,
             }),
             Label.fromObject({
               entityType: EntityType.Address,
@@ -369,20 +371,21 @@ describe("large balance decrease bot", () => {
             lastTxHash: txHash,
             assetImpacted: asset,
             assetVolumeDecreasePercentage: 1000 / 100,
-            anomalyScore: mockAnomalyScore.toFixed(2),
+            anomalyScore:
+              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txHash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.7,
             }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: txHash,
-              label: "Balance Decrease Transaction",
-              confidence: 1,
+              label: "Suspicious",
+              confidence: 0.7,
             }),
             Label.fromObject({
               entityType: EntityType.Address,
