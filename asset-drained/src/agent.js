@@ -232,6 +232,22 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
     let anomalyScore = assetDrainedTransactions / totalTransferTransactions;
     anomalyScore = Math.min(1, anomalyScore);
     transfers.forEach((t, i) => {
+      const initiators = [
+        ...new Set(
+          Object.values(t.txs)
+            .flat()
+            .map((tx) => tx.txFrom)
+        ),
+      ];
+      const attackerLabels = initiators.map((txFrom) =>
+        Label.fromObject({
+          entityType: EntityType.Address,
+          entity: txFrom,
+          label: "Attacker",
+          confidence: 0.5,
+        })
+      );
+
       findings.push(
         Finding.fromObject({
           name: "Asset drained",
@@ -242,13 +258,7 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
           metadata: {
             contract: t.address,
             asset: t.asset,
-            initiators: [
-              ...new Set(
-                Object.values(t.txs)
-                  .flat()
-                  .map((tx) => tx.txFrom)
-              ),
-            ],
+            initiators,
             preDrainBalance: balances[i][0],
             postDrainBalance: balances[i][1],
             txHashes: [
@@ -268,6 +278,7 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
               label: "Victim",
               confidence: 1,
             }),
+            ...attackerLabels,
           ],
           addresses: [...new Set(Object.keys(t.txs))],
         })

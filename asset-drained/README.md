@@ -31,11 +31,17 @@ This bot detects if a contract has had 99% or more of one of its assets drained 
     - `anomalyScore` - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ASSET-DRAINED` transactions out of the total number of ERC20 transfers processed by this bot.
         - Note: score differs based on chain.
-  - Label:
-    - `entityType`: The type of the entity, always set to "Address"
-    - `entity`: The victim's address
-    - `label`: The type of the label, always set to "Victim"
-    - `confidence`: The confidence level of the address being a victim (0-1). Always set to `1`.
+  - Labels:
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The victim's address
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim (0-1). Always set to `1`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The initiator EOA's address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being a victim (0-1). Always set to `0.5`.
   - Addresses contain the list of addresses that received the assets from the drained contract
 
 ## Test Data
