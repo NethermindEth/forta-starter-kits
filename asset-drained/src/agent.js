@@ -135,10 +135,15 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       cachedFindings = [];
     }
 
+    const st = new Date();
+    console.log(`processing block ${blockNumber}`);
+
     // Only process addresses that had more funds withdrawn than deposited
     let transfers = Object.values(transfersObj)
       .filter((t) => t.value.lt(ZERO))
-      .filter((t) => t.address !== ethers.constants.AddressZero);
+      .filter((t) => t.address !== ethers.constants.AddressZero)
+      .filter((t) => t.blockNumber === blockNumber - 1);
+
     // If there are no transfers, but still a block in which the bot
     // should persist the values, push the values to the database
     // despite there being no transfers
@@ -147,11 +152,10 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       await persistenceHelper.persist(totalTransferTransactions, allTransfersKey.concat("-", chainId));
       return [];
     } else if (transfers.length === 0) {
+      const et = new Date();
+      console.log(`previous block processed in ${et - st}ms`);
       return [];
     }
-
-    const st = new Date();
-    console.log(`processing block ${blockNumber}`);
 
     const balanceCalls = transfers.map((e) => {
       if (e.asset === "native") {
@@ -166,24 +170,57 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
     const balancesPreDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 2);
     const balancesPostDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
 
+    let balances = [];
+
     // Filter for transfers where the victim's post-drain balance
-    // is 1% or less of their pre-drain balance
-    transfers = transfers.filter(
-      (_, i) =>
+    // is less than 1% of their pre-drain balance
+    transfers = transfers.filter((_, i) => {
+      if (
         balancesPostDrain[i]["success"] &&
         balancesPreDrain[i]["success"] &&
-        // Balance check: less than or equal to 1% of pre drain balance
-        balancesPostDrain[i]["returnData"].lte(balancesPreDrain[i]["returnData"].div(100))
-    );
+        // Balance check: less than 1% of pre drain balance
+        ethers.BigNumber.from(balancesPostDrain[i]["returnData"]).lt(
+          ethers.BigNumber.from(balancesPreDrain[i]["returnData"].div(100))
+        )
+      ) {
+        balances.push([balancesPreDrain[i]["returnData"].toString(), balancesPostDrain[i]["returnData"].toString()]);
+        return true;
+      } else if (!balancesPostDrain[i]["success"]) {
+        console.log(
+          "Failed to get balance for address",
+          transfers[i].address,
+          "on block",
+          blockNumber - 1,
+          "balances:",
+          balancesPostDrain[i]
+        );
+      } else if (!balancesPreDrain[i]["success"]) {
+        console.log(
+          "Failed to get balance for address",
+          transfers[i].address,
+          "on block",
+          blockNumber - 2,
+          "balances:",
+          balancesPreDrain[i]
+        );
+      }
+      return false;
+    });
 
     // Filter out events to EOAs
     transfers = await Promise.all(
-      transfers.map(async (event) => {
+      transfers.map(async (event, i) => {
         const type = await getAddressType(event.address, cachedAddresses);
-        return type === AddressType.Contract ? event : null;
+        if (type === AddressType.Contract) {
+          return event;
+        } else {
+          balances[i] = null;
+          return null;
+        }
       })
     );
     transfers = transfers.filter((e) => !!e);
+    balances = balances.filter((e) => !!e);
     assetDrainedTransactions += transfers.length;
 
     const symbols = await Promise.all([...transfers.map((event) => getAssetSymbol(event.asset, cachedAssetSymbols))]);
@@ -192,8 +229,25 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
       transfers[i].symbol = s;
     });
 
-    const anomalyScore = assetDrainedTransactions / totalTransferTransactions;
-    transfers.forEach((t) => {
+    let anomalyScore = assetDrainedTransactions / totalTransferTransactions;
+    anomalyScore = Math.min(1, anomalyScore);
+    transfers.forEach((t, i) => {
+      const initiators = [
+        ...new Set(
+          Object.values(t.txs)
+            .flat()
+            .map((tx) => tx.txFrom)
+        ),
+      ];
+      const attackerLabels = initiators.map((txFrom) =>
+        Label.fromObject({
+          entityType: EntityType.Address,
+          entity: txFrom,
+          label: "Attacker",
+          confidence: 0.5,
+        })
+      );
+
       findings.push(
         Finding.fromObject({
           name: "Asset drained",
@@ -204,13 +258,9 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
           metadata: {
             contract: t.address,
             asset: t.asset,
-            initiators: [
-              ...new Set(
-                Object.values(t.txs)
-                  .flat()
-                  .map((tx) => tx.txFrom)
-              ),
-            ],
+            initiators,
+            preDrainBalance: balances[i][0],
+            postDrainBalance: balances[i][1],
             txHashes: [
               ...new Set(
                 Object.values(t.txs)
@@ -219,21 +269,16 @@ const provideHandleBlock = (persistenceHelper, assetDrainedTxnKey, allTransfersK
               ),
             ],
             blockNumber: t.blockNumber,
-            anomalyScore: anomalyScore.toFixed(2),
+            anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
           },
           labels: [
             Label.fromObject({
               entityType: EntityType.Address,
               entity: t.address,
-              label: "Asset Drained Victim",
+              label: "Victim",
               confidence: 1,
             }),
-            Label.fromObject({
-              entityType: EntityType.Block,
-              entity: blockNumber - 1,
-              label: "Asset Drained Block",
-              confidence: 1,
-            }),
+            ...attackerLabels,
           ],
           addresses: [...new Set(Object.keys(t.txs))],
         })

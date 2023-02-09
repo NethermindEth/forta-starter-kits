@@ -24,6 +24,8 @@ This bot detects if a contract has had 99% or more of one of its assets drained 
     - `contract` - the contract's address
     - `asset` - the asset's address
     - `initiators` - the EOA(s) that initiated the transaction(s)
+    - `preDrainBalance` - the pre-drain balance
+    - `postDrainBalance` - the post-drain balance
     - `txHashes` - the hash(es) of the transaction(s) in which the contract was drained
     - `blockNumber` - the block number at the time of the contract drain
     - `anomalyScore` - score of how anomalous the alert is (0-1)
@@ -33,13 +35,13 @@ This bot detects if a contract has had 99% or more of one of its assets drained 
     - Label 1:
       - `entityType`: The type of the entity, always set to "Address"
       - `entity`: The victim's address
-      - `label`: The type of the label, always set to "Asset Drained Victim"
-      - `confidence`: The confidence level of it being an asset draining transaction (0-1). Always set to `1`.
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim (0-1). Always set to `1`.
     - Label 2:
-      - `entityType`: The type of the entity, always set to "Block"
-      - `entity`: The block at the time of the contract drain
-      - `label`: The type of the label, always set to "Asset Drained Block"
-      - `confidence`: The confidence level of it being an asset draining transaction (0-1). Always set to `1`.
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The initiator EOA's address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being a victim (0-1). Always set to `0.5`.
   - Addresses contain the list of addresses that received the assets from the drained contract
 
 ## Test Data

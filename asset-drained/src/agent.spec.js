@@ -239,6 +239,8 @@ describe("Asset drained bot test suite", () => {
               contract: address1,
               asset,
               initiators: [address4],
+              preDrainBalance: "1000",
+              postDrainBalance: "5",
               txHashes: [ethers.utils.formatBytes32String("0x2352352")],
               blockNumber: 9999,
               anomalyScore: mockAnomalyScore.toFixed(2),
@@ -247,19 +249,46 @@ describe("Asset drained bot test suite", () => {
               Label.fromObject({
                 entityType: EntityType.Address,
                 entity: address1,
-                label: "Asset Drained Victim",
+                label: "Victim",
                 confidence: 1,
               }),
               Label.fromObject({
-                entityType: EntityType.Block,
-                entity: 9999,
-                label: "Asset Drained Block",
-                confidence: 1,
+                entityType: EntityType.Address,
+                entity: address4,
+                label: "Attacker",
+                confidence: 0.5,
               }),
             ],
             addresses: [address2],
           }),
         ]);
+      });
+
+      it("should not create an alert if the contract already had a 0 balance", async () => {
+        const mockTransferEvent1 = {
+          address: asset,
+          args: {
+            from: address1,
+            to: address2,
+            value: ethers.BigNumber.from(995),
+          },
+        };
+        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]);
+        // Balance call for pre-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(0) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(50) }, // Exploiter (address2)
+        ]);
+        // Balance call for post-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(0) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(1045) }, // Exploiter (address2)
+        ]);
+
+        await handleTransaction(mockTxEvent);
+        const findings = await handleBlock(mockBlockEvent);
+        expect(mockEthcallProviderTryAll).toHaveBeenCalledTimes(2);
+        expect(findings).toStrictEqual([]);
       });
 
       it("should alert if there are contracts with assets fully drained in more than one tx in the same block", async () => {
@@ -313,6 +342,8 @@ describe("Asset drained bot test suite", () => {
               contract: address1,
               asset,
               initiators: [address4, address5],
+              preDrainBalance: "1000",
+              postDrainBalance: "7",
               txHashes: [
                 ethers.utils.formatBytes32String("0x2352352"),
                 ethers.utils.formatBytes32String("0x442352352"),
@@ -324,14 +355,20 @@ describe("Asset drained bot test suite", () => {
               Label.fromObject({
                 entityType: EntityType.Address,
                 entity: address1,
-                label: "Asset Drained Victim",
+                label: "Victim",
                 confidence: 1,
               }),
               Label.fromObject({
-                entityType: EntityType.Block,
-                entity: 9999,
-                label: "Asset Drained Block",
-                confidence: 1,
+                entityType: EntityType.Address,
+                entity: address4,
+                label: "Attacker",
+                confidence: 0.5,
+              }),
+              Label.fromObject({
+                entityType: EntityType.Address,
+                entity: address5,
+                label: "Attacker",
+                confidence: 0.5,
               }),
             ],
             addresses: [address2, address3],
