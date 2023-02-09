@@ -43,7 +43,17 @@ Detects if the balance of a protocol decreases significantly.
       - `entityType`: The type of the entity, always set to "Address"
       - `entity`: The monitored contract address
       - `label`: The type of the label, always set to "Victim"
-      - `confidence`: The confidence level of it being a balance decreasing transaction (0-1). Always set to `0.9`.
+      - `confidence`: The confidence level of the address being a victim (0-1). Always set to `0.9`.
+    - Label 4:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The first transaction's initiator address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to `0.9`.
+    - Label 5:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The last transaction's initiator address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to `0.9`.
 
 - BALANCE-DECREASE-ASSETS-PORTION-REMOVED
   - Fired when the token balance of a protocol decreases significantly
@@ -72,7 +82,17 @@ Detects if the balance of a protocol decreases significantly.
       - `entityType`: The type of the entity, always set to "Address"
       - `entity`: The monitored contract address
       - `label`: The type of the label, always set to "Victim"
-      - `confidence`: The confidence level of it being a balance decreasing transaction (0-1). Always set to `0.7`.
+      - `confidence`: The confidence level of the address being a victim (0-1). Always set to `0.7`.
+    - Label 4:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The first transaction's initiator address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to `0.7`.
+    - Label 5:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The last transaction's initiator address
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker (0-1). Always set to `0.7`.
 
 ## [Bot Setup Walkthrough](SETUP.md)
 

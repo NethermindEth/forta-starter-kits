@@ -106,7 +106,7 @@ const handleTransaction = async (txEvent) => {
 
     if (contractAddress === from.toLowerCase()) {
       // Update the balance for the asset and the data for the current period
-      currentPeriodTxs[asset].push(txEvent.hash);
+      currentPeriodTxs[asset].push([txEvent.hash, txEvent.from]);
       currentPeriodDecreaseAmounts[asset] = currentPeriodDecreaseAmounts[asset].add(value);
 
       balanceChanges[asset] = balanceChanges[asset] ? balanceChanges[asset].sub(value) : value.mul(-1);
@@ -138,7 +138,7 @@ const handleTransaction = async (txEvent) => {
       if (contractAddress === from) {
         totalTransferTransactions += 1;
 
-        currentPeriodTxs.native.push(txEvent.hash);
+        currentPeriodTxs.native.push([txEvent.hash, txEvent.from]);
 
         balanceChanges.native = balanceChanges.native ? balanceChanges.native.sub(val) : val.mul(-1);
       }
@@ -167,7 +167,7 @@ const handleTransaction = async (txEvent) => {
           severity: FindingSeverity.Critical,
           type: FindingType.Exploit,
           metadata: {
-            firstTxHash: currentPeriodTxs[asset][0],
+            firstTxHash: currentPeriodTxs[asset][0][0],
             lastTxHash: txEvent.hash,
             assetImpacted: asset,
             anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
@@ -175,7 +175,7 @@ const handleTransaction = async (txEvent) => {
           labels: [
             Label.fromObject({
               entityType: EntityType.Transaction,
-              entity: currentPeriodTxs[asset][0],
+              entity: currentPeriodTxs[asset][0][0],
               label: "Suspicious",
               confidence: 0.9,
             }),
@@ -189,6 +189,18 @@ const handleTransaction = async (txEvent) => {
               entityType: EntityType.Address,
               entity: contractAddress,
               label: "Victim",
+              confidence: 0.9,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: currentPeriodTxs[asset][0][1],
+              label: "Attacker",
+              confidence: 0.9,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: txEvent.from,
+              label: "Attacker",
               confidence: 0.9,
             }),
           ],
@@ -249,8 +261,8 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
               severity: FindingSeverity.Medium,
               type: FindingType.Exploit,
               metadata: {
-                firstTxHash: currentPeriodTxs[asset][0],
-                lastTxHash: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
+                firstTxHash: currentPeriodTxs[asset][0][0],
+                lastTxHash: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1][0],
                 assetImpacted: asset,
                 assetVolumeDecreasePercentage: percentage,
                 anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
@@ -258,13 +270,13 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
               labels: [
                 Label.fromObject({
                   entityType: EntityType.Transaction,
-                  entity: currentPeriodTxs[asset][0],
+                  entity: currentPeriodTxs[asset][0][0],
                   label: "Suspicious",
                   confidence: 0.7,
                 }),
                 Label.fromObject({
                   entityType: EntityType.Transaction,
-                  entity: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1],
+                  entity: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1][0],
                   label: "Suspicious",
                   confidence: 0.7,
                 }),
@@ -272,6 +284,18 @@ const provideHandleBlock = (persistenceHelper, allRemovedKey, portionRemovedKey,
                   entityType: EntityType.Address,
                   entity: contractAddress,
                   label: "Victim",
+                  confidence: 0.7,
+                }),
+                Label.fromObject({
+                  entityType: EntityType.Address,
+                  entity: currentPeriodTxs[asset][0][1],
+                  label: "Attacker",
+                  confidence: 0.7,
+                }),
+                Label.fromObject({
+                  entityType: EntityType.Address,
+                  entity: currentPeriodTxs[asset][currentPeriodTxs[asset].length - 1][1],
+                  label: "Attacker",
                   confidence: 0.7,
                 }),
               ],

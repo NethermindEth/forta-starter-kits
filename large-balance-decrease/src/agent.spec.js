@@ -70,6 +70,7 @@ describe("large balance decrease bot", () => {
   describe("handleTransaction", () => {
     const mockTxEvent = {
       blockNumber: 1000,
+      from: "0x01",
       hash: txHash,
       filterLog: jest.fn(),
       traces: [],
@@ -210,6 +211,18 @@ describe("large balance decrease bot", () => {
               label: "Victim",
               confidence: 0.9,
             }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: "0x01",
+              label: "Attacker",
+              confidence: 0.9,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: "0x01",
+              label: "Attacker",
+              confidence: 0.9,
+            }),
           ],
         }),
       ]);
@@ -264,6 +277,18 @@ describe("large balance decrease bot", () => {
               entityType: EntityType.Address,
               entity: contractAddress,
               label: "Victim",
+              confidence: 0.9,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: "0x01",
+              label: "Attacker",
+              confidence: 0.9,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: "0x01",
+              label: "Attacker",
               confidence: 0.9,
             }),
           ],
@@ -329,6 +354,7 @@ describe("large balance decrease bot", () => {
       // Create transaction that contains a withdraw of 100 tokens
       const mockTxEvent = {
         blockNumber: 1000,
+        from: "0x1",
         hash: txHash,
         filterLog: jest.fn(),
         traces: [],
@@ -391,6 +417,18 @@ describe("large balance decrease bot", () => {
               entityType: EntityType.Address,
               entity: contractAddress,
               label: "Victim",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: "0x1",
+              label: "Attacker",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: "0x1",
+              label: "Attacker",
               confidence: 0.7,
             }),
           ],
