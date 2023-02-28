@@ -145,14 +145,14 @@ module.exports = {
     });
 
     if (decimalCalls.length > 0) {
-      const decimals = await ethcallProvider.all(decimalCalls);
+      const results = await ethcallProvider.all(decimalCalls);
 
-      if (!decimals[0]) {
+      if (!results[0]) {
         return;
       }
 
       newTokens.forEach((address, index) => {
-        tokenDecimals[address] = decimals[1][index];
+        tokenDecimals[address] = results[1][index];
       });
     }
 
