@@ -31,8 +31,8 @@
   "dependencies": {
     "axios": "^0.27.2",
     "dotenv": "^16.0.3",
-    "ethers-multicall": "^0.2.3",
     "forta-agent": "^0.1.17",
+    "forta-agent-tools": "^3.2.6",
     "node-fetch": "^2.6.7"
   },
   "devDependencies": {

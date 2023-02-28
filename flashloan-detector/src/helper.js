@@ -1,12 +1,12 @@
 /* eslint-disable no-plusplus */
 const { ethers, getEthersProvider, getTransactionReceipt } = require("forta-agent");
-const { Contract, Provider } = require("ethers-multicall");
+const { MulticallContract, MulticallProvider } = require("forta-agent-tools/lib/utils");
 const axios = require("axios").default;
 
 const zero = ethers.constants.Zero;
 const ABI = ["function decimals() external view returns (uint8)"];
 
-const ethcallProvider = new Provider(getEthersProvider());
+const ethcallProvider = new MulticallProvider(getEthersProvider());
 
 const tokenDecimals = {};
 
@@ -140,15 +140,19 @@ module.exports = {
     const newTokens = Object.keys(nonZeroProfits).filter((address) => !tokenDecimals[address]);
 
     const decimalCalls = newTokens.map((address) => {
-      const contract = new Contract(address, ABI);
+      const contract = new MulticallContract(address, ABI);
       return contract.decimals();
     });
 
     if (decimalCalls.length > 0) {
       const decimals = await ethcallProvider.all(decimalCalls);
 
+      if (!decimals[0]) {
+        return;
+      }
+
       newTokens.forEach((address, index) => {
-        tokenDecimals[address] = decimals[index];
+        tokenDecimals[address] = decimals[1][index];
       });
     }
 
@@ -188,8 +192,15 @@ module.exports = {
     }
 
     if (!tokenDecimals[asset]) {
-      const contract = new Contract(asset, ABI);
-      const [decimals] = await ethcallProvider.all([contract.decimals()]);
+      const contract = new MulticallContract(asset, ABI);
+      const results = await ethcallProvider.all([contract.decimals()]);
+
+      if (!results[0]) {
+        return;
+      }
+
+      const [decimals] = results[1];
+
       tokenDecimals[asset] = decimals;
     }
 
