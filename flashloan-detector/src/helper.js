@@ -148,7 +148,7 @@ module.exports = {
       const results = await ethcallProvider.all(decimalCalls);
 
       if (!results[0]) {
-        return;
+        return 0;
       }
 
       newTokens.forEach((address, index) => {
@@ -196,7 +196,7 @@ module.exports = {
       const results = await ethcallProvider.all([contract.decimals()]);
 
       if (!results[0]) {
-        return;
+        return ethers.constants.MaxUint256;
       }
 
       const [decimals] = results[1];
