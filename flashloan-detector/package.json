@@ -1,6 +1,6 @@
 {
   "name": "flashloan-detection-bot",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Forta bot that detects if a transaction contains a flashloan and the borrower made significant profit",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/flashloan-detector",
   "chainIds": [
@@ -12,6 +12,12 @@
     42161,
     43114
   ],
+  "chainSettings": {
+    "default": {
+      "shards": 3,
+      "target": 1
+    }
+  },
   "scripts": {
     "start": "npm run start:dev",
     "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec \"forta-agent run\"",
@@ -31,8 +37,8 @@
   "dependencies": {
     "axios": "^0.27.2",
     "dotenv": "^16.0.3",
-    "ethers-multicall": "^0.2.3",
-    "forta-agent": "^0.1.17",
+    "forta-agent": "^0.1.19",
+    "forta-agent-tools": "^3.2.6",
     "node-fetch": "^2.6.7"
   },
   "devDependencies": {
