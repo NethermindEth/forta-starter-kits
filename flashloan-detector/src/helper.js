@@ -184,11 +184,13 @@ module.exports = {
   },
   async calculateBorrowedAmount(asset, amount, chain) {
     const response = await axios.get(getTokenPrice(chain, asset));
-    const usdPrice = response.data[asset].usd;
+    let usdPrice;
 
-    //Setting a high price to avoid false positives as it's a borrowed amount
     if (!response.data[asset]) {
+      //Setting a high price to avoid false positives as it's a borrowed amount
       usdPrice = 1_000_000;
+    } else {
+      usdPrice = response.data[asset].usd;
     }
 
     if (!tokenDecimals[asset]) {
