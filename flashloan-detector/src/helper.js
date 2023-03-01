@@ -10,12 +10,42 @@ const ethcallProvider = new MulticallProvider(getEthersProvider());
 
 const tokenDecimals = {};
 
-function getTokenPrice(chain, asset) {
-  return `https://api.coingecko.com/api/v3/simple/token_price/${chain}?contract_addresses=${asset}&vs_currencies=usd`;
+async function getTokenPrice(chain, asset) {
+  const url = `https://api.coingecko.com/api/v3/simple/token_price/${chain}?contract_addresses=${asset}&vs_currencies=usd`;
+
+  const retryCount = 3;
+  for (let i = 0; i < retryCount; i++) {
+    let response;
+
+    try {
+      response = await axios.get(url);
+    } catch (error) {}
+
+    if (response && response.data[asset]) {
+      return response.data[asset].usd;
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
 }
 
-function getNativeTokenPrice(chain) {
-  return `https://api.coingecko.com/api/v3/simple/price?ids=${chain}&vs_currencies=usd`;
+async function getNativeTokenPrice(chain) {
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${chain}&vs_currencies=usd`;
+
+  const retryCount = 3;
+  for (let i = 0; i < retryCount; i++) {
+    let response;
+
+    try {
+      response = await axios.get(url);
+    } catch (error) {}
+
+    if (response && response.data[chain]) {
+      return response.data[chain].usd;
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
 }
 
 function getChainByChainId(chainId) {
@@ -159,10 +189,8 @@ module.exports = {
     // Calculate the usd profit based on the amount and the price
     const usdTokenProfits = await Promise.all(
       Object.entries(nonZeroProfits).map(async ([address, profit]) => {
-        const response = await axios.get(getTokenPrice(chain, address));
-        if (!response.data[address]) return 0;
-
-        const usdPrice = response.data[address].usd;
+        const usdPrice = await getTokenPrice(chain, address);
+        if (!usdPrice) return 0;
 
         const tokenAmount = ethers.utils.formatUnits(profit, tokenDecimals[address]);
         return tokenAmount * usdPrice;
@@ -174,24 +202,15 @@ module.exports = {
     return totalTokensProfit;
   },
   async calculateNativeUsdProfit(amount, token) {
-    const response = await axios.get(getNativeTokenPrice(token));
-    if (!response.data[token]) return 0;
+    const usdPrice = await getNativeTokenPrice(token);
 
-    const usdPrice = response.data[token].usd;
+    if (!usdPrice) return 0;
 
     const tokenAmount = ethers.utils.formatEther(amount);
     return tokenAmount * usdPrice;
   },
   async calculateBorrowedAmount(asset, amount, chain) {
-    const response = await axios.get(getTokenPrice(chain, asset));
-    let usdPrice;
-
-    if (!response.data[asset]) {
-      //Setting a high price to avoid false positives as it's a borrowed amount
-      usdPrice = 1_000_000;
-    } else {
-      usdPrice = response.data[asset].usd;
-    }
+    const usdPrice = (await getTokenPrice(chain, asset)) || 1_000_000; // Setting a high price to avoid false positives as it's a borrowed amount
 
     if (!tokenDecimals[asset]) {
       const contract = new MulticallContract(asset, ABI);
