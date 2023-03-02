@@ -6,6 +6,7 @@ const TIME_PERIOD = timePeriodDays * ONE_DAY;
 const ADDRESS_ZERO = ethers.constants.AddressZero;
 const MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID = "0x0b241032ca430d9c02eaa6a52d217bbff046f0d1b3f3d2aa928e42a97150ec91";
 const safeBatchTransferFrom1155Sig = "2eb2c2d6";
+const MAX_OBJECT_SIZE = 9 * 1024 * 1024; // 9 MB
 
 const permitFunctionABI =
   "function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external";
