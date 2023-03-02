@@ -26,13 +26,15 @@ class PersistenceHelper {
         if (response.ok) {
           console.log(`successfully persisted ${value} to database`);
           return;
+        } else {
+          console.log(response.status, response.statusText);
         }
       } catch (e) {
         console.log(`failed to persist ${value} to database. Error: ${e}`);
       }
     } else {
       // Persist locally
-      writeFileSync(key, value.toString());
+      writeFileSync(key, JSON.stringify(value));
       return;
     }
   }
@@ -47,16 +49,19 @@ class PersistenceHelper {
 
         if (response.ok) {
           const data = await response.json();
-          const value = parseInt(data);
-          console.log(`successfully fetched ${value} from database`);
-          return value;
+          console.log(data, typeof data);
+          //const value = parseInt(data);
+          console.log("successfully fetched", data, "from database");
+          return data;
         } else {
           console.log(`${key} has no database entry`);
           // If this is the first bot instance that is deployed,
           // the database will not have data to return,
           // thus return zero to assign value to the variables
           // necessary
-          return 0;
+          if (key.endsWith("2")) {
+            return 0;
+          } else return {};
         }
       } catch (e) {
         console.log(`Error in fetching data.`);
@@ -65,8 +70,9 @@ class PersistenceHelper {
     } else {
       // Checking if it exists locally
       if (existsSync(key)) {
-        const data = readFileSync(key);
-        return parseInt(data.toString());
+        let data;
+        data = JSON.parse(readFileSync(key).toString());
+        return data;
       } else {
         console.log(`file ${key} does not exist`);
         // If this is the first bot instance that is deployed,
