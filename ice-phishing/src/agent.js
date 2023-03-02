@@ -30,6 +30,8 @@ const {
   getBalance,
   getERC1155Balance,
   getSuspiciousContracts,
+  getTransactions,
+  checkObjectSizeAndCleanup,
 } = require("./helper");
 const {
   approveCountThreshold,
@@ -40,6 +42,7 @@ const {
 const {
   TIME_PERIOD,
   ADDRESS_ZERO,
+  MAX_OBJECT_SIZE,
   safeBatchTransferFrom1155Sig,
   permitFunctionABI,
   daiPermitFunctionABI,
@@ -53,7 +56,7 @@ const {
 const AddressType = require("./address-type");
 const { PersistenceHelper } = require("./persistence.helper");
 
-const approvals = {};
+let approvals = {};
 const approvalsERC20 = {};
 const approvalsERC721 = {};
 const approvalsForAll721 = {};
@@ -74,9 +77,51 @@ let scamAddresses = [];
 // 100_000 addresses are 10MB
 const cachedAddresses = new LRU({ max: 100_000 });
 
+const cachedERC1155Tokens = new LRU({ max: 100_000 });
+
 let chainId;
 
+let transactionsProcessed = 0;
+let lastBlock = 0;
+let scamSnifferDB = {
+  data: {},
+};
+
 const DATABASE_URL = "https://research.forta.network/database/bot/";
+
+const DATABASE_OBJECTS_KEYS = {
+  approvals: "nm-icephishing-bot-approvals-key",
+  approvalsERC20: "nm-icephishing-bot-approvals-erc20-key",
+  approvalsERC721: "nm-icephishing-bot-approvals-erc721-key",
+  approvalsForAll721: "nm-icephishing-bot-approvals-for-all-721-key",
+  approvalsForAll1155: "nm-icephishing-bot-approvals-for-all-1155-key",
+  approvalsInfoSeverity: "nm-icephishing-bot-approvals-info-severity-key",
+  approvalsERC20InfoSeverity: "nm-icephishing-bot-approvals-erc20-info-severity-key",
+  approvalsERC721InfoSeverity: "nm-icephishing-bot-approvals-erc721-info-severity-key",
+  approvalsForAll721InfoSeverity: "nm-icephishing-bot-approvals-for-all-721-info-severity-key",
+  approvalsForAll1155InfoSeverity: "nm-icephishing-bot-approvals-for-all-1155-info-severity-key",
+  permissions: "nm-icephishing-bot-permissions-key",
+  permissionsInfoSeverity: "nm-icephishing-bot-permissions-info-severity-key",
+  transfers: "nm-icephishing-bot-transfers-key",
+  transfersLowSeverity: "nm-icephishing-bot-transfers-low-severity-key",
+};
+
+const objectsArray = [
+  approvals,
+  approvalsERC20,
+  approvalsERC721,
+  approvalsForAll721,
+  approvalsForAll1155,
+  approvalsInfoSeverity,
+  approvalsERC20InfoSeverity,
+  approvalsERC721InfoSeverity,
+  approvalsForAll721InfoSeverity,
+  approvalsForAll1155InfoSeverity,
+  permissions,
+  permissionsInfoSeverity,
+  transfers,
+  transfersLowSeverity,
+];
 
 const DATABASE_KEYS = {
   totalPermits: "nm-icephishing-bot-total-permits-key",
@@ -157,11 +202,44 @@ const provideInitialize = (provider, persistenceHelper, databaseKeys, counters) 
     }
   };
 };
+let currentTx = 0;
+let transactions = [];
 
-const provideHandleTransaction = (provider, counters) => async (txEvent) => {
+const provideHandleTransaction = (provider, counters, persistenceHelper) => async (txEvent) => {
   const findings = [];
 
   const { hash, timestamp, blockNumber, from: f } = txEvent;
+
+  // console.log(transactions.length, transactions);
+
+  // console.log(transactions[currentTx].hash === hash);
+  // if (currentTx === transactions.length - 1) {
+  //   currentTx = 0;
+  // } else {
+  //   currentTx++;
+  // }
+
+  if (blockNumber != lastBlock) {
+    objectsArray.forEach((obj) => {
+      // Load objects
+    });
+
+    if (blockNumber % 100 == 0 || lastBlock === 0) {
+      scamSnifferDB = await axios.get(
+        "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
+      );
+    }
+
+    transactions = await getTransactions(provider, blockNumber);
+
+    // objectsArray.forEach((obj) => checkObjectSizeAndCleanup(obj));
+
+    lastBlock = blockNumber;
+    console.log(`-----Transactions processed in block ${blockNumber - 1}: ${transactionsProcessed}-----`);
+    transactionsProcessed = 0;
+  }
+  transactionsProcessed += 1;
+
   const txFrom = ethers.utils.getAddress(f);
 
   const permitFunctions = [
@@ -182,6 +260,14 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
     ...txEvent.filterLog(transferEventErc721ABI),
     ...txEvent.filterLog(erc1155transferEventABI),
   ];
+
+  if (approvalEvents.length === 0 && permitFunctions.length === 0 && transferEvents.length === 0) {
+    return findings;
+  }
+
+  if (!chainId) {
+    ({ chainId } = await provider.getNetwork());
+  }
 
   await Promise.all(
     permitFunctions.map(async (func) => {
@@ -232,9 +318,6 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             const anomalyScore = counters.detectedPermits / counters.totalPermits;
             findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
           } else {
-            const scamSnifferDB = await axios.get(
-              "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
-            );
             const scamDomains = Object.keys(scamSnifferDB.data).filter(
               (key) =>
                 scamSnifferDB.data[key].includes(txFrom.toLowerCase()) ||
@@ -293,9 +376,6 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             }
 
             if (spenderContractCreator && spenderContractCreatorType === AddressType.ScamAddress) {
-              const scamSnifferDB = await axios.get(
-                "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
-              );
               const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
                 scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
               );
@@ -357,19 +437,26 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
       let isAssetERC1155 = false;
 
       if (!isApprovalForAll) {
-        if (tokenId) {
-          counters.totalERC721Approvals += 1;
-        } else {
-          counters.totalERC20Approvals += 1;
-        }
+        counters[`totalERC${tokenId ? "721" : "20"}Approvals`] += 1;
       } else {
-        const assetCode = await provider.getCode(asset);
-        isAssetERC1155 = assetCode.includes(safeBatchTransferFrom1155Sig);
-        if (isAssetERC1155) {
-          counters.totalERC1155ApprovalsForAll += 1;
-        } else {
-          counters.totalERC721ApprovalsForAll += 1;
+        if (cachedERC1155Tokens.get(asset) === undefined) {
+          let assetCode,
+            tries = 0;
+          while (tries < 3) {
+            try {
+              assetCode = await provider.getCode(asset);
+              break;
+            } catch (err) {
+              tries++;
+              if (tries === 3) throw err;
+              console.log(`Attempt ${tries} to get the code failed, retrying...`);
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+          cachedERC1155Tokens.set(asset, assetCode.includes(safeBatchTransferFrom1155Sig));
         }
+        isAssetERC1155 = cachedERC1155Tokens.get(asset);
+        counters[`totalERC${isAssetERC1155 ? "1155" : "721"}ApprovalsForAll`] += 1;
       }
 
       // Skip if the owner is not EOA
@@ -411,51 +498,32 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
         spenderType.startsWith("Ignored")
       ) {
         return;
-      } else if (
-        spenderType === AddressType.EoaWithHighNonce ||
-        spenderType === AddressType.LowNumTxsVerifiedContract
-      ) {
+      }
+
+      if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
         // Initialize the approvals array for the spender if it doesn't exist
         if (!approvalsInfoSeverity[spender]) approvalsInfoSeverity[spender] = [];
       } else {
         if (!approvals[spender]) approvals[spender] = [];
       }
 
+      const approval = { asset, owner, hash, timestamp };
+
       if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
         if (isApprovalForAll) {
           if (isAssetERC1155) {
             if (!approvalsForAll1155InfoSeverity[spender]) approvalsForAll1155InfoSeverity[spender] = [];
-            approvalsForAll1155InfoSeverity[spender].push({
-              asset,
-              owner,
-              hash,
-              timestamp,
-            });
+            approvalsForAll1155InfoSeverity[spender].push(approval);
           } else {
             if (!approvalsForAll721InfoSeverity[spender]) approvalsForAll721InfoSeverity[spender] = [];
-            approvalsForAll721InfoSeverity[spender].push({
-              asset,
-              owner,
-              hash,
-              timestamp,
-            });
+            approvalsForAll721InfoSeverity[spender].push(approval);
           }
         } else if (tokenId) {
           if (!approvalsERC721InfoSeverity[spender]) approvalsERC721InfoSeverity[spender] = [];
-          approvalsERC721InfoSeverity[spender].push({
-            asset,
-            owner,
-            hash,
-            timestamp,
-          });
+          approvalsERC721InfoSeverity[spender].push(approval);
         } else {
           if (!approvalsERC20InfoSeverity[spender]) approvalsERC20InfoSeverity[spender] = [];
-          approvalsERC20InfoSeverity[spender].push({
-            asset,
-            owner,
-            hash,
-            timestamp,
-          });
+          approvalsERC20InfoSeverity[spender].push(approval);
         }
 
         // Update the approvals for the spender
@@ -471,37 +539,17 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
         if (isApprovalForAll) {
           if (isAssetERC1155) {
             if (!approvalsForAll1155[spender]) approvalsForAll1155[spender] = [];
-            approvalsForAll1155[spender].push({
-              asset,
-              owner,
-              hash,
-              timestamp,
-            });
+            approvalsForAll1155[spender].push(approval);
           } else {
             if (!approvalsForAll721[spender]) approvalsForAll721[spender] = [];
-            approvalsForAll721[spender].push({
-              asset,
-              owner,
-              hash,
-              timestamp,
-            });
+            approvalsForAll721[spender].push(approval);
           }
         } else if (tokenId) {
           if (!approvalsERC721[spender]) approvalsERC721[spender] = [];
-          approvalsERC721[spender].push({
-            asset,
-            owner,
-            hash,
-            timestamp,
-          });
+          approvalsERC721[spender].push(approval);
         } else {
           if (!approvalsERC20[spender]) approvalsERC20[spender] = [];
-          approvalsERC20[spender].push({
-            asset,
-            owner,
-            hash,
-            timestamp,
-          });
+          approvalsERC20[spender].push(approval);
         }
 
         // Update the approvals for the spender
@@ -535,15 +583,13 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
         if (!_approvals[spender]) continue;
         _approvals[spender].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
       }
+
       if (
         spenderType === AddressType.ScamAddress ||
         spenderType === AddressType.LowNumTxsVerifiedContract ||
         spenderType === AddressType.LowNumTxsUnverifiedContract ||
         spenderType === AddressType.EoaWithLowNonce
       ) {
-        const scamSnifferDB = await axios.get(
-          "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
-        );
         if (spenderType === AddressType.ScamAddress) {
           const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
             scamSnifferDB.data[key].includes(spender.toLowerCase())
@@ -686,28 +732,18 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
   await Promise.all(
     transferEvents.map(async (event) => {
       counters.totalTransfers += 1;
-
       const asset = event.address;
       const { from, to, value, values, tokenId, tokenIds } = event.args;
 
       // Filter out direct transfers and mints
       if (from === txFrom || from === ADDRESS_ZERO) return;
 
-      const txFromType = await getAddressType(
-        txFrom,
-        scamAddresses,
-        cachedAddresses,
-        provider,
-        blockNumber,
-        chainId,
-        false
-      );
-      const toType = await getAddressType(to, scamAddresses, cachedAddresses, provider, blockNumber, chainId, false);
+      const [txFromType, toType] = await Promise.all([
+        getAddressType(txFrom, scamAddresses, cachedAddresses, provider, blockNumber, chainId, false),
+        getAddressType(to, scamAddresses, cachedAddresses, provider, blockNumber, chainId, false),
+      ]);
 
       if (txFromType === AddressType.ScamAddress || toType === AddressType.ScamAddress) {
-        const scamSnifferDB = await axios.get(
-          "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
-        );
         const scamDomains = Object.keys(scamSnifferDB.data).filter(
           (key) =>
             scamSnifferDB.data[key].includes(txFrom.toLowerCase()) || scamSnifferDB.data[key].includes(to.toLowerCase())
@@ -727,12 +763,12 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
       }
 
       if (
-        toType === AddressType.LowNumTxsVerifiedContract ||
-        toType === AddressType.LowNumTxsUnverifiedContract ||
-        toType === AddressType.EoaWithLowNonce
+        [
+          AddressType.LowNumTxsVerifiedContract,
+          AddressType.LowNumTxsUnverifiedContract,
+          AddressType.EoaWithLowNonce,
+        ].includes(toType)
       ) {
-        let toContractCreator, toContractCreatorType;
-
         const suspiciousContractFound = Array.from(suspiciousContracts).find(
           (contract) => contract.address === to || contract.creator === to
         );
@@ -743,25 +779,20 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
             createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound, anomalyScore, hash)
           );
         }
-
-        if (toType === AddressType.LowNumTxsVerifiedContract || toType === AddressType.LowNumTxsUnverifiedContract) {
-          toContractCreator = await getContractCreator(to, chainId);
-          if (toContractCreator) {
-            toContractCreatorType = await getAddressType(
-              toContractCreator,
-              scamAddresses,
-              cachedAddresses,
-              provider,
-              blockNumber,
-              chainId,
-              false
-            );
-          }
-
+        if ([AddressType.LowNumTxsVerifiedContract, AddressType.LowNumTxsUnverifiedContract].includes(toType)) {
+          const toContractCreator = await getContractCreator(to, chainId);
+          const toContractCreatorType = toContractCreator
+            ? await getAddressType(
+                toContractCreator,
+                scamAddresses,
+                cachedAddresses,
+                provider,
+                blockNumber,
+                chainId,
+                false
+              )
+            : undefined;
           if (toContractCreatorType === AddressType.ScamAddress) {
-            const scamSnifferDB = await axios.get(
-              "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
-            );
             const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
               scamSnifferDB.data[key].includes(toContractCreator.toLowerCase())
             );
@@ -792,7 +823,6 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
       const spenderPermissionsInfoSeverity = permissionsInfoSeverity[txFrom];
       if (!spenderApprovals && !spenderApprovalsInfoSeverity && !spenderPermissions && !spenderPermissionsInfoSeverity)
         return;
-
       spenderPermissions?.forEach((permission) => {
         if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
           if (!permission.value || permission.value.toString() === value.toString()) {
@@ -816,13 +846,13 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
       if (spenderApprovals) {
         // Check if we have caught the approval
         // For ERC20: Check if there is an approval from the owner that isn't from the current tx
-        // For ERC721: Check if the tokenId is approved or if there is an ApprovalForAll
-        const hasMonitoredApproval = tokenId
-          ? spenderApprovals
-              .filter((a) => a.owner === from)
-              .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
-          : spenderApprovals.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
-
+        // For ERC721 & ERC1155: Check if the tokenId (or one of the tokenIds) is approved or if there is an ApprovalForAll
+        const hasMonitoredApproval =
+          tokenId || tokenIds
+            ? spenderApprovals
+                .filter((a) => a.owner === from)
+                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+            : spenderApprovals.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
         if (!hasMonitoredApproval) return;
 
         // Initialize the transfers array for the spender if it doesn't exist
@@ -843,7 +873,6 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
 
         // Filter out old transfers
         transfers[txFrom] = transfers[txFrom].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
-
         if (transfers[txFrom].length > transferCountThreshold) {
           if (value || (values && values.length > 0)) {
             if (tokenIds) {
@@ -874,11 +903,12 @@ const provideHandleTransaction = (provider, counters) => async (txEvent) => {
         // Check if we have caught the approval
         // For ERC20: Check if there is an approval from the owner that isn't from the current tx
         // For ERC721: Check if the tokenId is approved or if there is an ApprovalForAll
-        const hasMonitoredApproval = tokenId
-          ? spenderApprovalsInfoSeverity
-              .filter((a) => a.owner === from)
-              .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
-          : spenderApprovalsInfoSeverity.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
+        const hasMonitoredApproval =
+          tokenId || tokenIds
+            ? spenderApprovalsInfoSeverity
+                .filter((a) => a.owner === from)
+                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+            : spenderApprovalsInfoSeverity.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
 
         if (!hasMonitoredApproval) return;
 
@@ -941,13 +971,26 @@ let suspiciousContracts = new Set();
 const provideHandleBlock =
   (getSuspiciousContracts, persistenceHelper, databaseKeys, counters) => async (blockEvent) => {
     const { timestamp, number } = blockEvent.block;
+
     if (!init) {
       suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
     } else {
-      const newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+      let newSuspiciousContracts;
+      try {
+        newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+      } catch {
+        newSuspiciousContracts = new Set();
+      }
+
       newSuspiciousContracts.forEach((contract) => suspiciousContracts.add(contract));
     }
     init = true;
+
+    // console.log("transfers size:", Buffer.from(JSON.stringify(transfers)).length);
+    // console.log("transfersLowSeverity size:", Buffer.from(JSON.stringify(transfersLowSeverity)).length);
+    // console.log("approvals size:", Buffer.from(JSON.stringify(approvals)).length);
+    // console.log("approvalsERC20 size:", Buffer.from(JSON.stringify(approvalsERC20)).length);
+    // console.log("approvalsERC721 size:", Buffer.from(JSON.stringify(approvalsERC721)).length);
 
     const scamSnifferResponse = await axios.get(
       "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
@@ -1131,7 +1174,7 @@ module.exports = {
   initialize: provideInitialize(getEthersProvider(), new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters),
   provideInitialize,
   provideHandleTransaction,
-  handleTransaction: provideHandleTransaction(getEthersProvider(), counters),
+  handleTransaction: provideHandleTransaction(getEthersProvider(), counters, new PersistenceHelper(DATABASE_URL)),
   provideHandleBlock,
   handleBlock: provideHandleBlock(getSuspiciousContracts, new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters),
   getApprovals: () => approvals, // Exported for unit tests
@@ -1149,9 +1192,13 @@ module.exports = {
   getPermissionsInfoSeverity: () => permissionsInfoSeverity, // Exported for unit tests
   getTransfersLowSeverity: () => transfersLowSeverity, // Exported for unit tests
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
+  getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
   getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
   resetLastTimestamp: () => {
     lastTimestamp = 0;
+  },
+  resetLastBlock: () => {
+    lastBlock = 0;
   },
   resetInit: () => {
     init = false;
