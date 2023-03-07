@@ -24,13 +24,13 @@ class PersistenceHelper {
         });
 
         if (response.ok) {
-          console.log(`successfully persisted ${value} to database`);
+          console.log(`successfully persisted value to database`);
           return;
         } else {
           console.log(response.status, response.statusText);
         }
       } catch (e) {
-        console.log(`failed to persist ${value} to database. Error: ${e}`);
+        console.log(`failed to persist value to database. Error: ${e}`);
       }
     } else {
       // Persist locally
@@ -49,19 +49,41 @@ class PersistenceHelper {
 
         if (response.ok) {
           const data = await response.json();
-          console.log(data, typeof data);
           //const value = parseInt(data);
-          console.log("successfully fetched", data, "from database");
-          return data;
+          console.log("successfully fetched data from database");
+          if (key.includes("shard")) {
+            return data;
+          } else {
+            console.log("fetched:", Number(data));
+            return Number(data);
+          }
         } else {
           console.log(`${key} has no database entry`);
           // If this is the first bot instance that is deployed,
           // the database will not have data to return,
           // thus return zero to assign value to the variables
           // necessary
-          if (key.endsWith("2")) {
+          if (key.includes("shard")) {
+            return {
+              approvals: {},
+              approvalsERC20: {},
+              approvalsERC721: {},
+              approvalsForAll721: {},
+              approvalsForAll1155: {},
+              approvalsInfoSeverity: {},
+              approvalsERC20InfoSeverity: {},
+              approvalsERC721InfoSeverity: {},
+              approvalsForAll721InfoSeverity: {},
+              approvalsForAll1155InfoSeverity: {},
+              permissions: {},
+              permissionsInfoSeverity: {},
+              transfers: {},
+              transfersLowSeverity: {},
+              nativeTransfers: {},
+            };
+          } else {
             return 0;
-          } else return {};
+          }
         }
       } catch (e) {
         console.log(`Error in fetching data.`);
@@ -75,11 +97,32 @@ class PersistenceHelper {
         return data;
       } else {
         console.log(`file ${key} does not exist`);
+
         // If this is the first bot instance that is deployed,
         // the database will not have data to return,
         // thus return zero to assign value to the variables
         // necessary
-        return 0;
+        if (key.includes("shard")) {
+          return {
+            approvals: {},
+            approvalsERC20: {},
+            approvalsERC721: {},
+            approvalsForAll721: {},
+            approvalsForAll1155: {},
+            approvalsInfoSeverity: {},
+            approvalsERC20InfoSeverity: {},
+            approvalsERC721InfoSeverity: {},
+            approvalsForAll721InfoSeverity: {},
+            approvalsForAll1155InfoSeverity: {},
+            permissions: {},
+            permissionsInfoSeverity: {},
+            transfers: {},
+            transfersLowSeverity: {},
+            nativeTransfers: {},
+          };
+        } else {
+          return 0;
+        }
       }
     }
   }

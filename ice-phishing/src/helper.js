@@ -1,40 +1,50 @@
 const { Finding, FindingSeverity, FindingType, ethers, getAlerts, Label, EntityType } = require("forta-agent");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
-const { nonceThreshold, contractTxsThreshold, verifiedContractTxsThreshold } = require("../bot-config.json");
+const {
+  nonceThreshold,
+  //nativeTransfersNonceThreshold,
+  contractTxsThreshold,
+  verifiedContractTxsThreshold,
+} = require("../bot-config.json");
 const { etherscanApis } = require("./config");
 const { keys } = require("./keys");
-const {
-  MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID,
-  ERC_20_721_INTERFACE,
-  ERC_1155_INTERFACE,
-  MAX_OBJECT_SIZE,
-} = require("./utils");
+const { MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID, ERC_20_721_INTERFACE, ERC_1155_INTERFACE } = require("./utils");
 const AddressType = require("./address-type");
 
 // Computes the data needed for an alert
-function getEventInformation(eventsArray) {
+function getEventInformation(eventsArray, isTokenNative) {
   const { length } = eventsArray;
   const firstTxHash = eventsArray[0].hash;
   const lastTxHash = eventsArray[length - 1].hash;
 
   // Remove duplicates
-  const assets = [...new Set(eventsArray.map((e) => e.asset))];
   const accounts = [...new Set(eventsArray.map((e) => e.owner))];
 
   const days = Math.ceil((eventsArray[length - 1].timestamp - eventsArray[0].timestamp) / 86400);
 
-  return {
-    firstTxHash,
-    lastTxHash,
-    assets,
-    accounts,
-    days,
-  };
+  if (!isTokenNative) {
+    // Remove duplicates
+    const assets = [...new Set(eventsArray.map((e) => e.asset))];
+    return {
+      firstTxHash,
+      lastTxHash,
+      assets,
+      accounts,
+      days,
+    };
+  } else {
+    return {
+      firstTxHash,
+      lastTxHash,
+      accounts,
+      days,
+    };
+  }
 }
 
 function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray, false);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-20 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -71,7 +81,7 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
 }
 
 function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray, false);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-20 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -108,7 +118,7 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
 }
 
 function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray, false);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-721 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -145,7 +155,7 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
 }
 
 function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray, false);
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-721 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -718,7 +728,7 @@ function createTransferScamCreatorAlert(
 }
 
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
+  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray, false);
   return Finding.fromObject({
     name: "Previously approved assets transferred",
     description: `${spender} transferred ${assets.length} assets from ${accounts.length} accounts over period of ${days} days.`,
@@ -755,7 +765,7 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
 }
 
 function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
+  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray, false);
   return Finding.fromObject({
     name: "Previously approved assets transferred",
     description: `${spender} transferred ${assets.length} assets from ${accounts.length} accounts over period of ${days} days.`,
@@ -768,6 +778,42 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
       anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
     },
     addresses: assets,
+    labels: [
+      Label.fromObject({
+        entity: spender,
+        entityType: EntityType.Address,
+        label: "Attacker",
+        confidence: 0.25,
+      }),
+      Label.fromObject({
+        entity: firstTxHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+      Label.fromObject({
+        entity: lastTxHash,
+        entityType: EntityType.Transaction,
+        label: "Transfer",
+        confidence: 1,
+      }),
+    ],
+  });
+}
+
+function createNativeTransfersAlert(spender, transfersArray, anomalyScore) {
+  const { firstTxHash, lastTxHash, accounts, days } = getEventInformation(transfersArray, true);
+  return Finding.fromObject({
+    name: "Native tokens transferred",
+    description: `${spender} transferred native tokens from ${accounts.length} accounts over period of ${days} days.`,
+    alertId: "ICE-PHISHING-NATIVE-TRANSFERS-MEDIUM",
+    severity: FindingSeverity.Medium,
+    type: FindingType.Suspicious,
+    metadata: {
+      firstTxHash,
+      lastTxHash,
+      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+    },
     labels: [
       Label.fromObject({
         entity: spender,
@@ -956,6 +1002,11 @@ async function getEoaType(address, provider, blockNumber) {
     }
   }
   return nonce > nonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
+
+  // if (!isNativeTransfer) {
+  // } else {
+  //   return nonce > nativeTransfersNonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
+  // }
 }
 
 async function getContractType(address, chainId) {
@@ -1202,21 +1253,19 @@ async function getTransactions(provider, blockNumber) {
 }
 
 function checkObjectSizeAndCleanup(obj) {
-  let objectSize = Buffer.from(JSON.stringify(obj)).length;
-  if (objectSize > MAX_OBJECT_SIZE) {
-    // Flatten the object's values into an array of entries, and sort by timestamp
-    const entries = Object.values(obj).flat();
-    entries.sort((a, b) => a.timestamp - b.timestamp);
+  // Flatten the object's values into an array of entries, and sort by timestamp
+  const entries = Object.values(obj).flat();
+  if (entries.length === 0) return;
+  entries.sort((a, b) => a.timestamp - b.timestamp);
 
-    // Delete half of the oldest entries
-    const numEntriesToDelete = Math.ceil(entries.length / 2);
-    for (let i = 0; i < numEntriesToDelete; i++) {
-      const entryToDelete = entries[i];
-      const key = Object.keys(obj).find((k) => obj[k].includes(entryToDelete));
-      obj[key] = obj[key].filter((entry) => entry !== entryToDelete);
-      if (obj[key].length === 0) {
-        delete obj[key];
-      }
+  // Delete half of the oldest entries
+  const numEntriesToDelete = Math.ceil(entries.length / 2);
+  for (let i = 0; i < numEntriesToDelete; i++) {
+    const entryToDelete = entries[i];
+    const key = Object.keys(obj).find((k) => obj[k].includes(entryToDelete));
+    obj[key] = obj[key].filter((entry) => entry !== entryToDelete);
+    if (obj[key].length === 0) {
+      delete obj[key];
     }
   }
 }
@@ -1228,6 +1277,7 @@ module.exports = {
   createHighNumApprovalsInfoAlertERC721,
   createHighNumTransfersAlert,
   createHighNumTransfersLowSeverityAlert,
+  createNativeTransfersAlert,
   createPermitTransferAlert,
   createPermitTransferMediumSeverityAlert,
   createApprovalForAllAlertERC721,
@@ -1246,6 +1296,7 @@ module.exports = {
   createTransferScamCreatorAlert,
   createTransferSuspiciousContractAlert,
   getAddressType,
+  getEoaType,
   getContractCreator,
   getSuspiciousContracts,
   getBalance,

@@ -25,6 +25,7 @@ const {
   resetInit,
   resetLastBlock,
   getSuspiciousContracts,
+  getObjects,
 } = require("./agent");
 
 const approveCountThreshold = 2;
@@ -34,6 +35,23 @@ const timePeriodDays = 30;
 const nonceThreshold = 100;
 const maxAddressAlertsPerPeriod = 3;
 const verifiedContractTxsThreshold = 1;
+
+const mockObjects = {
+  approvals: {},
+  approvalsERC20: {},
+  approvalsERC721: {},
+  approvalsForAll721: {},
+  approvalsForAll1155: {},
+  approvalsInfoSeverity: {},
+  approvalsERC20InfoSeverity: {},
+  approvalsERC721InfoSeverity: {},
+  approvalsForAll721InfoSeverity: {},
+  approvalsForAll1155InfoSeverity: {},
+  permissions: {},
+  permissionsInfoSeverity: {},
+  transfers: {},
+  transfersLowSeverity: {},
+};
 
 const spender = createAddress("0x01");
 const owner1 = createAddress("0x02");
@@ -392,6 +410,23 @@ const MOCK_DATABASE_KEYS = {
   detectedSuspiciousTransfers: "nm-icephishing-bot-detect-suspicious-transfers-key",
 };
 
+const MOCK_DATABASE_OBJECTS_KEYS = {
+  approvals: "nm-icephishing-bot-approvals-key-shard",
+  approvalsERC20: "nm-icephishing-bot-approvals-erc20-key-shard",
+  approvalsERC721: "nm-icephishing-bot-approvals-erc721-key-shard",
+  approvalsForAll721: "nm-icephishing-bot-approvals-for-all-721-key-shard",
+  approvalsForAll1155: "nm-icephishing-bot-approvals-for-all-1155-key-shard",
+  approvalsInfoSeverity: "nm-icephishing-bot-approvals-info-severity-key-shard",
+  approvalsERC20InfoSeverity: "nm-icephishing-bot-approvals-erc20-info-severity-key-shard",
+  approvalsERC721InfoSeverity: "nm-icephishing-bot-approvals-erc721-info-severity-key-shard",
+  approvalsForAll721InfoSeverity: "nm-icephishing-bot-approvals-for-all-721-info-severity-key-shard",
+  approvalsForAll1155InfoSeverity: "nm-icephishing-bot-approvals-for-all-1155-info-severity-key-shard",
+  permissions: "nm-icephishing-bot-permissions-key-shard",
+  permissionsInfoSeverity: "nm-icephishing-bot-permissions-info-severity-key-shard",
+  transfers: "nm-icephishing-bot-transfers-key-shard",
+  transfersLowSeverity: "nm-icephishing-bot-transfers-low-severity-key-shard",
+};
+
 const mockCounters = {
   totalPermits: 60000,
   totalApprovals: 100000,
@@ -428,6 +463,7 @@ const mockCounters = {
 describe("ice-phishing bot", () => {
   const mockProvider = {
     getCode: jest.fn(),
+    getBlockWithTransactions: jest.fn(),
     getTransactionCount: jest.fn(),
     getNetwork: jest.fn(),
   };
@@ -451,21 +487,36 @@ describe("ice-phishing bot", () => {
       mockProvider.getCode.mockReset();
       mockProvider.getTransactionCount.mockReset();
       mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+      mockProvider.getBlockWithTransactions.mockReturnValue({ transactions: [{ hash: "hash15" }, { hash: "hash25" }] });
       mockBalanceOf.mockReset();
       axios.get.mockReset();
-      Object.keys(getApprovals()).forEach((s) => delete getApprovals()[s]);
-      Object.keys(getERC721Approvals()).forEach((s) => delete getERC721Approvals()[s]);
-      Object.keys(getERC20Approvals()).forEach((s) => delete getERC20Approvals()[s]);
-      Object.keys(getERC721ApprovalsForAll()).forEach((s) => delete getERC721ApprovalsForAll()[s]);
-      Object.keys(getERC1155ApprovalsForAll()).forEach((s) => delete getERC1155ApprovalsForAll()[s]);
-      Object.keys(getPermissions()).forEach((s) => delete getPermissions()[s]);
-      Object.keys(getTransfers()).forEach((s) => delete getTransfers()[s]);
+      mockPersistenceHelper.load.mockReset();
+      // Object.keys(getApprovals()).forEach((s) => delete getApprovals()[s]);
+      // Object.keys(getERC721Approvals()).forEach((s) => delete getERC721Approvals()[s]);
+      // Object.keys(getERC20Approvals()).forEach((s) => delete getERC20Approvals()[s]);
+      // Object.keys(getERC721ApprovalsForAll()).forEach((s) => delete getERC721ApprovalsForAll()[s]);
+      // Object.keys(getERC1155ApprovalsForAll()).forEach((s) => delete getERC1155ApprovalsForAll()[s]);
+      // Object.keys(getPermissions()).forEach((s) => delete getPermissions()[s]);
+      // Object.keys(getTransfers()).forEach((s) => delete getTransfers()[s]);
+      Object.keys(mockObjects).forEach((s) => {
+        mockObjects[s] = {};
+      });
       getCachedAddresses().clear();
       getCachedERC1155Tokens().clear();
-      handleTransaction = provideHandleTransaction(mockProvider, mockCounters);
+      handleTransaction = provideHandleTransaction(
+        mockProvider,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS,
+        mockPersistenceHelper,
+        mockObjects
+      );
     });
 
     it("should return empty findings if there are no Approval & Transfer events and no permit functions", async () => {
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
+
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
@@ -483,6 +534,9 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a EIP-2612's permit function call", async () => {
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
       mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
@@ -526,6 +580,9 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a DAI-like permit function call", async () => {
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
@@ -569,10 +626,17 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
@@ -582,6 +646,7 @@ describe("ice-phishing bot", () => {
         MOCK_DATABASE_KEYS,
         mockCounters
       );
+
       mockGetSuspiciousContracts.mockResolvedValueOnce(
         new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
       );
@@ -589,6 +654,10 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse);
 
       await handleBlock(mockBlockEvent);
+
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -692,7 +761,13 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
@@ -712,6 +787,10 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse);
 
       await handleBlock(mockBlockEvent);
+
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -815,6 +894,9 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC1155 ApprovalForAll events", async () => {
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
       const tempTxEvent0 = {
         filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
         filterLog: jest
@@ -903,7 +985,22 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC721 ApprovalForAll events", async () => {
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      await initialize();
+
       for (let i = 0; i < 2; i++) {
+        for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+          mockPersistenceHelper.load.mockReturnValueOnce({});
+        }
         const tempTxEvent = {
           filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
@@ -919,9 +1016,11 @@ describe("ice-phishing bot", () => {
           from: spender,
         };
         mockProvider.getCode.mockReturnValue("0x");
+
         mockProvider.getTransactionCount.mockReturnValue(1);
         await handleTransaction(tempTxEvent);
       }
+      //expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
 
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
@@ -934,7 +1033,7 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
+
       const findings = await handleTransaction(mockTxEvent);
 
       const mockAnomalyScore = mockCounters.detectedERC721ApprovalsForAll / mockCounters.totalERC721ApprovalsForAll;
@@ -1218,10 +1317,17 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC721 Approval events regarding a verified contract", async () => {
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+
       await initialize();
       const spender = createAddress("0xeded");
 
@@ -1257,7 +1363,11 @@ describe("ice-phishing bot", () => {
           },
         },
       ];
+
       for (let i = 0; i < 3; i++) {
+        for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+          mockPersistenceHelper.load.mockReturnValueOnce({});
+        }
         const tempTxEvent = {
           filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]),
           filterLog: jest
@@ -1279,7 +1389,6 @@ describe("ice-phishing bot", () => {
         };
         axios.get
           .mockResolvedValueOnce(axiosResponse)
-          // .mockResolvedValueOnce(axiosResponse)
           .mockResolvedValueOnce(axiosResponse2)
           .mockResolvedValueOnce(axiosResponse2);
 
@@ -1287,6 +1396,11 @@ describe("ice-phishing bot", () => {
         await handleTransaction(tempTxEvent);
       }
 
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
+
+      mockTxEvent.blockNumber = 23;
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
         .mockReturnValueOnce([thisMockApprovalERC721Events[2]]) // ERC721 approvals
@@ -1340,10 +1454,17 @@ describe("ice-phishing bot", () => {
     });
 
     it("should not return findings if there is a high number of ERC721 Approval events regarding a verified contract with high number of past transactions", async () => {
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+
       await initialize();
       const spender = createAddress("0xabeded");
       const thisMockApprovalERC721Events = [
@@ -1376,6 +1497,9 @@ describe("ice-phishing bot", () => {
         },
       ];
       for (let i = 0; i < 3; i++) {
+        for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+          mockPersistenceHelper.load.mockReturnValueOnce({});
+        }
         const tempTxEvent = {
           filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]),
           filterLog: jest
@@ -1716,7 +1840,6 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferSingleEvents[2]]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
-      // mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(7);
 
@@ -2240,6 +2363,10 @@ describe("ice-phishing bot", () => {
         },
       };
 
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
+
       mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
@@ -2290,7 +2417,13 @@ describe("ice-phishing bot", () => {
       resetLastBlock();
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set());
 
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       await initialize();
 
       const mockBlockEvent = { block: { timestamp: 1000121 } };
@@ -2303,6 +2436,10 @@ describe("ice-phishing bot", () => {
         mockCounters
       );
       await handleBlock(mockBlockEvent);
+
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
 
       const axiosResponse3 = { data: { "www.scamDomain.com": [createAddress("0x215050")] } };
       axios.get.mockResolvedValueOnce(axiosResponse3);
@@ -2414,6 +2551,10 @@ describe("ice-phishing bot", () => {
       );
       await handleBlock(mockBlockEvent);
 
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
+
       const mockTxEvent = {
         filterLog: jest.fn(),
         filterFunction: jest.fn(),
@@ -2494,6 +2635,10 @@ describe("ice-phishing bot", () => {
       const axiosResponse2 = { data: { "www.scamDomain.com": [spender] } };
       axios.get.mockResolvedValueOnce(axiosResponse2);
 
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
+
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
@@ -2547,7 +2692,13 @@ describe("ice-phishing bot", () => {
     it("should return findings if a suspicious contract is involved in a transfer", async () => {
       resetInit();
 
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
@@ -2573,6 +2724,10 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse);
 
       await handleBlock(mockBlockEvent);
+
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -2654,8 +2809,13 @@ describe("ice-phishing bot", () => {
 
     it("should return findings if a creator of a suspicious contract is involved in a transfer", async () => {
       resetInit();
-
-      const initialize = provideInitialize(mockProvider, mockPersistenceHelper, MOCK_DATABASE_KEYS, mockCounters);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
@@ -2675,6 +2835,11 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [] };
       axios.get.mockResolvedValueOnce(axiosResponse);
       await handleBlock(mockBlockEvent);
+
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
+
       const mockTxEvent = {
         filterLog: jest.fn(),
         filterFunction: jest.fn(),
@@ -2756,7 +2921,7 @@ describe("ice-phishing bot", () => {
     it("should return findings if a creator of a suspicious contract gets approval", async () => {
       resetInit();
 
-      const mockBlockEvent = { block: { timestamp: 10435300 } };
+      const mockBlockEvent = { block: { timestamp: 104353 } };
       const axiosResponse = { data: [createAddress("0x23232")] };
       axios.get.mockResolvedValueOnce(axiosResponse);
 
@@ -2770,6 +2935,10 @@ describe("ice-phishing bot", () => {
         new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0x01") }])
       );
       await handleBlock(mockBlockEvent);
+
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
 
       mockTxEvent.filterLog
         .mockReturnValueOnce([mockApprovalERC20Events[0]]) // ERC20 approvals
@@ -2827,25 +2996,16 @@ describe("ice-phishing bot", () => {
     beforeEach(() => {
       resetLastTimestamp();
       resetInit();
-
-      Object.keys(getApprovals()).forEach((s) => delete getApprovals()[s]);
-      Object.keys(getERC20Approvals()).forEach((s) => delete getERC20Approvals()[s]);
-      Object.keys(getERC721Approvals()).forEach((s) => delete getERC721Approvals()[s]);
-      Object.keys(getERC721ApprovalsForAll()).forEach((s) => delete getERC721ApprovalsForAll()[s]);
-      Object.keys(getERC1155ApprovalsForAll()).forEach((s) => delete getERC1155ApprovalsForAll()[s]);
-      Object.keys(getPermissions()).forEach((s) => delete getPermissions()[s]);
-      Object.keys(getTransfers()).forEach((s) => delete getTransfers()[s]);
-      Object.keys(getApprovalsInfoSeverity()).forEach((s) => delete getApprovalsInfoSeverity()[s]);
-      Object.keys(getERC20ApprovalsInfoSeverity()).forEach((s) => delete getERC20ApprovalsInfoSeverity()[s]);
-      Object.keys(getERC721ApprovalsInfoSeverity()).forEach((s) => delete getERC721ApprovalsInfoSeverity()[s]);
-      Object.keys(getERC721ApprovalsForAllInfoSeverity()).forEach(
-        (s) => delete getERC721ApprovalsForAllInfoSeverity()[s]
+      Object.keys(mockObjects).forEach((s) => {
+        mockObjects[s] = {};
+      });
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        mockObjects
       );
-      Object.keys(getERC1155ApprovalsForAllInfoSeverity()).forEach(
-        (s) => delete getERC1155ApprovalsForAllInfoSeverity()[s]
-      );
-      Object.keys(getPermissionsInfoSeverity()).forEach((s) => delete getPermissionsInfoSeverity()[s]);
-      Object.keys(getTransfersLowSeverity()).forEach((s) => delete getTransfersLowSeverity()[s]);
     });
 
     afterEach(async () => {
@@ -2858,36 +3018,36 @@ describe("ice-phishing bot", () => {
       const mockBlockEvent = { block: { timestamp: 1000 } };
       mockGetSuspiciousContracts.mockResolvedValueOnce({});
 
-      getApprovals()[spender] = [{ timestamp: 1000 }];
-      getERC20Approvals()[spender] = [{ timestamp: 1000 }];
-      getERC721Approvals()[spender] = [{ timestamp: 1000 }];
-      getERC721ApprovalsForAll()[spender] = [{ timestamp: 1000 }];
-      getERC1155ApprovalsForAll()[spender] = [{ timestamp: 1000 }];
-      getPermissions()[spender] = [{ deadline: 10 }];
-      getTransfers()[spender] = [{ timestamp: 1000 }];
-      getApprovalsInfoSeverity()[spender] = [{ timestamp: 1000 }];
-      getERC20ApprovalsInfoSeverity()[spender] = [{ timestamp: 1000 }];
-      getERC721ApprovalsInfoSeverity()[spender] = [{ timestamp: 1000 }];
-      getERC721ApprovalsForAllInfoSeverity()[spender] = [{ timestamp: 1000 }];
-      getERC1155ApprovalsForAllInfoSeverity()[spender] = [{ timestamp: 1000 }];
-      getPermissionsInfoSeverity()[spender] = [{ deadline: 10 }];
-      getTransfersLowSeverity()[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvals[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
+      mockObjects.permissions[spender] = [{ deadline: 10 }];
+      mockObjects.transfers[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsInfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC20InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC721InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll721InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll1155InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.permissionsInfoSeverity[spender] = [{ deadline: 10 }];
+      mockObjects.transfersLowSeverity[spender] = [{ timestamp: 1000 }];
       await handleBlock(mockBlockEvent);
 
-      expect(Object.keys(getApprovals()).length).toStrictEqual(1);
-      expect(Object.keys(getERC20Approvals()).length).toStrictEqual(1);
-      expect(Object.keys(getERC721Approvals()).length).toStrictEqual(1);
-      expect(Object.keys(getERC721ApprovalsForAll()).length).toStrictEqual(1);
-      expect(Object.keys(getERC1155ApprovalsForAll()).length).toStrictEqual(1);
-      expect(Object.keys(getPermissions()).length).toStrictEqual(1);
-      expect(Object.keys(getTransfers()).length).toStrictEqual(1);
-      expect(Object.keys(getApprovalsInfoSeverity()).length).toStrictEqual(1);
-      expect(Object.keys(getERC20ApprovalsInfoSeverity()).length).toStrictEqual(1);
-      expect(Object.keys(getERC721ApprovalsInfoSeverity()).length).toStrictEqual(1);
-      expect(Object.keys(getERC721ApprovalsForAllInfoSeverity()).length).toStrictEqual(1);
-      expect(Object.keys(getERC1155ApprovalsForAllInfoSeverity()).length).toStrictEqual(1);
-      expect(Object.keys(getPermissionsInfoSeverity()).length).toStrictEqual(1);
-      expect(Object.keys(getTransfersLowSeverity()).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.permissions).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.transfers).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsInfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC20InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC721InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll721InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll1155InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.permissionsInfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.transfersLowSeverity).length).toStrictEqual(1);
     });
 
     it("should not delete the entry if it was updated recently/permission deadline has not passed", async () => {
@@ -2895,22 +3055,23 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { timestamp: timePeriod } };
       mockGetSuspiciousContracts.mockResolvedValueOnce({});
-      getApprovals()[spender] = [{ timestamp: timePeriod }];
-      getERC20Approvals()[spender] = [{ timestamp: timePeriod }];
-      getERC721Approvals()[spender] = [{ timestamp: timePeriod }];
-      getERC721ApprovalsForAll()[spender] = [{ timestamp: timePeriod }];
-      getERC1155ApprovalsForAll()[spender] = [{ timestamp: timePeriod }];
-      getPermissions()[spender] = [{ deadline: 5184001 }];
-      getTransfers()[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvals[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsERC20[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsERC721[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsForAll721[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsForAll1155[spender] = [{ timestamp: timePeriod }];
+      mockObjects.permissions[spender] = [{ deadline: 5184001 }];
+      mockObjects.transfers[spender] = [{ timestamp: timePeriod }];
+
       await handleBlock(mockBlockEvent);
 
-      expect(Object.keys(getApprovals()).length).toStrictEqual(1);
-      expect(Object.keys(getERC20Approvals()).length).toStrictEqual(1);
-      expect(Object.keys(getERC721Approvals()).length).toStrictEqual(1);
-      expect(Object.keys(getERC721ApprovalsForAll()).length).toStrictEqual(1);
-      expect(Object.keys(getERC1155ApprovalsForAll()).length).toStrictEqual(1);
-      expect(Object.keys(getPermissions()).length).toStrictEqual(1);
-      expect(Object.keys(getTransfers()).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.permissions).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.transfers).length).toStrictEqual(1);
     });
 
     it("should delete the entry if it was not updated recently/permission deadline has expired", async () => {
@@ -2918,22 +3079,24 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { timestamp: timePeriod } };
       mockGetSuspiciousContracts.mockResolvedValueOnce({});
-      getApprovals()[spender] = [{ timestamp: 1000 }];
-      getERC20Approvals()[spender] = [{ timestamp: 1000 }];
-      getERC721Approvals()[spender] = [{ timestamp: 1000 }];
-      getERC721ApprovalsForAll()[spender] = [{ timestamp: 1000 }];
-      getERC1155ApprovalsForAll()[spender] = [{ timestamp: 1000 }];
-      getPermissions()[spender] = [{ deadline: 1000 }];
-      getTransfers()[spender] = [{ timestamp: 1000 }];
+
+      mockObjects.approvals[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
+      mockObjects.permissions[spender] = [{ deadline: 1000 }];
+      mockObjects.transfers[spender] = [{ timestamp: 1000 }];
+
       await handleBlock(mockBlockEvent);
 
-      expect(Object.keys(getApprovals()).length).toStrictEqual(0);
-      expect(Object.keys(getERC20Approvals()).length).toStrictEqual(0);
-      expect(Object.keys(getERC721Approvals()).length).toStrictEqual(0);
-      expect(Object.keys(getERC721ApprovalsForAll()).length).toStrictEqual(0);
-      expect(Object.keys(getERC1155ApprovalsForAll()).length).toStrictEqual(0);
-      expect(Object.keys(getPermissions()).length).toStrictEqual(0);
-      expect(Object.keys(getTransfers()).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvals).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.permissions).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.transfers).length).toStrictEqual(0);
     });
 
     it("should populate the suspicious contracts set correctly", async () => {

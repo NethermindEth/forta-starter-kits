@@ -14,8 +14,8 @@
   ],
   "chainSettings": {
     "default": {
-      "shards": 1,
-      "target": 4
+      "shards": 3,
+      "target": 2
     }
   },
   "scripts": {
