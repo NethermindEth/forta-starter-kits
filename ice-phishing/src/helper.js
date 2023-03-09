@@ -941,7 +941,9 @@ function getEtherscanContractUrl(address, chainId) {
 function getEtherscanAddressUrl(address, chainId, offset) {
   const { urlAccount } = etherscanApis[Number(chainId)];
   const key = getBlockExplorerKey(Number(chainId));
-  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${offset}&sort=asc&apikey=${key}`;
+  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
+    offset + 1
+  }&sort=asc&apikey=${key}`;
 }
 
 async function getContractCreator(address, chainId) {
