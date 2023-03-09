@@ -685,47 +685,47 @@ function createTransferSuspiciousContractAlert(
   });
 }
 
-function createTransferScamCreatorAlert(
-  msgSender,
-  owner,
-  receiver,
-  asset,
-  scamAddress,
-  scamDomains,
-  anomalyScore,
-  txHash
-) {
-  return Finding.fromObject({
-    name: "Contract, created by a known scam address, was involved in an asset transfer",
-    description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
-    alertId: "ICE-PHISHING-SCAM-CREATOR-TRANSFER",
-    severity: FindingSeverity.Critical,
-    type: FindingType.Exploit,
-    metadata: {
-      scamAddress,
-      scamDomains,
-      msgSender,
-      owner,
-      receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
-    },
-    addresses: [asset],
-    labels: [
-      Label.fromObject({
-        entity: scamAddress,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.95,
-      }),
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-    ],
-  });
-}
+// function createTransferScamCreatorAlert(
+//   msgSender,
+//   owner,
+//   receiver,
+//   asset,
+//   scamAddress,
+//   scamDomains,
+//   anomalyScore,
+//   txHash
+// ) {
+//   return Finding.fromObject({
+//     name: "Contract, created by a known scam address, was involved in an asset transfer",
+//     description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
+//     alertId: "ICE-PHISHING-SCAM-CREATOR-TRANSFER",
+//     severity: FindingSeverity.Critical,
+//     type: FindingType.Exploit,
+//     metadata: {
+//       scamAddress,
+//       scamDomains,
+//       msgSender,
+//       owner,
+//       receiver,
+//       anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+//     },
+//     addresses: [asset],
+//     labels: [
+//       Label.fromObject({
+//         entity: scamAddress,
+//         entityType: EntityType.Address,
+//         label: "Attacker",
+//         confidence: 0.95,
+//       }),
+//       Label.fromObject({
+//         entity: txHash,
+//         entityType: EntityType.Transaction,
+//         label: "Transfer",
+//         confidence: 1,
+//       }),
+//     ],
+//   });
+// }
 
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray, false);
@@ -938,10 +938,10 @@ function getEtherscanContractUrl(address, chainId) {
   return `${urlContract}&address=${address}&apikey=${key}`;
 }
 
-function getEtherscanAddressUrl(address, chainId) {
+function getEtherscanAddressUrl(address, chainId, offset) {
   const { urlAccount } = etherscanApis[Number(chainId)];
   const key = getBlockExplorerKey(Number(chainId));
-  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${key}`;
+  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${offset}&sort=asc&apikey=${key}`;
 }
 
 async function getContractCreator(address, chainId) {
@@ -1002,11 +1002,6 @@ async function getEoaType(address, provider, blockNumber) {
     }
   }
   return nonce > nonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
-
-  // if (!isNativeTransfer) {
-  // } else {
-  //   return nonce > nativeTransfersNonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
-  // }
 }
 
 async function getContractType(address, chainId) {
@@ -1038,18 +1033,17 @@ async function getContractType(address, chainId) {
   }
 
   const isVerified = result.data.status === "1";
-
+  const url = isVerified
+    ? getEtherscanAddressUrl(address, chainId, verifiedContractTxsThreshold)
+    : getEtherscanAddressUrl(address, chainId, contractTxsThreshold);
   for (let i = 0; i <= retries; i++) {
     try {
-      result = await axios.get(getEtherscanAddressUrl(address, chainId));
-      // Handle successful response
+      result = await axios.get(url);
       break; // Exit the loop if successful
     } catch {
       if (i === retries) {
         // Handle error after all retries
-        throw new Error(
-          `All retry attempts to call block explorer (URL: ${getEtherscanAddressUrl(address, chainId)}) failed`
-        );
+        throw new Error(`All retry attempts to call block explorer failed`);
       } else {
         // Handle error and retry
         console.log(`Retry attempt ${i + 1} to call block explorer failed`);
@@ -1086,11 +1080,13 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
     // Don't update the cached address if
     // the check is for the owner
     // the type cannot be changed back
+    // the type is unverified contract but with high number of txs indicating it will remain unverified
     // the address is ignored
     if (
       isOwner ||
       type === AddressType.EoaWithHighNonce ||
       type === AddressType.HighNumTxsVerifiedContract ||
+      type === AddressType.HighNumTxsUnverifiedContract ||
       type.startsWith("Ignored")
     ) {
       return type;
@@ -1190,7 +1186,7 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
       alertId: "SUSPICIOUS-CONTRACT-CREATION",
       chainId: chainId,
       blockNumberRange: {
-        startBlockNumber: blockNumber - 1,
+        startBlockNumber: blockNumber - 240,
         endBlockNumber: blockNumber,
       },
       first: 1000,
@@ -1293,7 +1289,7 @@ module.exports = {
   createApprovalScamCreatorAlert,
   createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
-  createTransferScamCreatorAlert,
+  // createTransferScamCreatorAlert,
   createTransferSuspiciousContractAlert,
   getAddressType,
   getEoaType,

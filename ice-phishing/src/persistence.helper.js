@@ -79,7 +79,6 @@ class PersistenceHelper {
               permissionsInfoSeverity: {},
               transfers: {},
               transfersLowSeverity: {},
-              nativeTransfers: {},
             };
           } else {
             return 0;
@@ -118,7 +117,6 @@ class PersistenceHelper {
             permissionsInfoSeverity: {},
             transfers: {},
             transfersLowSeverity: {},
-            nativeTransfers: {},
           };
         } else {
           return 0;

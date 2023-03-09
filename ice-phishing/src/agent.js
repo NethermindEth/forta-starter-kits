@@ -8,7 +8,6 @@ const {
   createHighNumApprovalsInfoAlertERC721,
   createHighNumTransfersAlert,
   createHighNumTransfersLowSeverityAlert,
-  // createNativeTransfersAlert,
   createPermitTransferAlert,
   createPermitTransferMediumSeverityAlert,
   createApprovalForAllAlertERC721,
@@ -24,10 +23,9 @@ const {
   createApprovalScamCreatorAlert,
   createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
-  createTransferScamCreatorAlert,
+  //createTransferScamCreatorAlert,
   createTransferSuspiciousContractAlert,
   getAddressType,
-  //getEoaType,
   getContractCreator,
   getBalance,
   getERC1155Balance,
@@ -39,7 +37,6 @@ const {
   approveCountThreshold,
   approveForAllCountThreshold,
   transferCountThreshold,
-  // nativeTransferCountThreshold,
   maxAddressAlertsPerPeriod,
 } = require("../bot-config.json");
 const {
@@ -78,28 +75,11 @@ let scamSnifferDB = {
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
-// const DATABASE_OBJECTS_KEYS = {
-//   approvals: "nm-icephishing-bot-approvals-key-shard",
-//   approvalsERC20: "nm-icephishing-bot-approvals-erc20-key-shard",
-//   approvalsERC721: "nm-icephishing-bot-approvals-erc721-key-shard",
-//   approvalsForAll721: "nm-icephishing-bot-approvals-for-all-721-key-shard",
-//   approvalsForAll1155: "nm-icephishing-bot-approvals-for-all-1155-key-shard",
-//   approvalsInfoSeverity: "nm-icephishing-bot-approvals-info-severity-key-shard",
-//   approvalsERC20InfoSeverity: "nm-icephishing-bot-approvals-erc20-info-severity-key-shard",
-//   approvalsERC721InfoSeverity: "nm-icephishing-bot-approvals-erc721-info-severity-key-shard",
-//   approvalsForAll721InfoSeverity: "nm-icephishing-bot-approvals-for-all-721-info-severity-key-shard",
-//   approvalsForAll1155InfoSeverity: "nm-icephishing-bot-approvals-for-all-1155-info-severity-key-shard",
-//   permissions: "nm-icephishing-bot-permissions-key-shard",
-//   permissionsInfoSeverity: "nm-icephishing-bot-permissions-info-severity-key-shard",
-//   transfers: "nm-icephishing-bot-transfers-key-shard",
-//   transfersLowSeverity: "nm-icephishing-bot-transfers-low-severity-key-shard",
-//   nativeTransfers: "nm-icephishing-bot-native-transfers-key-shard",
-// };
-
 const DATABASE_OBJECT_KEY = {
   key: "nm-icephishing-bot-objects-shard",
 };
-const objects = {
+
+let objects = {
   approvals: {},
   approvalsERC20: {},
   approvalsERC721: {},
@@ -114,14 +94,12 @@ const objects = {
   permissionsInfoSeverity: {},
   transfers: {},
   transfersLowSeverity: {},
-  // nativeTransfers: {},
 };
 
 const DATABASE_KEYS = {
   totalPermits: "nm-icephishing-bot-total-permits-key",
   totalApprovals: "nm-icephishing-bot-total-approvals-key",
   totalTransfers: "nm-icephishing-bot-total-transfers-key",
-  // totalNativeTransfers: "nm-icephishing-bot-total-native-transfers-key",
   totalERC20Approvals: "nm-icephishing-bot-total-erc20-approvals-key",
   totalERC721Approvals: "nm-icephishing-bot-total-erc721-approvals-key",
   totalERC721ApprovalsForAll: "nm-icephishing-bot-total-erc721-approvalsforall-key",
@@ -144,7 +122,6 @@ const DATABASE_KEYS = {
   detectedSuspiciousApprovals: "nm-icephishing-bot-detect-suspicious-approvals-key",
   detectedTransfers: "nm-icephishing-bot-detect-transfers-key",
   detectedTransfersLow: "nm-icephishing-bot-detect-transfers-low-key",
-  // detectedNativeTransfers: "nm-icephishing-bot-detect-native-transfers-key",
   detectedPermittedTransfers: "nm-icephishing-bot-detect-permitted-transfers-key",
   detectedPermittedTransfersMedium: "nm-icephishing-bot-detect-permitted-transfers-medium-key",
   detectedScamTransfers: "nm-icephishing-bot-detect-scam-transfers-key",
@@ -156,7 +133,6 @@ const counters = {
   totalPermits: 0,
   totalApprovals: 0,
   totalTransfers: 0,
-  // totalNativeTransfers: 0,
   totalERC20Approvals: 0,
   totalERC721Approvals: 0,
   totalERC721ApprovalsForAll: 0,
@@ -199,18 +175,9 @@ const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, 
       counters[key] = await persistenceHelper.load(databaseKeys[key]);
     }
 
-    // Object.keys(databeObjectsKeys).forEach((key) => {
-    //   databeObjectsKeys[key] = `${databeObjectsKeys[key]}-${chainId}`;
-    // });
-
-    // for (const key in objects) {
-    //   objects[key] = await persistenceHelper.load(databeObjectsKeys[key]);
-    // }
-
     databaseObjectsKey.key = `${databaseObjectsKey.key}-${chainId}`;
 
-    // TODO: persist
-    //objects = await persistenceHelper.load(databaseObjectsKey.key);
+    objects = await persistenceHelper.load(databaseObjectsKey.key);
   };
 };
 
@@ -219,12 +186,12 @@ let transactions = [];
 const provideHandleTransaction =
   (provider, counters, databaseObjectsKey, persistenceHelper, objects) => async (txEvent) => {
     const findings = [];
-    const { hash, timestamp, blockNumber, from: f, to: t, transaction } = txEvent;
+    const { hash, timestamp, blockNumber, from: f } = txEvent;
 
     if (blockNumber != lastBlock) {
       objects = await persistenceHelper.load(databaseObjectsKey.key);
 
-      if (blockNumber % 100 == 0 || lastBlock === 0) {
+      if (blockNumber % 240 == 0 || lastBlock === 0) {
         scamSnifferDB = await axios.get(
           "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
         );
@@ -237,18 +204,17 @@ const provideHandleTransaction =
         Object.keys(DATABASE_KEYS).forEach((key) => {
           DATABASE_KEYS[key] = `${DATABASE_KEYS[key]}-${chainId}`;
         });
-        // Object.keys(DATABASE_OBJECTS_KEYS).forEach((key) => {
-        //   DATABASE_OBJECTS_KEYS[key] = `${DATABASE_OBJECTS_KEYS[key]}-${chainId}`;
-        // });
         databaseObjectsKey.key = `${databaseObjectsKey.key}-${chainId}`;
       }
 
       const objectsSize = Buffer.from(JSON.stringify(objects)).length;
       console.log("Objects Size:", objectsSize);
+
       if (objectsSize > MAX_OBJECT_SIZE) {
         Object.values(objects).forEach((obj) => checkObjectSizeAndCleanup(obj));
         console.log("Objects Size After Cleanup:", Buffer.from(JSON.stringify(objects)).length);
       }
+
       console.log("Approvals Size:", Buffer.from(JSON.stringify(objects.approvals)).length);
       console.log("Approvals ERC20 Size:", Buffer.from(JSON.stringify(objects.approvalsERC20)).length);
       console.log("Approvals ERC721 Size:", Buffer.from(JSON.stringify(objects.approvalsERC721)).length);
@@ -272,47 +238,15 @@ const provideHandleTransaction =
       );
       console.log("Permits Size:", Buffer.from(JSON.stringify(objects.permissions)).length);
       console.log("Permits Info Size:", Buffer.from(JSON.stringify(objects.permissionsInfoSeverity)).length);
-      //console.log("Native Transfers Size:", Buffer.from(JSON.stringify(objects.nativeTransfers)).length);
+
       lastBlock = blockNumber;
-      console.log(`-----Transactions processed in block ${blockNumber - 1}: ${transactionsProcessed}-----`);
+      console.log(`-----Transactions processed in block ${blockNumber - 3}: ${transactionsProcessed}-----`);
       transactionsProcessed = 0;
     }
     transactionsProcessed += 1;
 
+    const st1 = new Date().getTime();
     if (hash === transactions[transactions.length - 1].hash) {
-      // await Promise.all(
-      //   Object.keys(objects).map(async (key) => {
-      //     if (Object.keys(objects[key]).length > 0) {
-      //       const tempObj = await persistenceHelper.load(databeObjectsKeys[key]);
-      //       if (Buffer.from(JSON.stringify(objects[key])).length === Buffer.from(JSON.stringify(tempObj)).length) {
-      //         return;
-      //       }
-      //       const mergedObj = {
-      //         ...objects[key],
-      //         ...tempObj,
-      //       };
-
-      //       for (const [address, value] of Object.entries(tempObj)) {
-      //         if (address in objects[key]) {
-      //           // Check if the current object already exists in the array
-      //           for (const obj of value) {
-      //             const index = mergedObj[address].findIndex((o) => {
-      //               return JSON.stringify(o) === JSON.stringify(obj);
-      //             });
-      //             if (index === -1) {
-      //               mergedObj[address].push(obj);
-      //             }
-      //           }
-      //         } else {
-      //           mergedObj[address] = value;
-      //         }
-      //       }
-
-      //       await persistenceHelper.persist(mergedObj, databeObjectsKeys[key]);
-      //     }
-      //   })
-      // );
-
       // Load the existing object from the database
       const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
 
@@ -357,6 +291,7 @@ const provideHandleTransaction =
       // Persist the merged object in the database
       await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
     }
+
     const txFrom = ethers.utils.getAddress(f);
 
     const permitFunctions = [
@@ -378,833 +313,710 @@ const provideHandleTransaction =
       ...txEvent.filterLog(erc1155transferEventABI),
     ];
 
-    // if (
-    //   !approvalEvents.length &&
-    //   !permitFunctions.length &&
-    //   !transferEvents.length &&
-    //   ethers.BigNumber.from(transaction.value).gt(0) &&
-    //   t &&
-    //   t !== f
-    // ) {
-    //   counters.totalNativeTransfers += 1;
-
-    //   const txTo = ethers.utils.getAddress(t);
-    //   let receiverType = cachedAddresses.get(txTo);
-    //   if (!receiverType) {
-    //     // If the address is not in the cache check if it is a contract
-    //     let code;
-    //     let tries = 0;
-    //     const maxTries = 3;
-    //     while (tries < maxTries) {
-    //       try {
-    //         code = await provider.getCode(txTo);
-    //         break; // exit the loop if successful
-    //       } catch (err) {
-    //         tries++;
-    //         if (tries === maxTries) {
-    //           throw err; // re-throw the error if maximum tries reached
-    //         }
-    //         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
-    //       }
-    //     }
-    //     const isEoa = code === "0x";
-    //     if (isEoa) {
-    //       receiverType = await getEoaType(txTo, provider, blockNumber, true);
-    //     }
-    //   }
-
-    //   if (receiverType === AddressType.EoaWithHighNonce) {
-    //     cachedAddresses.set(txTo, receiverType);
-    //     return findings;
-    //   }
-
-    //   let senderType = cachedAddresses.get(txFrom);
-    //   if (!senderType) {
-    //     senderType = await getEoaType(txFrom, provider, blockNumber, true);
-    //     if (senderType !== AddressType.EoaWithLowNonce) {
-    //       cachedAddresses.set(txFrom, senderType);
-    //     }
-    //   }
-    //   if (senderType === AddressType.EoaWithLowNonce && receiverType === AddressType.EoaWithLowNonce) {
-    //     console.log("HEREEEE");
-    //     objects.nativeTransfers[txTo] ||= [];
-    //     objects.nativeTransfers[txTo].push({ owner: txFrom, hash, timestamp });
-    //     if (objects.nativeTransfers[txTo].length > nativeTransferCountThreshold) {
-    //       let uniqueOwners = new Set();
-    //       for (let i = 0; i < objects.nativeTransfers[txTo].length; i++) {
-    //         uniqueOwners.add(objects.nativeTransfers[txTo][i].owner); // add the owner to the set
-    //       }
-    //       if (uniqueOwners.size > nativeTransferCountThreshold) {
-    //         counters.detectedNativeTransfers += objects.nativeTransfers[txTo].length;
-    //         const anomalyScore = counters.detectedNativeTransfers / counters.totalNativeTransfers;
-    //         findings.push(createNativeTransfersAlert(txTo, objects.nativeTransfers[txTo], anomalyScore));
-    //       }
-    //     }
-    //   }
-    //   return findings;
-    // }
-
     if (!approvalEvents.length && !permitFunctions.length && !transferEvents.length) {
       return findings;
     }
 
-    await Promise.all(
-      permitFunctions.map(async (func) => {
-        counters.totalPermits += 1;
+    for (const func of permitFunctions) {
+      counters.totalPermits += 1;
 
-        const { address: asset } = func;
-        const { owner, spender, deadline, expiry, value } = func.args;
+      const { address: asset } = func;
+      const { owner, spender, deadline, expiry, value } = func.args;
 
-        const msgSenderType = await getAddressType(
-          txFrom,
-          scamAddresses,
-          cachedAddresses,
-          provider,
-          blockNumber,
-          chainId,
-          false
+      if (txFrom === owner) {
+        continue;
+      }
+
+      const msgSenderType = await getAddressType(
+        txFrom,
+        scamAddresses,
+        cachedAddresses,
+        provider,
+        blockNumber,
+        chainId,
+        false
+      );
+
+      const spenderType = await getAddressType(
+        spender,
+        scamAddresses,
+        cachedAddresses,
+        provider,
+        blockNumber,
+        chainId,
+        false
+      );
+
+      if (
+        (spenderType === AddressType.LowNumTxsUnverifiedContract ||
+          spenderType === AddressType.EoaWithLowNonce ||
+          spenderType === AddressType.ScamAddress) &&
+        (msgSenderType === AddressType.LowNumTxsUnverifiedContract ||
+          msgSenderType === AddressType.EoaWithLowNonce ||
+          msgSenderType === AddressType.ScamAddress)
+      ) {
+        if (!objects.permissions[spender]) objects.permissions[spender] = [];
+        objects.permissions[spender].push({
+          asset,
+          owner,
+          hash,
+          deadline: deadline ? deadline : expiry,
+          value: value ? value : 0,
+        });
+        if (spenderType !== AddressType.ScamAddress && msgSenderType !== AddressType.ScamAddress) {
+          counters.detectedPermits += 1;
+          const anomalyScore = counters.detectedPermits / counters.totalPermits;
+          findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
+        } else {
+          const scamDomains = Object.keys(scamSnifferDB.data).filter(
+            (key) =>
+              scamSnifferDB.data[key].includes(txFrom.toLowerCase()) ||
+              scamSnifferDB.data[key].includes(spender.toLowerCase())
+          );
+          let _scamAddresses = [];
+          if (spenderType === AddressType.ScamAddress) {
+            _scamAddresses.push(spender);
+          }
+          if (msgSenderType === AddressType.ScamAddress) {
+            _scamAddresses.push(txFrom);
+          }
+          counters.detectedScamPermits += 1;
+          const anomalyScore = counters.detectedScamPermits / counters.totalPermits;
+          findings.push(
+            createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+          );
+        }
+      } else if (
+        spenderType === AddressType.LowNumTxsVerifiedContract ||
+        spenderType === AddressType.EoaWithHighNonce
+      ) {
+        const suspiciousContractFound = Array.from(suspiciousContracts).find(
+          (contract) => contract.address === spender || contract.creator === spender
         );
 
-        const spenderType = await getAddressType(
-          spender,
-          scamAddresses,
-          cachedAddresses,
-          provider,
-          blockNumber,
-          chainId,
-          false
-        );
-
-        if (txFrom !== owner) {
-          if (
-            (spenderType === AddressType.LowNumTxsUnverifiedContract ||
-              spenderType === AddressType.EoaWithLowNonce ||
-              spenderType === AddressType.ScamAddress) &&
-            (msgSenderType === AddressType.LowNumTxsUnverifiedContract ||
-              msgSenderType === AddressType.EoaWithLowNonce ||
-              msgSenderType === AddressType.ScamAddress)
-          ) {
-            if (!objects.permissions[spender]) objects.permissions[spender] = [];
-            objects.permissions[spender].push({
-              asset,
+        if (suspiciousContractFound) {
+          counters.detectedSuspiciousPermits += 1;
+          const anomalyScore = counters.detectedSuspiciousPermits / counters.totalPermits;
+          findings.push(
+            createPermitSuspiciousContractAlert(
+              txFrom,
+              spender,
               owner,
-              hash,
-              deadline: deadline ? deadline : expiry,
-              value: value ? value : 0,
-            });
-            if (spenderType !== AddressType.ScamAddress && msgSenderType !== AddressType.ScamAddress) {
-              counters.detectedPermits += 1;
-              const anomalyScore = counters.detectedPermits / counters.totalPermits;
-              findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
-            } else {
-              const scamDomains = Object.keys(scamSnifferDB.data).filter(
-                (key) =>
-                  scamSnifferDB.data[key].includes(txFrom.toLowerCase()) ||
-                  scamSnifferDB.data[key].includes(spender.toLowerCase())
-              );
-              let _scamAddresses = [];
-              if (spenderType === AddressType.ScamAddress) {
-                _scamAddresses.push(spender);
-              }
-              if (msgSenderType === AddressType.ScamAddress) {
-                _scamAddresses.push(txFrom);
-              }
-              counters.detectedScamPermits += 1;
-              const anomalyScore = counters.detectedScamPermits / counters.totalPermits;
-              findings.push(
-                createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, hash)
-              );
-            }
-          } else if (
-            spenderType === AddressType.LowNumTxsVerifiedContract ||
-            spenderType === AddressType.EoaWithHighNonce
-          ) {
-            const suspiciousContractFound = Array.from(suspiciousContracts).find(
-              (contract) => contract.address === spender || contract.creator === spender
+              asset,
+              suspiciousContractFound,
+              anomalyScore,
+              hash
+            )
+          );
+        }
+
+        if (spenderType === AddressType.LowNumTxsVerifiedContract) {
+          let spenderContractCreator, spenderContractCreatorType;
+
+          spenderContractCreator = await getContractCreator(spender, chainId);
+          if (spenderContractCreator) {
+            spenderContractCreatorType = await getAddressType(
+              spenderContractCreator,
+              scamAddresses,
+              cachedAddresses,
+              provider,
+              blockNumber,
+              chainId,
+              false
             );
-            if (suspiciousContractFound) {
-              counters.detectedSuspiciousPermits += 1;
-              const anomalyScore = counters.detectedSuspiciousPermits / counters.totalPermits;
+          }
+
+          if (spenderContractCreator && spenderContractCreatorType === AddressType.ScamAddress) {
+            const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
+              scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
+            );
+            if (scamDomains.length > 0) {
+              counters.detectedScamCreatorPermits += 1;
+              const anomalyScore = counters.detectedScamCreatorPermits / counters.totalPermits;
               findings.push(
-                createPermitSuspiciousContractAlert(
+                createPermitScamCreatorAlert(
                   txFrom,
                   spender,
                   owner,
                   asset,
-                  suspiciousContractFound,
-                  anomalyScore,
-                  hash
-                )
-              );
-            }
-
-            if (spenderType === AddressType.LowNumTxsVerifiedContract) {
-              let spenderContractCreator, spenderContractCreatorType;
-
-              spenderContractCreator = await getContractCreator(spender, chainId);
-              if (spenderContractCreator) {
-                spenderContractCreatorType = await getAddressType(
                   spenderContractCreator,
-                  scamAddresses,
-                  cachedAddresses,
-                  provider,
-                  blockNumber,
-                  chainId,
-                  false
-                );
-              }
-
-              if (spenderContractCreator && spenderContractCreatorType === AddressType.ScamAddress) {
-                const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-                  scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
-                );
-                if (scamDomains.length > 0) {
-                  counters.detectedScamCreatorPermits += 1;
-                  const anomalyScore = counters.detectedScamCreatorPermits / counters.totalPermits;
-                  findings.push(
-                    createPermitScamCreatorAlert(
-                      txFrom,
-                      spender,
-                      owner,
-                      asset,
-                      spenderContractCreator,
-                      scamDomains,
-                      anomalyScore,
-                      hash
-                    )
-                  );
-                }
-              }
-            }
-
-            if (!objects.permissionsInfoSeverity[spender]) objects.permissionsInfoSeverity[spender] = [];
-            objects.permissionsInfoSeverity[spender].push({
-              asset,
-              owner,
-              hash,
-              deadline: deadline ? deadline : expiry,
-              value: value ? value : 0,
-            });
-            counters.detectedPermitsInfo += 1;
-            const anomalyScore = counters.detectedPermitsInfo / counters.totalPermits;
-            findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, hash));
-          }
-        }
-      })
-    );
-
-    await Promise.all(
-      approvalEvents.map(async (event) => {
-        counters.totalApprovals += 1;
-
-        const { address: asset, name } = event;
-        const { owner, spender, value, tokenId, approved } = event.args;
-
-        const isApprovalForAll = name === "ApprovalForAll";
-
-        // Filter out approval revokes
-        if (isApprovalForAll && !approved) return;
-        if (value?.eq(0)) return;
-        if (spender === ADDRESS_ZERO) return;
-        if (IGNORED_ADDRESSES.includes(spender)) return;
-
-        // When transfering ERC20 tokens an Approval event is emitted with lower value
-        // We should ignore these Approval events because they are duplicates
-        const isAlreadyApproved = tokenId ? false : objects.approvals[spender]?.some((a) => a.owner === owner);
-
-        if (isAlreadyApproved) return;
-
-        let isAssetERC1155 = false;
-
-        if (!isApprovalForAll) {
-          counters[`totalERC${tokenId ? "721" : "20"}Approvals`] += 1;
-        } else {
-          if (cachedERC1155Tokens.get(asset) === undefined) {
-            let assetCode,
-              tries = 0;
-            while (tries < 3) {
-              try {
-                assetCode = await provider.getCode(asset);
-                break;
-              } catch (err) {
-                tries++;
-                if (tries === 3) throw err;
-                console.log(`Attempt ${tries} to get the code failed, retrying...`);
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-              }
-            }
-            cachedERC1155Tokens.set(asset, assetCode.includes(safeBatchTransferFrom1155Sig));
-          }
-          isAssetERC1155 = cachedERC1155Tokens.get(asset);
-          counters[`totalERC${isAssetERC1155 ? "1155" : "721"}ApprovalsForAll`] += 1;
-        }
-
-        // Skip if the owner is not EOA
-        const ownerType = await getAddressType(
-          owner,
-          scamAddresses,
-          cachedAddresses,
-          provider,
-          blockNumber,
-          chainId,
-          true
-        );
-        if (
-          ownerType === AddressType.LowNumTxsUnverifiedContract ||
-          ownerType === AddressType.HighNumTxsUnverifiedContract ||
-          ownerType === AddressType.LowNumTxsVerifiedContract ||
-          ownerType === AddressType.HighNumTxsVerifiedContract
-        )
-          return;
-
-        // Skip if the spender
-        // is verified contract with high number of txs
-        // is unverified contract with high number of txs
-        // or is ignored address
-        const spenderType = await getAddressType(
-          spender,
-          scamAddresses,
-          cachedAddresses,
-          provider,
-          blockNumber,
-          chainId,
-          false
-        );
-
-        if (
-          !spenderType ||
-          spenderType === AddressType.HighNumTxsVerifiedContract ||
-          spenderType === AddressType.HighNumTxsUnverifiedContract ||
-          spenderType.startsWith("Ignored")
-        ) {
-          return;
-        }
-
-        if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
-          // Initialize the approvals array for the spender if it doesn't exist
-          if (!objects.approvalsInfoSeverity[spender]) objects.approvalsInfoSeverity[spender] = [];
-        } else {
-          if (!objects.approvals[spender]) objects.approvals[spender] = [];
-        }
-
-        const approval = { asset, owner, hash, timestamp };
-
-        if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
-          if (isApprovalForAll) {
-            if (isAssetERC1155) {
-              if (!objects.approvalsForAll1155InfoSeverity[spender])
-                objects.approvalsForAll1155InfoSeverity[spender] = [];
-              objects.approvalsForAll1155InfoSeverity[spender].push(approval);
-            } else {
-              if (!objects.approvalsForAll721InfoSeverity[spender])
-                objects.approvalsForAll721InfoSeverity[spender] = [];
-              objects.approvalsForAll721InfoSeverity[spender].push(approval);
-            }
-          } else if (tokenId) {
-            if (!objects.approvalsERC721InfoSeverity[spender]) objects.approvalsERC721InfoSeverity[spender] = [];
-            objects.approvalsERC721InfoSeverity[spender].push(approval);
-          } else {
-            if (!objects.approvalsERC20InfoSeverity[spender]) objects.approvalsERC20InfoSeverity[spender] = [];
-            objects.approvalsERC20InfoSeverity[spender].push(approval);
-          }
-          // Update the approvals for the spender
-          objects.approvalsInfoSeverity[spender].push({
-            asset,
-            owner,
-            hash,
-            timestamp,
-            tokenId,
-            isApprovalForAll,
-          });
-        } else {
-          if (isApprovalForAll) {
-            if (isAssetERC1155) {
-              if (!objects.approvalsForAll1155[spender]) objects.approvalsForAll1155[spender] = [];
-              objects.approvalsForAll1155[spender].push(approval);
-            } else {
-              if (!objects.approvalsForAll721[spender]) objects.approvalsForAll721[spender] = [];
-              objects.approvalsForAll721[spender].push(approval);
-            }
-          } else if (tokenId) {
-            if (!objects.approvalsERC721[spender]) objects.approvalsERC721[spender] = [];
-            objects.approvalsERC721[spender].push(approval);
-          } else {
-            if (!objects.approvalsERC20[spender]) objects.approvalsERC20[spender] = [];
-            objects.approvalsERC20[spender].push(approval);
-          }
-          // Update the approvals for the spender
-          objects.approvals[spender].push({
-            asset,
-            owner,
-            hash,
-            timestamp,
-            tokenId,
-            isApprovalForAll,
-          });
-        }
-        console.log("Detected possible malicious approval");
-        console.log(`owner: ${owner}`);
-        console.log(`spender: ${spender}`);
-        console.log(`asset: ${asset}`);
-
-        for (const _approvals of [
-          objects.approvalsERC20,
-          objects.approvalsERC721,
-          objects.approvalsForAll721,
-          objects.approvalsForAll1155,
-          objects.approvals,
-          objects.approvalsERC20InfoSeverity,
-          objects.approvalsERC721InfoSeverity,
-          objects.approvalsForAll721InfoSeverity,
-          objects.approvalsForAll1155InfoSeverity,
-          objects.approvalsInfoSeverity,
-        ]) {
-          if (!_approvals[spender]) continue;
-          _approvals[spender].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
-        }
-
-        if (
-          spenderType === AddressType.ScamAddress ||
-          spenderType === AddressType.LowNumTxsVerifiedContract ||
-          spenderType === AddressType.LowNumTxsUnverifiedContract ||
-          spenderType === AddressType.EoaWithLowNonce
-        ) {
-          if (spenderType === AddressType.ScamAddress) {
-            const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-              scamSnifferDB.data[key].includes(spender.toLowerCase())
-            );
-            counters.detectedScamApprovals += 1;
-            const anomalyScore = counters.detectedScamApprovals / counters.totalApprovals;
-            findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
-          } else {
-            const suspiciousContractFound = Array.from(suspiciousContracts).find(
-              (contract) => contract.address === spender || contract.creator === spender
-            );
-            if (suspiciousContractFound) {
-              counters.detectedSuspiciousApprovals += 1;
-              const anomalyScore = counters.detectedSuspiciousApprovals / counters.totalApprovals;
-              findings.push(
-                createApprovalSuspiciousContractAlert(
-                  spender,
-                  owner,
-                  asset,
-                  suspiciousContractFound.address,
-                  suspiciousContractFound.creator,
+                  scamDomains,
                   anomalyScore,
                   hash
                 )
               );
             }
-
-            if (
-              spenderType === AddressType.LowNumTxsVerifiedContract ||
-              spenderType === AddressType.LowNumTxsUnverifiedContract
-            ) {
-              const spenderContractCreator = await getContractCreator(spender, chainId);
-              if (spenderContractCreator) {
-                const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-                  scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
-                );
-                if (scamDomains.length > 0) {
-                  counters.detectedScamCreatorApprovals += 1;
-                  const anomalyScore = counters.detectedScamCreatorApprovals / counters.totalApprovals;
-                  findings.push(
-                    createApprovalScamCreatorAlert(
-                      spender,
-                      spenderContractCreator,
-                      owner,
-                      asset,
-                      scamDomains,
-                      anomalyScore,
-                      hash
-                    )
-                  );
-                }
-              }
-            }
           }
         }
 
-        // Ignore the address until the end of the period if there are a lot of approvals
-        if (objects.approvals[spender] && objects.approvals[spender].length > maxAddressAlertsPerPeriod) {
-          const newType =
-            spenderType === AddressType.EoaWithLowNonce ? AddressType.IgnoredEoa : AddressType.IgnoredContract;
-          cachedAddresses.set(spender, newType);
-        } else if (
-          objects.approvalsInfoSeverity[spender] &&
-          objects.approvalsInfoSeverity[spender].length > maxAddressAlertsPerPeriod
-        ) {
-          const newType =
-            spenderType === AddressType.EoaWithHighNonce ? AddressType.IgnoredEoa : AddressType.IgnoredContract;
-          cachedAddresses.set(spender, newType);
-        }
+        if (!objects.permissionsInfoSeverity[spender]) objects.permissionsInfoSeverity[spender] = [];
+        objects.permissionsInfoSeverity[spender].push({
+          asset,
+          owner,
+          hash,
+          deadline: deadline ? deadline : expiry,
+          value: value ? value : 0,
+        });
+        counters.detectedPermitsInfo += 1;
+        const anomalyScore = counters.detectedPermitsInfo / counters.totalPermits;
+        findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, hash));
+      }
+    }
 
-        if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
-          if (
-            objects.approvalsERC20InfoSeverity[spender] &&
-            objects.approvalsERC20InfoSeverity[spender].length > approveCountThreshold
-          ) {
-            counters.detectedERC20ApprovalsInfo += objects.approvalsERC20InfoSeverity[spender].length;
-            let anomalyScore = counters.detectedERC20ApprovalsInfo / counters.totalERC20Approvals;
-            anomalyScore = Math.min(anomalyScore, 1);
-            findings.push(
-              createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
-            );
-          }
+    for (const event of approvalEvents) {
+      counters.totalApprovals += 1;
 
-          if (
-            objects.approvalsERC721InfoSeverity[spender] &&
-            objects.approvalsERC721InfoSeverity[spender].length > approveCountThreshold
-          ) {
-            counters.detectedERC721ApprovalsInfo += objects.approvalsERC721InfoSeverity[spender].length;
-            let anomalyScore = counters.detectedERC721ApprovalsInfo / counters.totalERC721Approvals;
-            anomalyScore = Math.min(anomalyScore, 1);
-            findings.push(
-              createHighNumApprovalsInfoAlertERC721(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
-            );
-          }
+      const { address: asset, name } = event;
+      const { owner, spender, value, tokenId, approved } = event.args;
 
-          if (isApprovalForAll) {
-            if (
-              objects.approvalsForAll721InfoSeverity[spender] &&
-              objects.approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
-            ) {
-              counters.detectedERC721ApprovalsForAllInfo += objects.approvalsForAll721InfoSeverity[spender].length;
-              let anomalyScore = counters.detectedERC721ApprovalsForAllInfo / counters.totalERC721ApprovalsForAll;
-              anomalyScore = Math.min(anomalyScore, 1);
-              findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
-            } else if (
-              objects.approvalsForAll1155InfoSeverity[spender] &&
-              objects.approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
-            ) {
-              counters.detectedERC1155ApprovalsForAllInfo += objects.approvalsForAll1155InfoSeverity[spender].length;
-              let anomalyScore = counters.detectedERC1155ApprovalsForAllInfo / counters.totalERC1155ApprovalsForAll;
-              anomalyScore = Math.min(anomalyScore, 1);
-              findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
+      const isApprovalForAll = name === "ApprovalForAll";
+
+      // Filter out approval revokes
+      if (isApprovalForAll && !approved) continue;
+      if (value?.eq(0)) continue;
+      if (spender === ADDRESS_ZERO) continue;
+      if (IGNORED_ADDRESSES.includes(spender)) continue;
+
+      // When transfering ERC20 tokens an Approval event is emitted with lower value
+      // We should ignore these Approval events because they are duplicates
+      const isAlreadyApproved = tokenId ? false : objects.approvals[spender]?.some((a) => a.owner === owner);
+
+      if (isAlreadyApproved) continue;
+
+      let isAssetERC1155 = false;
+
+      if (!isApprovalForAll) {
+        counters[`totalERC${tokenId ? "721" : "20"}Approvals`] += 1;
+      } else {
+        if (cachedERC1155Tokens.get(asset) === undefined) {
+          let assetCode,
+            tries = 0;
+          while (tries < 3) {
+            try {
+              assetCode = await provider.getCode(asset);
+              break;
+            } catch (err) {
+              tries++;
+              if (tries === 3) throw err;
+              console.log(`Attempt ${tries} to get the code failed, retrying...`);
+              await new Promise((resolve) => setTimeout(resolve, 1000));
             }
           }
+          cachedERC1155Tokens.set(asset, assetCode.includes(safeBatchTransferFrom1155Sig));
+        }
+        isAssetERC1155 = cachedERC1155Tokens.get(asset);
+        counters[`totalERC${isAssetERC1155 ? "1155" : "721"}ApprovalsForAll`] += 1;
+      }
+
+      // Skip if the owner is not EOA
+      const ownerType = await getAddressType(
+        owner,
+        scamAddresses,
+        cachedAddresses,
+        provider,
+        blockNumber,
+        chainId,
+        true
+      );
+
+      if (
+        ownerType === AddressType.LowNumTxsUnverifiedContract ||
+        ownerType === AddressType.HighNumTxsUnverifiedContract ||
+        ownerType === AddressType.LowNumTxsVerifiedContract ||
+        ownerType === AddressType.HighNumTxsVerifiedContract
+      )
+        continue;
+
+      // Skip if the spender
+      // is verified contract with high number of txs
+      // is unverified contract with high number of txs
+      // or is ignored address
+      const spenderType = await getAddressType(
+        spender,
+        scamAddresses,
+        cachedAddresses,
+        provider,
+        blockNumber,
+        chainId,
+        false
+      );
+
+      if (
+        !spenderType ||
+        spenderType === AddressType.HighNumTxsVerifiedContract ||
+        spenderType === AddressType.HighNumTxsUnverifiedContract ||
+        spenderType.startsWith("Ignored")
+      ) {
+        continue;
+      }
+
+      if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
+        // Initialize the approvals array for the spender if it doesn't exist
+        if (!objects.approvalsInfoSeverity[spender]) objects.approvalsInfoSeverity[spender] = [];
+      } else {
+        if (!objects.approvals[spender]) objects.approvals[spender] = [];
+      }
+
+      const approval = { asset, owner, hash, timestamp };
+
+      if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
+        if (isApprovalForAll) {
+          if (isAssetERC1155) {
+            if (!objects.approvalsForAll1155InfoSeverity[spender])
+              objects.approvalsForAll1155InfoSeverity[spender] = [];
+            objects.approvalsForAll1155InfoSeverity[spender].push(approval);
+          } else {
+            if (!objects.approvalsForAll721InfoSeverity[spender]) objects.approvalsForAll721InfoSeverity[spender] = [];
+            objects.approvalsForAll721InfoSeverity[spender].push(approval);
+          }
+        } else if (tokenId) {
+          if (!objects.approvalsERC721InfoSeverity[spender]) objects.approvalsERC721InfoSeverity[spender] = [];
+          objects.approvalsERC721InfoSeverity[spender].push(approval);
         } else {
-          if (objects.approvalsERC20[spender] && objects.approvalsERC20[spender].length > approveCountThreshold) {
-            counters.detectedERC20Approvals += objects.approvalsERC20[spender].length;
-            let anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
-            anomalyScore = Math.min(anomalyScore, 1);
-            findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore));
-          }
-
-          if (objects.approvalsERC721[spender] && objects.approvalsERC721[spender].length > approveCountThreshold) {
-            counters.detectedERC721Approvals += objects.approvalsERC721[spender].length;
-            let anomalyScore = counters.detectedERC721Approvals / counters.totalERC721Approvals;
-            anomalyScore = Math.min(anomalyScore, 1);
-            findings.push(createHighNumApprovalsAlertERC721(spender, objects.approvals[spender], anomalyScore));
-          }
-
-          if (isApprovalForAll) {
-            if (
-              objects.approvalsForAll721[spender] &&
-              objects.approvalsForAll721[spender].length > approveForAllCountThreshold
-            ) {
-              counters.detectedERC721ApprovalsForAll += objects.approvalsForAll721[spender].length;
-              let anomalyScore = counters.detectedERC721ApprovalsForAll / counters.totalERC721ApprovalsForAll;
-              anomalyScore = Math.min(anomalyScore, 1);
-              findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
-            } else if (
-              objects.approvalsForAll1155[spender] &&
-              objects.approvalsForAll1155[spender].length > approveForAllCountThreshold
-            ) {
-              counters.detectedERC1155ApprovalsForAll += objects.approvalsForAll1155[spender].length;
-              let anomalyScore = counters.detectedERC1155ApprovalsForAll / counters.totalERC1155ApprovalsForAll;
-              anomalyScore = Math.min(anomalyScore, 1);
-              findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
-            }
-          }
+          if (!objects.approvalsERC20InfoSeverity[spender]) objects.approvalsERC20InfoSeverity[spender] = [];
+          objects.approvalsERC20InfoSeverity[spender].push(approval);
         }
-      })
-    );
-
-    await Promise.all(
-      transferEvents.map(async (event) => {
-        counters.totalTransfers += 1;
-        const asset = event.address;
-        const { from, to, value, values, tokenId, tokenIds } = event.args;
-
-        // Filter out direct transfers and mints
-        if (from === txFrom || from === ADDRESS_ZERO) return;
-
-        const [txFromType, toType] = await Promise.all([
-          getAddressType(txFrom, scamAddresses, cachedAddresses, provider, blockNumber, chainId, false),
-          getAddressType(to, scamAddresses, cachedAddresses, provider, blockNumber, chainId, false),
-        ]);
-
-        if (txFromType === AddressType.ScamAddress || toType === AddressType.ScamAddress) {
-          const scamDomains = Object.keys(scamSnifferDB.data).filter(
-            (key) =>
-              scamSnifferDB.data[key].includes(txFrom.toLowerCase()) ||
-              scamSnifferDB.data[key].includes(to.toLowerCase())
-          );
-          let _scamAddresses = [];
-          if (toType === AddressType.ScamAddress) {
-            _scamAddresses.push(to);
+        // Update the approvals for the spender
+        objects.approvalsInfoSeverity[spender].push({
+          asset,
+          owner,
+          hash,
+          timestamp,
+          tokenId,
+          isApprovalForAll,
+        });
+      } else {
+        if (isApprovalForAll) {
+          if (isAssetERC1155) {
+            if (!objects.approvalsForAll1155[spender]) objects.approvalsForAll1155[spender] = [];
+            objects.approvalsForAll1155[spender].push(approval);
+          } else {
+            if (!objects.approvalsForAll721[spender]) objects.approvalsForAll721[spender] = [];
+            objects.approvalsForAll721[spender].push(approval);
           }
-          if (txFromType === AddressType.ScamAddress) {
-            _scamAddresses.push(txFrom);
-          }
-          counters.detectedScamTransfers += 1;
-          const anomalyScore = counters.detectedScamTransfers / counters.totalTransfers;
-          findings.push(
-            createTransferScamAlert(txFrom, from, to, asset, _scamAddresses, scamDomains, anomalyScore, hash)
-          );
+        } else if (tokenId) {
+          if (!objects.approvalsERC721[spender]) objects.approvalsERC721[spender] = [];
+          objects.approvalsERC721[spender].push(approval);
+        } else {
+          if (!objects.approvalsERC20[spender]) objects.approvalsERC20[spender] = [];
+          objects.approvalsERC20[spender].push(approval);
         }
+        // Update the approvals for the spender
+        objects.approvals[spender].push({
+          asset,
+          owner,
+          hash,
+          timestamp,
+          tokenId,
+          isApprovalForAll,
+        });
+      }
+      console.log("Detected possible malicious approval");
+      console.log(`owner: ${owner}`);
+      console.log(`spender: ${spender}`);
+      console.log(`asset: ${asset}`);
 
-        if (
-          [
-            AddressType.LowNumTxsVerifiedContract,
-            AddressType.LowNumTxsUnverifiedContract,
-            AddressType.EoaWithLowNonce,
-          ].includes(toType)
-        ) {
+      for (const _approvals of [
+        objects.approvalsERC20,
+        objects.approvalsERC721,
+        objects.approvalsForAll721,
+        objects.approvalsForAll1155,
+        objects.approvals,
+        objects.approvalsERC20InfoSeverity,
+        objects.approvalsERC721InfoSeverity,
+        objects.approvalsForAll721InfoSeverity,
+        objects.approvalsForAll1155InfoSeverity,
+        objects.approvalsInfoSeverity,
+      ]) {
+        if (!_approvals[spender]) continue;
+        _approvals[spender].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
+      }
+
+      if (
+        spenderType === AddressType.ScamAddress ||
+        spenderType === AddressType.LowNumTxsVerifiedContract ||
+        spenderType === AddressType.LowNumTxsUnverifiedContract ||
+        spenderType === AddressType.EoaWithLowNonce
+      ) {
+        if (spenderType === AddressType.ScamAddress) {
+          const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
+            scamSnifferDB.data[key].includes(spender.toLowerCase())
+          );
+          counters.detectedScamApprovals += 1;
+          const anomalyScore = counters.detectedScamApprovals / counters.totalApprovals;
+          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
+        } else {
           const suspiciousContractFound = Array.from(suspiciousContracts).find(
-            (contract) => contract.address === to || contract.creator === to
+            (contract) => contract.address === spender || contract.creator === spender
           );
           if (suspiciousContractFound) {
-            counters.detectedSuspiciousTransfers += 1;
-            const anomalyScore = counters.detectedSuspiciousTransfers / counters.totalTransfers;
+            counters.detectedSuspiciousApprovals += 1;
+            const anomalyScore = counters.detectedSuspiciousApprovals / counters.totalApprovals;
             findings.push(
-              createTransferSuspiciousContractAlert(
-                txFrom,
-                from,
-                to,
+              createApprovalSuspiciousContractAlert(
+                spender,
+                owner,
                 asset,
-                suspiciousContractFound,
+                suspiciousContractFound.address,
+                suspiciousContractFound.creator,
                 anomalyScore,
                 hash
               )
             );
           }
-          if ([AddressType.LowNumTxsVerifiedContract, AddressType.LowNumTxsUnverifiedContract].includes(toType)) {
-            const toContractCreator = await getContractCreator(to, chainId);
-            const toContractCreatorType = toContractCreator
-              ? await getAddressType(
-                  toContractCreator,
-                  scamAddresses,
-                  cachedAddresses,
-                  provider,
-                  blockNumber,
-                  chainId,
-                  false
-                )
-              : undefined;
-            if (toContractCreatorType === AddressType.ScamAddress) {
+
+          if (
+            spenderType === AddressType.LowNumTxsVerifiedContract ||
+            spenderType === AddressType.LowNumTxsUnverifiedContract
+          ) {
+            const spenderContractCreator = await getContractCreator(spender, chainId);
+            if (spenderContractCreator && scamAddresses.includes(ethers.utils.getAddress(spenderContractCreator))) {
               const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-                scamSnifferDB.data[key].includes(toContractCreator.toLowerCase())
+                scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
               );
-              if (scamDomains.length > 0) {
-                counters.detectedScamCreatorTransfers += 1;
-                const anomalyScore = counters.detectedScamCreatorTransfers / counters.totalTransfers;
-                findings.push(
-                  createTransferScamCreatorAlert(
-                    txFrom,
-                    from,
-                    to,
-                    asset,
-                    toContractCreator,
-                    scamDomains,
-                    anomalyScore,
-                    hash
-                  )
-                );
-              }
-            }
-          }
-        }
 
-        // Check if we monitor the spender
-        const spenderApprovals = objects.approvals[txFrom];
-        const spenderApprovalsInfoSeverity = objects.approvalsInfoSeverity[txFrom];
-        const spenderPermissions = objects.permissions[txFrom];
-        const spenderPermissionsInfoSeverity = objects.permissionsInfoSeverity[txFrom];
-        if (
-          !spenderApprovals &&
-          !spenderApprovalsInfoSeverity &&
-          !spenderPermissions &&
-          !spenderPermissionsInfoSeverity
-        )
-          return;
-        spenderPermissions?.forEach((permission) => {
-          if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-            if (!permission.value || permission.value.toString() === value.toString()) {
-              counters.detectedPermittedTransfers += 1;
-              const anomalyScore = counters.detectedPermittedTransfers / counters.totalTransfers;
-              findings.push(createPermitTransferAlert(txFrom, from, to, asset, value, anomalyScore, hash));
-            }
-          }
-        });
-
-        spenderPermissionsInfoSeverity?.forEach((permission) => {
-          if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-            if (!permission.value || permission.value.toString() === value.toString()) {
-              counters.detectedPermittedTransfersMedium += 1;
-              const anomalyScore = counters.detectedPermittedTransfersMedium / counters.totalTransfers;
+              counters.detectedScamCreatorApprovals += 1;
+              const anomalyScore = counters.detectedScamCreatorApprovals / counters.totalApprovals;
               findings.push(
-                createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash)
+                createApprovalScamCreatorAlert(
+                  spender,
+                  spenderContractCreator,
+                  owner,
+                  asset,
+                  scamDomains,
+                  anomalyScore,
+                  hash
+                )
               );
             }
           }
+        }
+      }
+
+      // Ignore the address until the end of the period if there are a lot of approvals
+      if (objects.approvals[spender] && objects.approvals[spender].length > maxAddressAlertsPerPeriod) {
+        const newType =
+          spenderType === AddressType.EoaWithLowNonce ? AddressType.IgnoredEoa : AddressType.IgnoredContract;
+        cachedAddresses.set(spender, newType);
+      } else if (
+        objects.approvalsInfoSeverity[spender] &&
+        objects.approvalsInfoSeverity[spender].length > maxAddressAlertsPerPeriod
+      ) {
+        const newType =
+          spenderType === AddressType.EoaWithHighNonce ? AddressType.IgnoredEoa : AddressType.IgnoredContract;
+        cachedAddresses.set(spender, newType);
+      }
+
+      if (spenderType === AddressType.EoaWithHighNonce || spenderType === AddressType.LowNumTxsVerifiedContract) {
+        if (
+          objects.approvalsERC20InfoSeverity[spender] &&
+          objects.approvalsERC20InfoSeverity[spender].length > approveCountThreshold
+        ) {
+          counters.detectedERC20ApprovalsInfo += objects.approvalsERC20InfoSeverity[spender].length;
+          let anomalyScore = counters.detectedERC20ApprovalsInfo / counters.totalERC20Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
+          findings.push(
+            createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+          );
+        }
+
+        if (
+          objects.approvalsERC721InfoSeverity[spender] &&
+          objects.approvalsERC721InfoSeverity[spender].length > approveCountThreshold
+        ) {
+          counters.detectedERC721ApprovalsInfo += objects.approvalsERC721InfoSeverity[spender].length;
+          let anomalyScore = counters.detectedERC721ApprovalsInfo / counters.totalERC721Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
+          findings.push(
+            createHighNumApprovalsInfoAlertERC721(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+          );
+        }
+
+        if (isApprovalForAll) {
+          if (
+            objects.approvalsForAll721InfoSeverity[spender] &&
+            objects.approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
+          ) {
+            counters.detectedERC721ApprovalsForAllInfo += objects.approvalsForAll721InfoSeverity[spender].length;
+            let anomalyScore = counters.detectedERC721ApprovalsForAllInfo / counters.totalERC721ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
+            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
+          } else if (
+            objects.approvalsForAll1155InfoSeverity[spender] &&
+            objects.approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
+          ) {
+            counters.detectedERC1155ApprovalsForAllInfo += objects.approvalsForAll1155InfoSeverity[spender].length;
+            let anomalyScore = counters.detectedERC1155ApprovalsForAllInfo / counters.totalERC1155ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
+            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
+          }
+        }
+      } else {
+        if (objects.approvalsERC20[spender] && objects.approvalsERC20[spender].length > approveCountThreshold) {
+          counters.detectedERC20Approvals += objects.approvalsERC20[spender].length;
+          let anomalyScore = counters.detectedERC20Approvals / counters.totalERC20Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
+          findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore));
+        }
+
+        if (objects.approvalsERC721[spender] && objects.approvalsERC721[spender].length > approveCountThreshold) {
+          counters.detectedERC721Approvals += objects.approvalsERC721[spender].length;
+          let anomalyScore = counters.detectedERC721Approvals / counters.totalERC721Approvals;
+          anomalyScore = Math.min(anomalyScore, 1);
+          findings.push(createHighNumApprovalsAlertERC721(spender, objects.approvals[spender], anomalyScore));
+        }
+
+        if (isApprovalForAll) {
+          if (
+            objects.approvalsForAll721[spender] &&
+            objects.approvalsForAll721[spender].length > approveForAllCountThreshold
+          ) {
+            counters.detectedERC721ApprovalsForAll += objects.approvalsForAll721[spender].length;
+            let anomalyScore = counters.detectedERC721ApprovalsForAll / counters.totalERC721ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
+            findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
+          } else if (
+            objects.approvalsForAll1155[spender] &&
+            objects.approvalsForAll1155[spender].length > approveForAllCountThreshold
+          ) {
+            counters.detectedERC1155ApprovalsForAll += objects.approvalsForAll1155[spender].length;
+            let anomalyScore = counters.detectedERC1155ApprovalsForAll / counters.totalERC1155ApprovalsForAll;
+            anomalyScore = Math.min(anomalyScore, 1);
+            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
+          }
+        }
+      }
+    }
+
+    for (const event of transferEvents) {
+      counters.totalTransfers += 1;
+      const asset = event.address;
+      const { from, to, value, values, tokenId, tokenIds } = event.args;
+
+      // Filter out direct transfers, mints and burns
+      if (from === txFrom || from === ADDRESS_ZERO || to === ADDRESS_ZERO) continue;
+
+      let _scamAddresses = [];
+      if (scamAddresses.includes(txFrom)) {
+        if (!cachedAddresses.has(txFrom) || cachedAddresses.get(txFrom) !== AddressType.ScamAddress) {
+          cachedAddresses.set(txFrom, AddressType.ScamAddress);
+        }
+        _scamAddresses.push(txFrom);
+      }
+      if (scamAddresses.includes(to)) {
+        if (!cachedAddresses.has(to) || cachedAddresses.get(to) !== AddressType.ScamAddress) {
+          cachedAddresses.set(to, AddressType.ScamAddress);
+        }
+        _scamAddresses.push(to);
+      }
+
+      if (_scamAddresses.length > 0) {
+        const scamDomains = Object.keys(scamSnifferDB.data).filter(
+          (key) =>
+            scamSnifferDB.data[key].includes(txFrom.toLowerCase()) || scamSnifferDB.data[key].includes(to.toLowerCase())
+        );
+        counters.detectedScamTransfers += 1;
+        const anomalyScore = counters.detectedScamTransfers / counters.totalTransfers;
+        findings.push(
+          createTransferScamAlert(txFrom, from, to, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+        );
+      }
+
+      const suspiciousContractFound = Array.from(suspiciousContracts).find(
+        (contract) => contract.address === to || contract.creator === to
+      );
+      if (suspiciousContractFound) {
+        counters.detectedSuspiciousTransfers += 1;
+        const anomalyScore = counters.detectedSuspiciousTransfers / counters.totalTransfers;
+        findings.push(
+          createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound, anomalyScore, hash)
+        );
+      }
+
+      // if ([AddressType.LowNumTxsVerifiedContract, AddressType.LowNumTxsUnverifiedContract].includes(toType)) {
+      //   const toContractCreator = await getContractCreator(to, chainId);
+      //   const toContractCreatorType = toContractCreator
+      //     ? await getAddressType(
+      //         toContractCreator,
+      //         scamAddresses,
+      //         cachedAddresses,
+      //         provider,
+      //         blockNumber,
+      //         chainId,
+      //         false
+      //       )
+      //     : undefined;
+      //   if (toContractCreatorType === AddressType.ScamAddress) {
+      //     const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
+      //       scamSnifferDB.data[key].includes(toContractCreator.toLowerCase())
+      //     );
+      //     if (scamDomains.length > 0) {
+      //       counters.detectedScamCreatorTransfers += 1;
+      //       const anomalyScore = counters.detectedScamCreatorTransfers / counters.totalTransfers;
+      //       findings.push(
+      //         createTransferScamCreatorAlert(
+      //           txFrom,
+      //           from,
+      //           to,
+      //           asset,
+      //           toContractCreator,
+      //           scamDomains,
+      //           anomalyScore,
+      //           hash
+      //         )
+      //       );
+      //     }
+      //   }
+      // }
+      //   }
+
+      // Check if we monitor the spender
+      const spenderApprovals = objects.approvals[txFrom];
+      const spenderApprovalsInfoSeverity = objects.approvalsInfoSeverity[txFrom];
+      const spenderPermissions = objects.permissions[txFrom];
+      const spenderPermissionsInfoSeverity = objects.permissionsInfoSeverity[txFrom];
+      if (!spenderApprovals && !spenderApprovalsInfoSeverity && !spenderPermissions && !spenderPermissionsInfoSeverity)
+        continue;
+      spenderPermissions?.forEach((permission) => {
+        if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
+          if (!permission.value || permission.value.toString() === value.toString()) {
+            counters.detectedPermittedTransfers += 1;
+            const anomalyScore = counters.detectedPermittedTransfers / counters.totalTransfers;
+            findings.push(createPermitTransferAlert(txFrom, from, to, asset, value, anomalyScore, hash));
+          }
+        }
+      });
+
+      spenderPermissionsInfoSeverity?.forEach((permission) => {
+        if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
+          if (!permission.value || permission.value.toString() === value.toString()) {
+            counters.detectedPermittedTransfersMedium += 1;
+            const anomalyScore = counters.detectedPermittedTransfersMedium / counters.totalTransfers;
+            findings.push(createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash));
+          }
+        }
+      });
+
+      if (spenderApprovals) {
+        // Check if we have caught the approval
+        // For ERC20: Check if there is an approval from the owner that isn't from the current tx
+        // For ERC721 & ERC1155: Check if the tokenId (or one of the tokenIds) is approved or if there is an ApprovalForAll
+        const hasMonitoredApproval =
+          tokenId || tokenIds
+            ? spenderApprovals
+                .filter((a) => a.owner === from)
+                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+            : spenderApprovals.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
+        if (!hasMonitoredApproval) continue;
+
+        // Initialize the transfers array for the spender if it doesn't exist
+        if (!objects.transfers[txFrom]) objects.transfers[txFrom] = [];
+
+        console.log("Detected possible malicious transfer of approved assets");
+        console.log(`owner: ${from}`);
+        console.log(`spender: ${txFrom}`);
+        console.log(`asset: ${asset}`);
+
+        // Update the transfers for the spender
+        objects.transfers[txFrom].push({
+          asset,
+          owner: from,
+          hash,
+          timestamp,
         });
 
-        if (spenderApprovals) {
-          // Check if we have caught the approval
-          // For ERC20: Check if there is an approval from the owner that isn't from the current tx
-          // For ERC721 & ERC1155: Check if the tokenId (or one of the tokenIds) is approved or if there is an ApprovalForAll
-          const hasMonitoredApproval =
-            tokenId || tokenIds
-              ? spenderApprovals
-                  .filter((a) => a.owner === from)
-                  .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
-              : spenderApprovals.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
-          if (!hasMonitoredApproval) return;
-
-          // Initialize the transfers array for the spender if it doesn't exist
-          if (!objects.transfers[txFrom]) objects.transfers[txFrom] = [];
-
-          console.log("Detected possible malicious transfer of approved assets");
-          console.log(`owner: ${from}`);
-          console.log(`spender: ${txFrom}`);
-          console.log(`asset: ${asset}`);
-
-          // Update the transfers for the spender
-          objects.transfers[txFrom].push({
-            asset,
-            owner: from,
-            hash,
-            timestamp,
-          });
-
-          // Filter out old transfers
-          objects.transfers[txFrom] = objects.transfers[txFrom].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
-          if (objects.transfers[txFrom].length > transferCountThreshold) {
-            if (value || (values && values.length > 0)) {
-              if (tokenIds) {
-                tokenIds.forEach(async (tokenId) => {
-                  const balance = ethers.BigNumber.from(
-                    await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
-                  );
-                  if (!balance.eq(0)) return;
-                });
-              } else if (tokenId) {
+        // Filter out old transfers
+        objects.transfers[txFrom] = objects.transfers[txFrom].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
+        if (objects.transfers[txFrom].length > transferCountThreshold) {
+          if (value || (values && values.length > 0)) {
+            if (tokenIds) {
+              tokenIds.forEach(async (tokenId) => {
                 const balance = ethers.BigNumber.from(
                   await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
                 );
                 if (!balance.eq(0)) return;
-              } else {
-                const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-                if (!balance.eq(0)) return;
-              }
+              });
+            } else if (tokenId) {
+              const balance = ethers.BigNumber.from(
+                await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              );
+              if (!balance.eq(0)) continue;
+            } else {
+              const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
+              if (!balance.eq(0)) continue;
             }
-            counters.detectedTransfers += objects.transfers[txFrom].length;
-            let anomalyScore = counters.detectedTransfers / counters.totalTransfers;
-            anomalyScore = Math.min(anomalyScore, 1);
-            findings.push(createHighNumTransfersAlert(txFrom, objects.transfers[txFrom], anomalyScore));
           }
+          counters.detectedTransfers += objects.transfers[txFrom].length;
+          let anomalyScore = counters.detectedTransfers / counters.totalTransfers;
+          anomalyScore = Math.min(anomalyScore, 1);
+          findings.push(createHighNumTransfersAlert(txFrom, objects.transfers[txFrom], anomalyScore));
         }
+      }
 
-        if (spenderApprovalsInfoSeverity) {
-          // Check if we have caught the approval
-          // For ERC20: Check if there is an approval from the owner that isn't from the current tx
-          // For ERC721: Check if the tokenId is approved or if there is an ApprovalForAll
-          const hasMonitoredApproval =
-            tokenId || tokenIds
-              ? spenderApprovalsInfoSeverity
-                  .filter((a) => a.owner === from)
-                  .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
-              : spenderApprovalsInfoSeverity.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
+      if (spenderApprovalsInfoSeverity) {
+        // Check if we have caught the approval
+        // For ERC20: Check if there is an approval from the owner that isn't from the current tx
+        // For ERC721: Check if the tokenId is approved or if there is an ApprovalForAll
+        const hasMonitoredApproval =
+          tokenId || tokenIds
+            ? spenderApprovalsInfoSeverity
+                .filter((a) => a.owner === from)
+                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+            : spenderApprovalsInfoSeverity.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
 
-          if (!hasMonitoredApproval) return;
+        if (!hasMonitoredApproval) continue;
 
-          // Initialize the transfers array for the spender if it doesn't exist
-          if (!objects.transfersLowSeverity[txFrom]) objects.transfersLowSeverity[txFrom] = [];
+        // Initialize the transfers array for the spender if it doesn't exist
+        if (!objects.transfersLowSeverity[txFrom]) objects.transfersLowSeverity[txFrom] = [];
 
-          console.log("Detected possible malicious transfer of approved assets");
-          console.log(`owner: ${from}`);
-          console.log(`spender: ${txFrom}`);
-          console.log(`asset: ${asset}`);
+        console.log("Detected possible malicious transfer of approved assets");
+        console.log(`owner: ${from}`);
+        console.log(`spender: ${txFrom}`);
+        console.log(`asset: ${asset}`);
 
-          // Update the transfers for the spender
-          objects.transfersLowSeverity[txFrom].push({
-            asset,
-            owner: from,
-            hash,
-            timestamp,
-          });
+        // Update the transfers for the spender
+        objects.transfersLowSeverity[txFrom].push({
+          asset,
+          owner: from,
+          hash,
+          timestamp,
+        });
 
-          // Filter out old transfers
-          objects.transfersLowSeverity[txFrom] = objects.transfersLowSeverity[txFrom].filter(
-            (a) => timestamp - a.timestamp < TIME_PERIOD
+        // Filter out old transfers
+        objects.transfersLowSeverity[txFrom] = objects.transfersLowSeverity[txFrom].filter(
+          (a) => timestamp - a.timestamp < TIME_PERIOD
+        );
+
+        if (objects.transfersLowSeverity[txFrom].length > transferCountThreshold) {
+          if (value || (values && values.length > 0)) {
+            if (tokenIds) {
+              tokenIds.forEach(async (tokenId) => {
+                const balance = ethers.BigNumber.from(
+                  await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+                );
+                if (!balance.eq(0)) return;
+              });
+            } else if (tokenId) {
+              const balance = ethers.BigNumber.from(
+                await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              );
+              if (!balance.eq(0)) continue;
+            } else {
+              const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
+              if (!balance.eq(0)) continue;
+            }
+          }
+          counters.detectedTransfersLow += objects.transfersLowSeverity[txFrom].length;
+          let anomalyScore = counters.detectedTransfersLow / counters.totalTransfers;
+          anomalyScore = Math.min(anomalyScore, 1);
+          findings.push(
+            createHighNumTransfersLowSeverityAlert(txFrom, objects.transfersLowSeverity[txFrom], anomalyScore)
           );
-
-          if (objects.transfersLowSeverity[txFrom].length > transferCountThreshold) {
-            if (value || (values && values.length > 0)) {
-              if (tokenIds) {
-                tokenIds.forEach(async (tokenId) => {
-                  const balance = ethers.BigNumber.from(
-                    await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
-                  );
-                  if (!balance.eq(0)) return;
-                });
-              } else if (tokenId) {
-                const balance = ethers.BigNumber.from(
-                  await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
-                );
-                if (!balance.eq(0)) return;
-              } else {
-                const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-                if (!balance.eq(0)) return;
-              }
-            }
-            counters.detectedTransfersLow += objects.transfersLowSeverity[txFrom].length;
-            let anomalyScore = counters.detectedTransfersLow / counters.totalTransfers;
-            anomalyScore = Math.min(anomalyScore, 1);
-            findings.push(
-              createHighNumTransfersLowSeverityAlert(txFrom, objects.transfersLowSeverity[txFrom], anomalyScore)
-            );
-          }
         }
-      })
-    );
+      }
+    }
 
     if (hash === transactions[transactions.length - 1].hash) {
-      // await Promise.all(
-      //   Object.keys(objects).map(async (key) => {
-      //     if (Object.keys(objects[key]).length > 0) {
-      //       const tempObj = await persistenceHelper.load(databeObjectsKeys[key]);
-      //       if (Buffer.from(JSON.stringify(objects[key])).length === Buffer.from(JSON.stringify(tempObj)).length) {
-      //         return;
-      //       }
-      //       const mergedObj = {
-      //         ...objects[key],
-      //         ...tempObj,
-      //       };
-
-      //       for (const [address, value] of Object.entries(tempObj)) {
-      //         if (address in objects[key]) {
-      //           // Check if the current object already exists in the array
-      //           for (const obj of value) {
-      //             const index = mergedObj[address].findIndex((o) => {
-      //               return JSON.stringify(o) === JSON.stringify(obj);
-      //             });
-      //             if (index === -1) {
-      //               mergedObj[address].push(obj);
-      //             }
-      //           }
-      //         } else {
-      //           mergedObj[address] = value;
-      //         }
-      //       }
-
-      //       await persistenceHelper.persist(mergedObj, databeObjectsKeys[key]);
-      //     }
-      //   })
-      // );
-
       // Load the existing object from the database
       const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
 
@@ -1250,6 +1062,10 @@ const provideHandleTransaction =
       await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
     }
 
+    const et1 = new Date().getTime();
+    if (et1 - st1 > 80) {
+      console.log(`Time taken for transaction: ${et1 - st1} ms`, hash);
+    }
     return findings;
   };
 
@@ -1263,26 +1079,30 @@ const provideHandleBlock =
 
     if (!init) {
       suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
-    } else {
+
+      const scamSnifferResponse = await axios.get(
+        "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
+      );
+      scamAddresses = scamSnifferResponse.data;
+      // Convert to checksum addresses
+      scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
+
+      init = true;
+    } else if (number % 240 === 0) {
       let newSuspiciousContracts;
       try {
         newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
       } catch {
         newSuspiciousContracts = new Set();
       }
-
       newSuspiciousContracts.forEach((contract) => suspiciousContracts.add(contract));
-    }
-    init = true;
+      const scamSnifferResponse = await axios.get(
+        "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
+      );
+      scamAddresses = scamSnifferResponse.data;
+      // Convert to checksum addresses
+      scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
 
-    const scamSnifferResponse = await axios.get(
-      "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
-    );
-    scamAddresses = scamSnifferResponse.data;
-    // Convert to checksum addresses
-    scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
-
-    if (number % 240 === 0) {
       for (const key in counters) {
         await persistenceHelper.persist(counters[key], databaseKeys[key]);
       }
@@ -1482,21 +1302,6 @@ module.exports = {
     counters,
     objects
   ),
-  getObjects: () => objects, // Exported for unit tests
-  getApprovals: () => objects.approvals, // Exported for unit tests
-  getERC20Approvals: () => objects.approvalsERC20, // Exported for unit tests
-  getERC721Approvals: () => objects.approvalsERC721, // Exported for unit tests
-  getERC721ApprovalsForAll: () => objects.approvalsForAll721, // Exported for unit tests
-  getERC1155ApprovalsForAll: () => objects.approvalsForAll1155, // Exported for unit tests
-  getPermissions: () => objects.permissions, // Exported for unit tests
-  getTransfers: () => objects.transfers, // Exported for unit tests
-  getApprovalsInfoSeverity: () => objects.approvalsInfoSeverity, // Exported for unit tests
-  getERC20ApprovalsInfoSeverity: () => objects.approvalsERC20InfoSeverity, // Exported for unit tests
-  getERC721ApprovalsInfoSeverity: () => objects.approvalsERC721InfoSeverity, // Exported for unit tests
-  getERC721ApprovalsForAllInfoSeverity: () => objects.approvalsForAll721InfoSeverity, // Exported for unit tests
-  getERC1155ApprovalsForAllInfoSeverity: () => objects.approvalsForAll1155InfoSeverity, // Exported for unit tests
-  getPermissionsInfoSeverity: () => objects.permissionsInfoSeverity, // Exported for unit tests
-  getTransfersLowSeverity: () => objects.transfersLowSeverity, // Exported for unit tests
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
   getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
