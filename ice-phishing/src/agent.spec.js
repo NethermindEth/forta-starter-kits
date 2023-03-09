@@ -5,27 +5,12 @@ const {
   provideHandleTransaction,
   provideHandleBlock,
   provideInitialize,
-  getApprovals,
-  getERC20Approvals,
-  getERC721Approvals,
-  getERC721ApprovalsForAll,
-  getERC1155ApprovalsForAll,
-  getPermissions,
-  getTransfers,
-  getApprovalsInfoSeverity,
-  getERC20ApprovalsInfoSeverity,
-  getERC721ApprovalsInfoSeverity,
-  getERC721ApprovalsForAllInfoSeverity,
-  getERC1155ApprovalsForAllInfoSeverity,
-  getPermissionsInfoSeverity,
-  getTransfersLowSeverity,
   getCachedAddresses,
   getCachedERC1155Tokens,
   resetLastTimestamp,
   resetInit,
   resetLastBlock,
   getSuspiciousContracts,
-  getObjects,
 } = require("./agent");
 
 const approveCountThreshold = 2;
@@ -491,13 +476,6 @@ describe("ice-phishing bot", () => {
       mockBalanceOf.mockReset();
       axios.get.mockReset();
       mockPersistenceHelper.load.mockReset();
-      // Object.keys(getApprovals()).forEach((s) => delete getApprovals()[s]);
-      // Object.keys(getERC721Approvals()).forEach((s) => delete getERC721Approvals()[s]);
-      // Object.keys(getERC20Approvals()).forEach((s) => delete getERC20Approvals()[s]);
-      // Object.keys(getERC721ApprovalsForAll()).forEach((s) => delete getERC721ApprovalsForAll()[s]);
-      // Object.keys(getERC1155ApprovalsForAll()).forEach((s) => delete getERC1155ApprovalsForAll()[s]);
-      // Object.keys(getPermissions()).forEach((s) => delete getPermissions()[s]);
-      // Object.keys(getTransfers()).forEach((s) => delete getTransfers()[s]);
       Object.keys(mockObjects).forEach((s) => {
         mockObjects[s] = {};
       });
@@ -513,9 +491,7 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return empty findings if there are no Approval & Transfer events and no permit functions", async () => {
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
@@ -534,9 +510,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a EIP-2612's permit function call", async () => {
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
@@ -580,9 +555,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a DAI-like permit function call", async () => {
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
@@ -636,7 +610,6 @@ describe("ice-phishing bot", () => {
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
-
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
@@ -655,6 +628,8 @@ describe("ice-phishing bot", () => {
 
       await handleBlock(mockBlockEvent);
 
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce({});
       }
@@ -664,6 +639,7 @@ describe("ice-phishing bot", () => {
         filterFunction: jest.fn(),
         hash: "hash2",
         timestamp: 1230000,
+        blockNumber: 876123,
         from: createAddress("0x4567"),
       };
 
@@ -773,20 +749,22 @@ describe("ice-phishing bot", () => {
       }
       await initialize();
 
-      const mockBlockEvent = { block: { number: 876123 } };
-      handleBlock = provideHandleBlock(
+      const mockBlockEvent = { block: { number: 876126 } };
+      const handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters
       );
-      mockGetSuspiciousContracts.mockResolvedValueOnce(
-        new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
-      );
-      const axiosResponse = { data: [createAddress("0x5050")] };
-      axios.get.mockResolvedValueOnce(axiosResponse);
+      // mockGetSuspiciousContracts.mockResolvedValueOnce(
+      //   new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
+      // );
+      // const axiosResponse = { data: [createAddress("0x5050")] };
+      // axios.get.mockResolvedValueOnce(axiosResponse);
 
       await handleBlock(mockBlockEvent);
+
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
@@ -797,6 +775,7 @@ describe("ice-phishing bot", () => {
         filterFunction: jest.fn(),
         hash: "hash2",
         timestamp: 1230000,
+        blockNumber: 876126,
         from: createAddress("0x4567"),
       };
 
@@ -894,9 +873,12 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC1155 ApprovalForAll events", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce({});
       }
+
       const tempTxEvent0 = {
         filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
         filterLog: jest
@@ -996,6 +978,7 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
       await initialize();
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       for (let i = 0; i < 2; i++) {
         for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
@@ -1071,6 +1054,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC721 ApprovalForAll events regarding a high nonce EOA", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       const thisMockApprovalForAllEvent = [
         {
           address: asset,
@@ -1171,6 +1156,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC20 Approval events", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
           filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
@@ -1245,6 +1232,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC721 Approval events", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
           filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]),
@@ -1363,6 +1352,7 @@ describe("ice-phishing bot", () => {
           },
         },
       ];
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       for (let i = 0; i < 3; i++) {
         for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
@@ -1496,6 +1486,8 @@ describe("ice-phishing bot", () => {
           },
         },
       ];
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       for (let i = 0; i < 3; i++) {
         for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
           mockPersistenceHelper.load.mockReturnValueOnce({});
@@ -1543,6 +1535,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC-20 Transfer events and the balance is completely drained", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
@@ -1637,6 +1631,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should not return findings if there is a high number of ERC-20 Transfer events but the balance is not completely drained", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
@@ -1689,7 +1685,7 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from("100000000000000")); // not drained
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(5);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1697,6 +1693,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC-721 Transfer events", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
@@ -1746,7 +1744,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(5);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1791,6 +1789,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC-1155 TransferSingle events and the balance is completely drained", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
@@ -1841,7 +1841,7 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(7);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1915,6 +1915,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there is a high number of ERC-1155 TransferBatch events and the balance is completely drained", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
@@ -1965,7 +1967,7 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(7);
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -2040,6 +2042,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return a lower severity finding if there is a high number of ERC-1155 TransferBatch events when the balance is completely drained and the spender is a high nonce EOA", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       // Create the Approval events first
       const spender = createAddress("0x9831");
       const mockApprovalForAllEvent = [
@@ -2106,7 +2110,7 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-        // mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
+
         await handleTransaction(tempTxEvent);
       }
       const mockTxEvent = {
@@ -2126,9 +2130,9 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferBatchEvents[2]]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
-      //mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699");
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
-      expect(mockProvider.getCode).toHaveBeenCalledTimes(7);
+
+      expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -2203,6 +2207,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there's a transfer following an EIP-2612's permit function call", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       const tempTxEvent = {
         filterFunction: jest.fn().mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]),
         filterLog: jest
@@ -2271,6 +2277,8 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings if there's a transfer following a DAI-like permit function call", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       const tempTxEvent = {
         filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]),
         filterLog: jest
@@ -2363,6 +2371,8 @@ describe("ice-phishing bot", () => {
         },
       };
 
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce({});
       }
@@ -2437,9 +2447,7 @@ describe("ice-phishing bot", () => {
       );
       await handleBlock(mockBlockEvent);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const axiosResponse3 = { data: { "www.scamDomain.com": [createAddress("0x215050")] } };
       axios.get.mockResolvedValueOnce(axiosResponse3);
@@ -2551,9 +2559,7 @@ describe("ice-phishing bot", () => {
       );
       await handleBlock(mockBlockEvent);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -2635,9 +2641,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse2 = { data: { "www.scamDomain.com": [spender] } };
       axios.get.mockResolvedValueOnce(axiosResponse2);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
@@ -2725,9 +2729,7 @@ describe("ice-phishing bot", () => {
 
       await handleBlock(mockBlockEvent);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -2836,9 +2838,7 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse);
       await handleBlock(mockBlockEvent);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -2936,9 +2936,7 @@ describe("ice-phishing bot", () => {
       );
       await handleBlock(mockBlockEvent);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       mockTxEvent.filterLog
         .mockReturnValueOnce([mockApprovalERC20Events[0]]) // ERC20 approvals
@@ -3102,12 +3100,12 @@ describe("ice-phishing bot", () => {
     it("should populate the suspicious contracts set correctly", async () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
-      const mockBlockEvent = { block: { number: 123 } };
+      const mockBlockEvent = { block: { number: 239 } };
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
       await handleBlock(mockBlockEvent);
       expect(getSuspiciousContracts().size).toStrictEqual(1);
 
-      const mockBlockEvent2 = { block: { number: 124 } };
+      const mockBlockEvent2 = { block: { number: 240 } };
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x765756756")]));
       await handleBlock(mockBlockEvent2);
       expect(getSuspiciousContracts().size).toStrictEqual(2);
@@ -3121,16 +3119,26 @@ describe("ice-phishing bot", () => {
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        mockCounters,
+        mockObjects
       );
 
-      const mockBlockEvent = {
+      const mockBlockEvent1 = {
+        block: {
+          number: 719,
+        },
+      };
+      const mockBlockEvent2 = {
         block: {
           number: 720,
         },
       };
 
-      await handleBlock(mockBlockEvent);
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      await handleBlock(mockBlockEvent1);
+
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      await handleBlock(mockBlockEvent2);
 
       expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(30);
     });
