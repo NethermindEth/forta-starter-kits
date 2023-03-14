@@ -23,7 +23,6 @@ const {
   createApprovalScamCreatorAlert,
   createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
-  //createTransferScamCreatorAlert,
   createTransferSuspiciousContractAlert,
   getAddressType,
   getContractCreator,
@@ -832,43 +831,6 @@ const provideHandleTransaction =
           createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound, anomalyScore, hash)
         );
       }
-
-      // if ([AddressType.LowNumTxsVerifiedContract, AddressType.LowNumTxsUnverifiedContract].includes(toType)) {
-      //   const toContractCreator = await getContractCreator(to, chainId);
-      //   const toContractCreatorType = toContractCreator
-      //     ? await getAddressType(
-      //         toContractCreator,
-      //         scamAddresses,
-      //         cachedAddresses,
-      //         provider,
-      //         blockNumber,
-      //         chainId,
-      //         false
-      //       )
-      //     : undefined;
-      //   if (toContractCreatorType === AddressType.ScamAddress) {
-      //     const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-      //       scamSnifferDB.data[key].includes(toContractCreator.toLowerCase())
-      //     );
-      //     if (scamDomains.length > 0) {
-      //       counters.detectedScamCreatorTransfers += 1;
-      //       const anomalyScore = counters.detectedScamCreatorTransfers / counters.totalTransfers;
-      //       findings.push(
-      //         createTransferScamCreatorAlert(
-      //           txFrom,
-      //           from,
-      //           to,
-      //           asset,
-      //           toContractCreator,
-      //           scamDomains,
-      //           anomalyScore,
-      //           hash
-      //         )
-      //       );
-      //     }
-      //   }
-      // }
-      //   }
 
       // Check if we monitor the spender
       const spenderApprovals = objects.approvals[txFrom];
