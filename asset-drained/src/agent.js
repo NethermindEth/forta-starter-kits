@@ -22,7 +22,7 @@ const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address index
 let chainId;
 let isRelevantChain;
 let transfersCount = 0;
-const BOT_ID = "0x8e04225a5a6bdcab90c5a159bad0a43454db252f6fe13da1adf3ca77bf4afe85";
+const BOT_ID = "0xe4a8660b5d79c0c64ac6bfd3b9871b77c98eaaa464aa555c00635e9d8b33f77f";
 
 const ethcallProvider = new MulticallProvider(getEthersProvider());
 
