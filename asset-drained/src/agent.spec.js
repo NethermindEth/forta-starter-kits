@@ -17,11 +17,9 @@ function hashCode(address, asset) {
   return hash;
 }
 
-const mockAssetDrainedTxnKey = "mock-asset-drained-bot-key";
-const mockAllTransfersKey = "mock-all-transfers-bot-key";
-
-const assetDrainedTransactions = 6;
-const totalTransferTransactions = 33;
+const mockCalculateRate = jest.fn();
+const mockGetValueInUsd = jest.fn();
+const mockGetTotalSupply = jest.fn();
 
 const asset = createAddress("0x01");
 const address1 = createAddress("0x02");
@@ -146,10 +144,6 @@ describe("Asset drained bot test suite", () => {
     const mockProvider = {
       getNetwork: jest.fn(),
     };
-    const mockPersistenceHelper = {
-      persist: jest.fn(),
-      load: jest.fn(),
-    };
 
     let initialize;
     let handleTransaction;
@@ -173,17 +167,13 @@ describe("Asset drained bot test suite", () => {
     beforeEach(async () => {
       mockProvider.getNetwork.mockReturnValueOnce({ chainId: 1 });
 
-      initialize = provideInitialize(mockProvider, mockPersistenceHelper, mockAssetDrainedTxnKey, mockAllTransfersKey);
-
-      mockPersistenceHelper.load
-        .mockReturnValueOnce(assetDrainedTransactions)
-        .mockReturnValueOnce(totalTransferTransactions);
+      initialize = provideInitialize(mockProvider);
 
       await initialize();
 
       handleTransaction = provideHandleTransaction();
 
-      handleBlock = provideHandleBlock(mockPersistenceHelper, mockAssetDrainedTxnKey, mockAssetDrainedTxnKey);
+      handleBlock = provideHandleBlock(mockCalculateRate, mockGetValueInUsd, mockGetTotalSupply);
 
       mockTxEvent.filterLog.mockReset();
       mockTxEvent2.filterLog.mockReset();
@@ -201,7 +191,7 @@ describe("Asset drained bot test suite", () => {
         expect(findings).toStrictEqual([]);
       });
 
-      it("should alert if there are contracts that had 99% or more of their assets drained", async () => {
+      it("should alert if there are contracts that had 99% or more of their assets drained and the value is over threshold", async () => {
         const mockTransferEvent1 = {
           address: asset,
           args: {
@@ -222,8 +212,8 @@ describe("Asset drained bot test suite", () => {
           { success: true, returnData: ethers.BigNumber.from(1045) }, // Exploiter (address2)
         ]);
 
-        // Adding one to each for the current transaction
-        const mockAnomalyScore = (assetDrainedTransactions + 1) / (totalTransferTransactions + 1);
+        mockCalculateRate.mockResolvedValueOnce(0.00000034234);
+        mockGetValueInUsd.mockResolvedValueOnce(32000);
 
         await handleTransaction(mockTxEvent);
         const findings = await handleBlock(mockBlockEvent);
@@ -243,7 +233,100 @@ describe("Asset drained bot test suite", () => {
               postDrainBalance: "5",
               txHashes: [ethers.utils.formatBytes32String("0x2352352")],
               blockNumber: 9999,
-              anomalyScore: mockAnomalyScore.toFixed(2),
+              anomalyScore: (0.00000034234).toString(),
+            },
+            labels: [
+              Label.fromObject({
+                entityType: EntityType.Address,
+                entity: address1,
+                label: "Victim",
+                confidence: 1,
+              }),
+              Label.fromObject({
+                entityType: EntityType.Address,
+                entity: address4,
+                label: "Attacker",
+                confidence: 0.5,
+              }),
+            ],
+            addresses: [address2],
+          }),
+        ]);
+      });
+
+      it("should alert if there are contracts that had 99% or more of their assets drained but the value lost is under threshold", async () => {
+        const mockTransferEvent1 = {
+          address: asset,
+          args: {
+            from: address1,
+            to: address2,
+            value: ethers.BigNumber.from(995),
+          },
+        };
+        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]);
+        // Balance call for pre-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(50) }, // Exploiter (address2)
+        ]);
+        // Balance call for post-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(5) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(1045) }, // Exploiter (address2)
+        ]);
+
+        mockGetValueInUsd.mockResolvedValueOnce(2000);
+
+        await handleTransaction(mockTxEvent);
+        const findings = await handleBlock(mockBlockEvent);
+        expect(mockEthcallProviderTryAll).toHaveBeenCalledTimes(2);
+        expect(findings).toStrictEqual([]);
+      });
+
+      it("should alert if there are contracts that had 99% or more of their assets drained, the value is 0, but the amount lost is over the total supply percentage threshold", async () => {
+        const mockTransferEvent1 = {
+          address: asset,
+          args: {
+            from: address1,
+            to: address2,
+            value: ethers.BigNumber.from(995),
+          },
+        };
+        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]);
+        // Balance call for pre-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(50) }, // Exploiter (address2)
+        ]);
+        // Balance call for post-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(5) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(1045) }, // Exploiter (address2)
+        ]);
+
+        mockGetValueInUsd.mockResolvedValueOnce(0);
+        mockGetTotalSupply.mockResolvedValueOnce(ethers.BigNumber.from(2000));
+        mockCalculateRate.mockResolvedValueOnce(0.000000534234);
+
+        await handleTransaction(mockTxEvent);
+        const findings = await handleBlock(mockBlockEvent);
+        expect(mockEthcallProviderTryAll).toHaveBeenCalledTimes(2);
+        expect(findings).toStrictEqual([
+          Finding.fromObject({
+            name: "Asset drained",
+            description: `99% or more of ${address1}'s ${symbol} tokens were drained`,
+            alertId: "ASSET-DRAINED",
+            severity: FindingSeverity.High,
+            type: FindingType.Exploit,
+            metadata: {
+              contract: address1,
+              asset,
+              initiators: [address4],
+              preDrainBalance: "1000",
+              postDrainBalance: "5",
+              txHashes: [ethers.utils.formatBytes32String("0x2352352")],
+              blockNumber: 9999,
+              anomalyScore: (0.000000534234).toString(),
             },
             labels: [
               Label.fromObject({
@@ -324,8 +407,8 @@ describe("Asset drained bot test suite", () => {
           { success: true, returnData: ethers.BigNumber.from(668) }, // Exploiter 02 (address3)
         ]);
 
-        // Adding one for the asset drained transaction, but two because it is handling two transactions
-        const mockAnomalyScore = (assetDrainedTransactions + 1) / (totalTransferTransactions + 2);
+        mockCalculateRate.mockResolvedValueOnce(0.000000934234);
+        mockGetValueInUsd.mockResolvedValueOnce(32000);
 
         await handleTransaction(mockTxEvent);
         await handleTransaction(mockTxEvent2);
@@ -349,7 +432,7 @@ describe("Asset drained bot test suite", () => {
                 ethers.utils.formatBytes32String("0x442352352"),
               ],
               blockNumber: 9999,
-              anomalyScore: mockAnomalyScore.toFixed(2),
+              anomalyScore: (0.000000934234).toString(),
             },
             labels: [
               Label.fromObject({
@@ -374,32 +457,6 @@ describe("Asset drained bot test suite", () => {
             addresses: [address2, address3],
           }),
         ]);
-      });
-    });
-
-    describe("Persistence functionality", () => {
-      afterEach(() => {
-        mockPersistenceHelper.persist.mockClear();
-      });
-
-      it("should persist the value in a block evenly divisible by 240", async () => {
-        const mockBlockEvent = {
-          blockNumber: 720,
-        };
-
-        await handleBlock(mockBlockEvent);
-
-        expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(2);
-      });
-
-      it("should not persist values because block is not evenly divisible by 240", async () => {
-        const mockBlockEvent = {
-          blockNumber: 600,
-        };
-
-        await handleBlock(mockBlockEvent);
-
-        expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
       });
     });
   });
