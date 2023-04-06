@@ -8,6 +8,9 @@ const keys = {
   snowtraceApiKeys: [],
 };
 
+const ZETTABLOCK_API_KEY = "";
+
 module.exports = {
   keys,
+  ZETTABLOCK_API_KEY
 };

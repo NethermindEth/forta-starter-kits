@@ -60,6 +60,7 @@ jest.mock(
   { virtual: true }
 );
 
+const mockCalculateAlertRate = jest.fn();
 const mockBalanceOf = jest.fn();
 // Mock axios and ethers provider
 jest.mock("axios");
@@ -105,6 +106,7 @@ const mockApprovalForAllEvent = [
     },
   },
 ];
+
 
 const mockPermitFunctionCall = {
   address: asset,
@@ -370,29 +372,6 @@ const MOCK_DATABASE_KEYS = {
   totalERC721Approvals: "nm-icephishing-bot-total-erc721-approvals-key",
   totalERC721ApprovalsForAll: "nm-icephishing-bot-total-erc721-approvalsforall-key",
   totalERC1155ApprovalsForAll: "nm-icephishing-bot-total-erc1155-approvalsforall-key",
-  detectedPermits: "nm-icephishing-bot-detect-permits-key",
-  detectedPermitsInfo: "nm-icephishing-bot-detect-permits-info-key",
-  detectedScamPermits: "nm-icephishing-bot-detect-scam-permits-key",
-  detectedScamCreatorPermits: "nm-icephishing-bot-detect-scam-creator-permits-key",
-  detectedSuspiciousPermits: "nm-icephishing-bot-detect-suspicious-permits-key",
-  detectedERC20Approvals: "nm-icephishing-bot-detect-erc20-approvals-key",
-  detectedERC20ApprovalsInfo: "nm-icephishing-bot-detect-erc20-approvals-info-key",
-  detectedERC721Approvals: "nm-icephishing-bot-detect-erc721-approvals-key",
-  detectedERC721ApprovalsInfo: "nm-icephishing-bot-detect-erc721-approvals-info-key",
-  detectedERC721ApprovalsForAll: "nm-icephishing-bot-detect-erc721-approvalsforall-key",
-  detectedERC721ApprovalsForAllInfo: "nm-icephishing-bot-detect-erc721-approvalsforall-info-key",
-  detectedERC1155ApprovalsForAll: "nm-icephishing-bot-detect-erc1155-approvalsforall-key",
-  detectedERC1155ApprovalsForAllInfo: "nm-icephishing-bot-detect-erc1155-approvalsforall-info-key",
-  detectedScamApprovals: "nm-icephishing-bot-detect-scam-approvals-key",
-  detectedScamCreatorApprovals: "nm-icephishing-bot-detect-scam-creator-approvals-key",
-  detectedSuspiciousApprovals: "nm-icephishing-bot-detect-suspicious-approvals-key",
-  detectedTransfers: "nm-icephishing-bot-detect-transfers-key",
-  detectedTransfersLow: "nm-icephishing-bot-detect-transfers-low-key",
-  detectedPermittedTransfers: "nm-icephishing-bot-detect-permitted-transfers-key",
-  detectedPermittedTransfersMedium: "nm-icephishing-bot-detect-permitted-transfers-medium-key",
-  detectedScamTransfers: "nm-icephishing-bot-detect-scam-transfers-key",
-  detectedScamCreatorTransfers: "nm-icephishing-bot-detect-scam-creator-transfers-key",
-  detectedSuspiciousTransfers: "nm-icephishing-bot-detect-suspicious-transfers-key",
 };
 
 const MOCK_DATABASE_OBJECTS_KEYS = {
@@ -420,29 +399,6 @@ const mockCounters = {
   totalERC721Approvals: 10000,
   totalERC721ApprovalsForAll: 8200,
   totalERC1155ApprovalsForAll: 8000,
-  detectedPermits: 220,
-  detectedPermitsInfo: 56,
-  detectedScamPermits: 34,
-  detectedScamCreatorPermits: 111,
-  detectedSuspiciousPermits: 121,
-  detectedERC20Approvals: 78,
-  detectedERC20ApprovalsInfo: 99,
-  detectedERC721Approvals: 13,
-  detectedERC721ApprovalsInfo: 21,
-  detectedERC721ApprovalsForAll: 220,
-  detectedERC721ApprovalsForAllInfo: 144,
-  detectedERC1155ApprovalsForAll: 545,
-  detectedERC1155ApprovalsForAllInfo: 11,
-  detectedScamApprovals: 6,
-  detectedScamCreatorApprovals: 20,
-  detectedSuspiciousApprovals: 310,
-  detectedTransfers: 77,
-  detectedTransfersLow: 313,
-  detectedPermittedTransfers: 41,
-  detectedPermittedTransfersMedium: 43,
-  detectedScamTransfers: 55,
-  detectedScamCreatorTransfers: 90,
-  detectedSuspiciousTransfers: 120,
 };
 
 describe("ice-phishing bot", () => {
@@ -486,7 +442,8 @@ describe("ice-phishing bot", () => {
         mockCounters,
         MOCK_DATABASE_OBJECTS_KEYS,
         mockPersistenceHelper,
-        mockObjects
+        mockObjects,
+        mockCalculateAlertRate
       );
     });
 
@@ -515,9 +472,10 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
+      mockCalculateAlertRate.mockReturnValueOnce("0.3");
+
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = mockCounters.detectedPermits / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -531,7 +489,7 @@ describe("ice-phishing bot", () => {
             owner: owner1,
             spender,
             anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+              "0.3",
           },
           addresses: [asset],
           labels: [
@@ -560,9 +518,9 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
-      const findings = await handleTransaction(mockTxEvent);
+      mockCalculateAlertRate.mockReturnValueOnce("0.23");
 
-      const mockAnomalyScore = mockCounters.detectedPermits / mockCounters.totalPermits;
+      const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -575,8 +533,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             owner: owner1,
             spender,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.23",
           },
           addresses: [asset],
           labels: [
@@ -661,10 +618,9 @@ describe("ice-phishing bot", () => {
       };
       const axiosResponse3 = { data: { message: "totally ok", status: "1", result: [createAddress("0xaaaa")] } };
       axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
-      const findings = await handleTransaction(mockTxEvent);
+      mockCalculateAlertRate.mockReturnValueOnce("0.023").mockReturnValueOnce("0.001");
 
-      const mockAnomalyScore1 = mockCounters.detectedSuspiciousPermits / mockCounters.totalPermits;
-      const mockAnomalyScore2 = mockCounters.detectedPermitsInfo / mockCounters.totalPermits;
+      const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -681,8 +637,7 @@ describe("ice-phishing bot", () => {
             spender: createAddress("0xabcdabcd"),
             suspiciousContract: createAddress("0xabcdabcd"),
             suspiciousContractCreator: createAddress("0xeeffeeff"),
-            anomalyScore:
-              mockAnomalyScore1.toFixed(2) === "0.00" ? mockAnomalyScore1.toString() : mockAnomalyScore1.toFixed(2),
+            anomalyScore: "0.023",
           },
           addresses: [asset],
           labels: [
@@ -712,8 +667,7 @@ describe("ice-phishing bot", () => {
             msgSender: createAddress("0x4567"),
             owner: owner1,
             spender: createAddress("0xabcdabcd"),
-            anomalyScore:
-              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
+            anomalyScore: "0.001",
           },
           addresses: [asset],
           labels: [
@@ -756,11 +710,6 @@ describe("ice-phishing bot", () => {
         MOCK_DATABASE_KEYS,
         mockCounters
       );
-      // mockGetSuspiciousContracts.mockResolvedValueOnce(
-      //   new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
-      // );
-      // const axiosResponse = { data: [createAddress("0x5050")] };
-      // axios.get.mockResolvedValueOnce(axiosResponse);
 
       await handleBlock(mockBlockEvent);
 
@@ -797,10 +746,9 @@ describe("ice-phishing bot", () => {
       };
       const axiosResponse3 = { data: { message: "totally ok", status: "1", result: [createAddress("0xaaaa")] } };
       axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
-      const findings = await handleTransaction(mockTxEvent);
+      mockCalculateAlertRate.mockReturnValueOnce("0.1023").mockReturnValueOnce("0.1001");
 
-      const mockAnomalyScore1 = mockCounters.detectedSuspiciousPermits / mockCounters.totalPermits;
-      const mockAnomalyScore2 = mockCounters.detectedPermitsInfo / mockCounters.totalPermits;
+      const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -817,8 +765,7 @@ describe("ice-phishing bot", () => {
             spender: createAddress("0xeeffeeff"),
             suspiciousContract: createAddress("0xabcdabcd"),
             suspiciousContractCreator: createAddress("0xeeffeeff"),
-            anomalyScore:
-              mockAnomalyScore1.toFixed(2) === "0.00" ? mockAnomalyScore1.toString() : mockAnomalyScore1.toFixed(2),
+            anomalyScore: "0.1023",
           },
           addresses: [asset],
           labels: [
@@ -848,8 +795,7 @@ describe("ice-phishing bot", () => {
             msgSender: createAddress("0x4567"),
             owner: owner1,
             spender: createAddress("0xeeffeeff"),
-            anomalyScore:
-              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
+            anomalyScore: "0.1001",
           },
           addresses: [asset],
           labels: [
@@ -930,9 +876,9 @@ describe("ice-phishing bot", () => {
       mockProvider.getCode.mockReturnValueOnce("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
-      const findings = await handleTransaction(mockTxEvent);
+      mockCalculateAlertRate.mockReturnValueOnce("0.91023");
 
-      const mockAnomalyScore = mockCounters.detectedERC1155ApprovalsForAll / mockCounters.totalERC1155ApprovalsForAll;
+      const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -944,8 +890,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.91023",
           },
           addresses: [asset],
           labels: [
@@ -1016,6 +961,7 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
+      mockCalculateAlertRate.mockReturnValueOnce("0.891023");
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1031,8 +977,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.891023",
           },
           addresses: [asset],
           labels: [
@@ -1117,9 +1062,9 @@ describe("ice-phishing bot", () => {
       mockProvider.getCode.mockReturnValue("0x");
       mockProvider.getTransactionCount.mockReturnValue(1234454);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
-      const findings = await handleTransaction(mockTxEvent);
+      mockCalculateAlertRate.mockReturnValueOnce("0.8910234");
 
-      const mockAnomalyScore = mockCounters.detectedERC721ApprovalsForAllInfo / mockCounters.totalERC721ApprovalsForAll;
+      const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1133,8 +1078,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender: createAddress("0xcdcd"),
             owner: createAddress("0xcccdcd"),
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.8910234",
           },
           addresses: [asset],
           labels: [
@@ -1189,9 +1133,8 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       expect(mockProvider.getCode).toHaveBeenCalledTimes(3);
+      mockCalculateAlertRate.mockReturnValueOnce("0.08910234");
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedERC20Approvals / mockCounters.totalERC20Approvals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1203,8 +1146,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.08910234",
           },
           addresses: [asset],
           labels: [
@@ -1262,10 +1204,9 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockCalculateAlertRate.mockReturnValueOnce("0.008910234");
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedERC721Approvals / mockCounters.totalERC721Approvals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1277,8 +1218,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.008910234"
           },
           addresses: [asset],
           labels: [
@@ -1400,10 +1340,9 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]); // ERC1155 transfers
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockCalculateAlertRate.mockReturnValueOnce("0.0008910234");
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedERC721ApprovalsInfo / mockCounters.totalERC721Approvals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1415,8 +1354,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.0008910234",
           },
           addresses: [asset],
           labels: [
@@ -1554,7 +1492,9 @@ describe("ice-phishing bot", () => {
           from: spender,
         };
         mockProvider.getCode.mockReturnValue("0x");
-
+        if (i === 2) {
+          mockCalculateAlertRate.mockReturnValueOnce(0.0008910231);
+        }
         await handleTransaction(tempTxEvent);
       }
 
@@ -1587,10 +1527,9 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockCalculateAlertRate.mockReturnValueOnce(0.4);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1602,8 +1541,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.4",
           },
           addresses: [asset],
           labels: [
@@ -1650,6 +1588,9 @@ describe("ice-phishing bot", () => {
           from: spender,
         };
         mockProvider.getCode.mockReturnValue("0x");
+        if (i === 2) {
+          mockCalculateAlertRate.mockReturnValueOnce(0.10008910231);
+        }
 
         await handleTransaction(tempTxEvent);
       }
@@ -1712,7 +1653,9 @@ describe("ice-phishing bot", () => {
           from: spender,
         };
         mockProvider.getCode.mockReturnValue("0x");
-
+        if (i === 2) {
+          mockCalculateAlertRate.mockReturnValueOnce(0.914);
+        }
         await handleTransaction(tempTxEvent);
       }
 
@@ -1731,7 +1674,9 @@ describe("ice-phishing bot", () => {
           timestamp: 3000 + 1000 * i,
           from: spender,
         };
-
+        if (i === 0) {
+          mockCalculateAlertRate.mockReturnValueOnce(0.9148);
+        }
         await handleTransaction(tempTxEvent);
       }
 
@@ -1745,10 +1690,10 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
+      mockCalculateAlertRate.mockReturnValue(0.42);
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1760,8 +1705,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.42",
           },
           addresses: [asset],
           labels: [
@@ -1809,7 +1753,9 @@ describe("ice-phishing bot", () => {
         };
         // First call includes 1155 sig "2eb2c2d6"
         mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValue("0x");
-
+        if (i === 2) {
+          mockCalculateAlertRate.mockReturnValue(0.142);
+        }
         await handleTransaction(tempTxEvent);
       }
 
@@ -1842,11 +1788,9 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
+      mockCalculateAlertRate.mockReturnValueOnce(0.421).mockReturnValueOnce(0.1421);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedERC1155ApprovalsForAll / mockCounters.totalERC1155ApprovalsForAll;
-      const mockAnomalyScore2 = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1858,8 +1802,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.421"
           },
           addresses: [asset],
           labels: [
@@ -1886,8 +1829,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
+            anomalyScore: "0.1421"
           },
           addresses: [asset],
           labels: [
@@ -1968,11 +1910,9 @@ describe("ice-phishing bot", () => {
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
+      mockCalculateAlertRate.mockReturnValueOnce(0.212421).mockReturnValueOnce(0.1212);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedERC1155ApprovalsForAll / mockCounters.totalERC1155ApprovalsForAll;
-      const mockAnomalyScore2 = mockCounters.detectedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1984,8 +1924,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.212421",
           },
           addresses: [asset],
           labels: [
@@ -2013,8 +1952,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
+            anomalyScore: "0.1212",
           },
           addresses: [asset],
           labels: [
@@ -2133,12 +2071,10 @@ describe("ice-phishing bot", () => {
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
 
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
+      mockCalculateAlertRate.mockReturnValueOnce(0.11095).mockReturnValueOnce(0.11);
 
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore =
-        mockCounters.detectedERC1155ApprovalsForAllInfo / mockCounters.totalERC1155ApprovalsForAll;
-      const mockAnomalyScore2 = mockCounters.detectedTransfersLow / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2150,8 +2086,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.11095",
           },
           addresses: [asset],
           labels: [
@@ -2178,8 +2113,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore:
-              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
+            anomalyScore: "0.11",
           },
           addresses: [asset],
           labels: [
@@ -2238,10 +2172,9 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockCalculateAlertRate.mockReturnValueOnce(0.095);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedPermittedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2253,9 +2186,8 @@ describe("ice-phishing bot", () => {
           metadata: {
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
-            spender: spender,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            spender: spender,          
+            anomalyScore: "0.095",
           },
           addresses: asset,
           labels: [
@@ -2308,10 +2240,9 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockCalculateAlertRate.mockReturnValueOnce(0.4111);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedPermittedTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2324,8 +2255,7 @@ describe("ice-phishing bot", () => {
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
             spender: spender,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.4111"
           },
           addresses: asset,
           labels: [
@@ -2383,9 +2313,9 @@ describe("ice-phishing bot", () => {
 
       const axiosResponse2 = { data: { "www.scamDomain.com": [createAddress("0x5050")] } };
       axios.get.mockResolvedValueOnce(axiosResponse2);
-      const findings = await handleTransaction(mockTxEvent);
+      mockCalculateAlertRate.mockReturnValueOnce(0.004);
 
-      const mockAnomalyScore = mockCounters.detectedScamPermits / mockCounters.totalPermits;
+      const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2400,8 +2330,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x5050"),
             owner: owner1,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.004"
           },
           addresses: [asset],
           labels: [
@@ -2474,11 +2403,9 @@ describe("ice-phishing bot", () => {
 
       const axiosResponse2 = { data: { message: "ok", result: [{ contractCreator: createAddress("0x215050") }] } };
       axios.get.mockResolvedValueOnce(axiosResponse2);
-
+      mockCalculateAlertRate.mockReturnValueOnce(0.4).mockReturnValueOnce(0.3);
       const findings = await handleTransaction(mockTxEvent);
 
-      const mockAnomalyScore1 = mockCounters.detectedScamCreatorPermits / mockCounters.totalPermits;
-      const mockAnomalyScore2 = mockCounters.detectedPermitsInfo / mockCounters.totalPermits;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2493,8 +2420,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x23325050"),
             owner: owner1,
-            anomalyScore:
-              mockAnomalyScore1.toFixed(2) === "0.00" ? mockAnomalyScore1.toString() : mockAnomalyScore1.toFixed(2),
+            anomalyScore: "0.4",
           },
           addresses: [asset],
           labels: [
@@ -2522,8 +2448,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x23325050"),
             owner: owner1,
-            anomalyScore:
-              mockAnomalyScore2.toFixed(2) === "0.00" ? mockAnomalyScore2.toString() : mockAnomalyScore2.toFixed(2),
+            anomalyScore: "0.3",
           },
           addresses: [asset],
           labels: [
@@ -2583,10 +2508,9 @@ describe("ice-phishing bot", () => {
       const axiosResponse2 = { data: { "www.scamDomain.com": [spender] } };
       axios.get.mockResolvedValueOnce(axiosResponse2);
       mockProvider.getCode.mockReturnValue("0x");
+      mockCalculateAlertRate.mockReturnValueOnce(0.003);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedScamApprovals / mockCounters.totalApprovals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2599,8 +2523,7 @@ describe("ice-phishing bot", () => {
             scamDomains: ["www.scamDomain.com"],
             scamSpender: spender,
             owner: owner1,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.003",
           },
           addresses: [asset],
           labels: [
@@ -2653,10 +2576,9 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
+      mockCalculateAlertRate.mockReturnValueOnce(0.9);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedScamTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2671,8 +2593,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.9",
           },
           addresses: [asset],
           labels: [
@@ -2763,6 +2684,7 @@ describe("ice-phishing bot", () => {
         data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
       };
       axios.get.mockResolvedValue(axiosResponse2);
+      mockCalculateAlertRate.mockReturnValue(0.5);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -2781,8 +2703,7 @@ describe("ice-phishing bot", () => {
             receiver: suspiciousReceiver,
             suspiciousContract: suspiciousReceiver,
             suspiciousContractCreator,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.5",
           },
           addresses: [asset],
           labels: [
@@ -2872,10 +2793,8 @@ describe("ice-phishing bot", () => {
         data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
       };
       axios.get.mockResolvedValue(axiosResponse2);
-
+      mockCalculateAlertRate.mockReturnValueOnce(0.665);
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedSuspiciousTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2890,8 +2809,7 @@ describe("ice-phishing bot", () => {
             receiver: suspiciousContractCreator,
             suspiciousContract,
             suspiciousContractCreator,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.665"
           },
           addresses: [asset],
           labels: [
@@ -2948,10 +2866,8 @@ describe("ice-phishing bot", () => {
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
-
+      mockCalculateAlertRate.mockReturnValue(0.6);
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedSuspiciousApprovals / mockCounters.totalApprovals;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2965,8 +2881,7 @@ describe("ice-phishing bot", () => {
             suspiciousContractCreator: spender,
             owner: owner1,
             suspiciousSpender: spender,
-            anomalyScore:
-              mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+            anomalyScore: "0.6"
           },
           addresses: [asset],
           labels: [
@@ -3140,7 +3055,7 @@ describe("ice-phishing bot", () => {
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
       await handleBlock(mockBlockEvent2);
 
-      expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(30);
+      expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(7);
     });
 
     it("should not persist values because block is not evenly divisible by 240", async () => {

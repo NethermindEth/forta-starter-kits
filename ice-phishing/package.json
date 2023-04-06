@@ -1,6 +1,6 @@
 {
   "name": "forta-ice-phishing-starter-kit",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "This bot detects if an account gains high number of approvals and if it transfers the approved funds",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/ice-phishing",
   "chainIds": [
@@ -38,7 +38,8 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "forta-agent": "^0.1.19",
+    "forta-agent": "^0.1.24",
+    "bot-alert-rate": "^0.0.4",
     "lru-cache": "^7.13.1",
     "node-fetch": "^2.6.7",
     "dotenv": "^16.0.3"

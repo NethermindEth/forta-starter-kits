@@ -39,7 +39,7 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -76,7 +76,7 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -113,7 +113,7 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -150,7 +150,7 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -186,7 +186,7 @@ function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, tx
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -216,7 +216,7 @@ function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -246,7 +246,7 @@ function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, t
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -276,7 +276,7 @@ function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScor
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -307,7 +307,7 @@ function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txHas
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -338,7 +338,7 @@ function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, t
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -390,7 +390,7 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: labels,
@@ -419,7 +419,7 @@ function createPermitScamCreatorAlert(
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -460,7 +460,7 @@ function createPermitSuspiciousContractAlert(
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -491,7 +491,7 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
       scamDomains,
       scamSpender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -531,7 +531,7 @@ function createApprovalSuspiciousContractAlert(
       suspiciousContract: contract,
       suspiciousContractCreator: creator,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -563,7 +563,7 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
       scamCreator,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -616,7 +616,7 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: labels,
@@ -644,7 +644,7 @@ function createTransferSuspiciousContractAlert(
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -681,7 +681,7 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -718,7 +718,7 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -755,7 +755,7 @@ function createPermitTransferAlert(spender, owner, receiver, asset, value, anoma
       spender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: asset,
     labels: [
@@ -786,7 +786,7 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
       spender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: asset,
     labels: [
