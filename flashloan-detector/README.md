@@ -69,4 +69,4 @@ The bot behaviour can be verified with the following transactions:
 
 - [0xe7e0474793aad11875c131ebd7582c8b73499dd3c5a473b59e6762d4e373d7b8](https://etherscan.io/tx/0xe7e0474793aad11875c131ebd7582c8b73499dd3c5a473b59e6762d4e373d7b8) (SaddleFinance exploit)
 - [0x47c7ab4a9e829415322c8933cf17261cd666dbeb875f0d559ca2785d21cae661](https://etherscan.io/tx/0x47c7ab4a9e829415322c8933cf17261cd666dbeb875f0d559ca2785d21cae661) (Curve Finance exploit)
-  - To test this exploit transaction, lower `PERCENTAGE_THRESHOLD` in `agent.js` (L19) to `1.75`, as currently the transaction does not clear the percentage threshold of `2`.
+  - To test this exploit transaction, lower `PERCENTAGE_THRESHOLD` in `agent.js` (L12) to `1.75`, as currently the transaction does not clear the percentage threshold of `2`.
