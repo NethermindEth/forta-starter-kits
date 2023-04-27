@@ -62,7 +62,7 @@ describe("Persistence Helper test suite", () => {
     const spy = jest.spyOn(console, "log").mockImplementation(() => {});
     await persistenceHelper.persist(mockValue, mockKey);
 
-    expect(spy).toHaveBeenCalledWith("successfully persisted 101 to database");
+    expect(spy).toHaveBeenCalledWith("successfully persisted value to database");
     expect(mockHasOwnProperty).toHaveBeenCalledTimes(1);
     expect(mockFetchJwt).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledTimes(1);

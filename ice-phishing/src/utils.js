@@ -6,6 +6,14 @@ const TIME_PERIOD = timePeriodDays * ONE_DAY;
 const ADDRESS_ZERO = ethers.constants.AddressZero;
 const MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID = "0x0b241032ca430d9c02eaa6a52d217bbff046f0d1b3f3d2aa928e42a97150ec91";
 const safeBatchTransferFrom1155Sig = "2eb2c2d6";
+const MAX_OBJECT_SIZE = 9 * 1024 * 1024; // 9 MB
+
+// Ignore Approvals to Uniswap Permit 2, OpenSea Conduit and Blur Execution Delegate
+const IGNORED_ADDRESSES = [
+  "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+  "0x1E0049783F008A0085193E00003D00cd54003c71",
+  "0x00000000000111AbE46ff893f3B2fdF1F759a8A8",
+];
 
 const permitFunctionABI =
   "function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external";
@@ -36,6 +44,8 @@ module.exports = {
   TIME_PERIOD,
   ADDRESS_ZERO,
   MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID,
+  MAX_OBJECT_SIZE,
+  IGNORED_ADDRESSES,
   safeBatchTransferFrom1155Sig,
   permitFunctionABI,
   daiPermitFunctionABI,

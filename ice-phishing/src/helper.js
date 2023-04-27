@@ -3,6 +3,7 @@ const { default: axios } = require("axios");
 const LRU = require("lru-cache");
 const { nonceThreshold, contractTxsThreshold, verifiedContractTxsThreshold } = require("../bot-config.json");
 const { etherscanApis } = require("./config");
+const { keys } = require("./keys");
 const { MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID, ERC_20_721_INTERFACE, ERC_1155_INTERFACE } = require("./utils");
 const AddressType = require("./address-type");
 
@@ -38,7 +39,7 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -75,7 +76,7 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -112,7 +113,7 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -149,7 +150,7 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -185,7 +186,7 @@ function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, tx
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -215,7 +216,7 @@ function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -245,7 +246,7 @@ function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, t
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -275,7 +276,7 @@ function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScor
     metadata: {
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -306,7 +307,7 @@ function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txHas
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -337,7 +338,7 @@ function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, t
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -389,7 +390,7 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: labels,
@@ -418,7 +419,7 @@ function createPermitScamCreatorAlert(
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -459,7 +460,7 @@ function createPermitSuspiciousContractAlert(
       msgSender,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -490,7 +491,7 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
       scamDomains,
       scamSpender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -530,7 +531,7 @@ function createApprovalSuspiciousContractAlert(
       suspiciousContract: contract,
       suspiciousContractCreator: creator,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -562,7 +563,7 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
       scamCreator,
       spender,
       owner,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -615,7 +616,7 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: labels,
@@ -643,7 +644,7 @@ function createTransferSuspiciousContractAlert(
       msgSender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
     labels: [
@@ -669,48 +670,6 @@ function createTransferSuspiciousContractAlert(
   });
 }
 
-function createTransferScamCreatorAlert(
-  msgSender,
-  owner,
-  receiver,
-  asset,
-  scamAddress,
-  scamDomains,
-  anomalyScore,
-  txHash
-) {
-  return Finding.fromObject({
-    name: "Contract, created by a known scam address, was involved in an asset transfer",
-    description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
-    alertId: "ICE-PHISHING-SCAM-CREATOR-TRANSFER",
-    severity: FindingSeverity.Critical,
-    type: FindingType.Exploit,
-    metadata: {
-      scamAddress,
-      scamDomains,
-      msgSender,
-      owner,
-      receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
-    },
-    addresses: [asset],
-    labels: [
-      Label.fromObject({
-        entity: scamAddress,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.95,
-      }),
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-    ],
-  });
-}
-
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
   return Finding.fromObject({
@@ -722,7 +681,7 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -759,7 +718,7 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
     metadata: {
       firstTxHash,
       lastTxHash,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
     labels: [
@@ -796,7 +755,7 @@ function createPermitTransferAlert(spender, owner, receiver, asset, value, anoma
       spender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: asset,
     labels: [
@@ -827,7 +786,7 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
       spender,
       owner,
       receiver,
-      anomalyScore: anomalyScore.toFixed(2) === "0.00" ? anomalyScore.toString() : anomalyScore.toFixed(2),
+      anomalyScore: anomalyScore.toString(),
     },
     addresses: asset,
     labels: [
@@ -847,39 +806,135 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
   });
 }
 
+function getBlockExplorerKey(chainId) {
+  switch (chainId) {
+    case 10:
+      return keys.optimisticEtherscanApiKeys.length > 0
+        ? keys.optimisticEtherscanApiKeys[Math.floor(Math.random() * keys.optimisticEtherscanApiKeys.length)]
+        : "YourApiKeyToken";
+    case 56:
+      return keys.bscscanApiKeys.length > 0
+        ? keys.bscscanApiKeys[Math.floor(Math.random() * keys.bscscanApiKeys.length)]
+        : "YourApiKeyToken";
+    case 137:
+      return keys.polygonscanApiKeys.length > 0
+        ? keys.polygonscanApiKeys[Math.floor(Math.random() * keys.polygonscanApiKeys.length)]
+        : "YourApiKeyToken";
+    case 250:
+      return keys.fantomscanApiKeys.length > 0
+        ? keys.fantomscanApiKeys[Math.floor(Math.random() * keys.fantomscanApiKeys.length)]
+        : "YourApiKeyToken";
+    case 42161:
+      return keys.arbiscanApiKeys.length > 0
+        ? keys.arbiscanApiKeys[Math.floor(Math.random() * keys.arbiscanApiKeys.length)]
+        : "YourApiKeyToken";
+    case 43114:
+      return keys.snowtraceApiKeys.length > 0
+        ? keys.snowtraceApiKeys[Math.floor(Math.random() * keys.snowtraceApiKeys.length)]
+        : "YourApiKeyToken";
+    default:
+      return keys.etherscanApiKeys.length > 0
+        ? keys.etherscanApiKeys[Math.floor(Math.random() * keys.etherscanApiKeys.length)]
+        : "YourApiKeyToken";
+  }
+}
+
 function getEtherscanContractUrl(address, chainId) {
-  const { urlContract, key } = etherscanApis[chainId];
+  const { urlContract } = etherscanApis[Number(chainId)];
+  const key = getBlockExplorerKey(Number(chainId));
   return `${urlContract}&address=${address}&apikey=${key}`;
 }
 
-function getEtherscanAddressUrl(address, chainId) {
-  const { urlAccount, key } = etherscanApis[chainId];
-  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${key}`;
+function getEtherscanAddressUrl(address, chainId, offset) {
+  const { urlAccount } = etherscanApis[Number(chainId)];
+  const key = getBlockExplorerKey(Number(chainId));
+  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
+    offset + 1
+  }&sort=asc&apikey=${key}`;
 }
 
 async function getContractCreator(address, chainId) {
-  const { urlContractCreation, key } = etherscanApis[chainId];
+  const { urlContractCreation } = etherscanApis[Number(chainId)];
+  const key = getBlockExplorerKey(Number(chainId));
   const url = `${urlContractCreation}&contractaddresses=${address}&apikey=${key}`;
 
-  const result = await axios.get(url);
+  let retries = 2;
+  let result;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(url);
+      // Handle successful response
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to call block explorer (URL: ${url}) failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
 
-  if (result.data.message.startsWith("NOTOK")) {
+  if (result.data.message.startsWith("NOTOK") || result.data.message.startsWith("No data found")) {
     console.log(`block explorer error occured; skipping check for ${address}`);
     return null;
   }
+  const contractCreator = result.data.result[0].contractCreator;
 
-  return result.data.result[0].contractCreator;
+  // E.g. contract 0x85149247691df622eaf1a8bd0cafd40bc45154a9 on Optimism returns "GENESIS" as the creator
+  if (!contractCreator.startsWith("0x")) {
+    console.log("Contract creator is not an address:", contractCreator);
+    return null;
+  } else {
+    return contractCreator;
+  }
 }
 
 async function getEoaType(address, provider, blockNumber) {
-  const nonce = await provider.getTransactionCount(address, blockNumber);
+  let nonce;
+  let tries = 0;
+  const maxTries = 3;
+
+  while (tries < maxTries) {
+    try {
+      nonce = await provider.getTransactionCount(address, blockNumber);
+      break; // exit the loop if successful
+    } catch (err) {
+      tries++;
+      if (tries === maxTries) {
+        nonce = 0;
+        console.log("Error on fetching the transaction count, setting the nonce to 0"); // re-throw the error if maximum tries reached
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
+    }
+  }
   return nonce > nonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
 }
 
 async function getContractType(address, chainId) {
   let result;
 
-  result = await axios.get(getEtherscanContractUrl(address, chainId));
+  let retries = 2;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(getEtherscanContractUrl(address, chainId));
+      // Handle successful response
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(
+          `All retry attempts to call block explorer (URL: ${getEtherscanContractUrl(address, chainId)}) failed`
+        );
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
 
   if (result.data.message.startsWith("NOTOK") && result.data.result !== "Contract source code not verified") {
     console.log(`block explorer error occured; skipping check for ${address}`);
@@ -887,8 +942,25 @@ async function getContractType(address, chainId) {
   }
 
   const isVerified = result.data.status === "1";
+  const url = isVerified
+    ? getEtherscanAddressUrl(address, chainId, verifiedContractTxsThreshold)
+    : getEtherscanAddressUrl(address, chainId, contractTxsThreshold);
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(url);
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to call block explorer failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
 
-  result = await axios.get(getEtherscanAddressUrl(address, chainId));
   if (result.data.message.startsWith("NOTOK") || result.data.message.startsWith("Query Timeout")) {
     console.log(`block explorer error occured; skipping check for ${address}`);
     return null;
@@ -917,11 +989,13 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
     // Don't update the cached address if
     // the check is for the owner
     // the type cannot be changed back
+    // the type is unverified contract but with high number of txs indicating it will remain unverified
     // the address is ignored
     if (
       isOwner ||
       type === AddressType.EoaWithHighNonce ||
       type === AddressType.HighNumTxsVerifiedContract ||
+      type === AddressType.HighNumTxsUnverifiedContract ||
       type.startsWith("Ignored")
     ) {
       return type;
@@ -938,7 +1012,22 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
   }
 
   // If the address is not in the cache check if it is a contract
-  const code = await provider.getCode(address);
+  let code;
+  let tries = 0;
+  const maxTries = 3;
+  while (tries < maxTries) {
+    try {
+      code = await provider.getCode(address);
+      break; // exit the loop if successful
+    } catch (err) {
+      tries++;
+      if (tries === maxTries) {
+        throw err; // re-throw the error if maximum tries reached
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
+    }
+  }
+
   const isEoa = code === "0x";
 
   // Skip etherscan call and directly return unverified if checking for the owner
@@ -959,12 +1048,13 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
   if (!init) {
     const fortaResponse = await getAlerts({
       botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
+      alertId: "SUSPICIOUS-CONTRACT-CREATION",
       chainId: chainId,
       blockNumberRange: {
         startBlockNumber: blockNumber - 20000,
         endBlockNumber: blockNumber,
       },
-      first: 6000,
+      first: 5000,
     });
 
     fortaResponse.alerts.forEach((alert) => {
@@ -975,9 +1065,10 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     while (startingCursor.blockNumber > 0) {
       const fortaResponse = await getAlerts({
         botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
+        alertId: "SUSPICIOUS-CONTRACT-CREATION",
         chainId: chainId,
         blockNumberRange: {
-          startBlockNumber: blockNumber - 20000,
+          startBlockNumber: blockNumber - 15000,
           endBlockNumber: blockNumber,
         },
         first: 1000,
@@ -996,13 +1087,15 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
         creator: ethers.utils.getAddress(contract.creator),
       };
     });
+
     return new Set(contracts);
   } else {
     const fortaResponse = await getAlerts({
       botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
+      alertId: "SUSPICIOUS-CONTRACT-CREATION",
       chainId: chainId,
       blockNumberRange: {
-        startBlockNumber: blockNumber - 1,
+        startBlockNumber: blockNumber - 240,
         endBlockNumber: blockNumber,
       },
       first: 1000,
@@ -1045,6 +1138,43 @@ async function getERC1155Balance(token, id, account, provider, blockNumber) {
   return balance;
 }
 
+async function getTransactions(provider, blockNumber) {
+  let retries = 2;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const { transactions } = await provider.getBlockWithTransactions(blockNumber);
+      return transactions; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to fetch transactions failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to fetch transactions failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+}
+
+function checkObjectSizeAndCleanup(obj) {
+  // Flatten the object's values into an array of entries, and sort by timestamp
+  const entries = Object.values(obj).flat();
+  if (entries.length === 0) return;
+  entries.sort((a, b) => a.timestamp - b.timestamp);
+
+  // Delete half of the oldest entries
+  const numEntriesToDelete = Math.ceil(entries.length / 2);
+  for (let i = 0; i < numEntriesToDelete; i++) {
+    const entryToDelete = entries[i];
+    const key = Object.keys(obj).find((k) => obj[k].includes(entryToDelete));
+    obj[key] = obj[key].filter((entry) => entry !== entryToDelete);
+    if (obj[key].length === 0) {
+      delete obj[key];
+    }
+  }
+}
+
 module.exports = {
   createHighNumApprovalsAlertERC20,
   createHighNumApprovalsInfoAlertERC20,
@@ -1067,11 +1197,13 @@ module.exports = {
   createApprovalScamCreatorAlert,
   createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
-  createTransferScamCreatorAlert,
   createTransferSuspiciousContractAlert,
   getAddressType,
+  getEoaType,
   getContractCreator,
   getSuspiciousContracts,
   getBalance,
   getERC1155Balance,
+  getTransactions,
+  checkObjectSizeAndCleanup,
 };
