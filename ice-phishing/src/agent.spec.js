@@ -107,7 +107,6 @@ const mockApprovalForAllEvent = [
   },
 ];
 
-
 const mockPermitFunctionCall = {
   address: asset,
   args: {
@@ -123,7 +122,26 @@ const mockDAILikePermitFunctionCall = {
   args: {
     owner: owner1,
     spender,
-    expiry: 8359543534435,
+    deadline: 8359543534435,
+  },
+};
+//  "function permit(address owner, tuple(tuple(address token, uint160 value, uint48 expiration, uint48 nonce) details, address spender, uint256 deadline) permitSingle, bytes calldata signature) external ";
+
+const mockPermit2FunctionCall = {
+  address: createAddress("0x06"),
+  args: {
+    owner: owner1,
+    permitSingle: {
+      details: {
+        token: asset,
+        value: ethers.BigNumber.from(210),
+        expiration: 9359543534435,
+        nonce: 1,
+      },
+      spender,
+      deadline: 9359543534435,
+    },
+    signature: ethers.utils.formatBytes32String("signature"),
   },
 };
 
@@ -458,24 +476,26 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
-      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(2);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(3);
     });
 
     it("should return findings if there is a EIP-2612's permit function call", async () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([mockPermitFunctionCall])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockCalculateAlertRate.mockReturnValueOnce("0.3");
 
       const findings = await handleTransaction(mockTxEvent);
-
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -488,8 +508,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             owner: owner1,
             spender,
-            anomalyScore:
-              "0.3",
+            anomalyScore: "0.3",
           },
           addresses: [asset],
           labels: [
@@ -509,13 +528,16 @@ describe("ice-phishing bot", () => {
         }),
       ]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
-      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(2);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(3);
     });
 
     it("should return findings if there is a DAI-like permit function call", async () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockDAILikePermitFunctionCall])
+        .mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockCalculateAlertRate.mockReturnValueOnce("0.23");
@@ -553,7 +575,54 @@ describe("ice-phishing bot", () => {
         }),
       ]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
-      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(2);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(3);
+    });
+
+    it("should return findings if there is a Permit2 function call", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockPermit2FunctionCall]);
+      mockTxEvent.filterLog.mockReturnValue([]);
+      mockProvider.getCode.mockReturnValue("0x");
+      mockCalculateAlertRate.mockReturnValueOnce("0.3");
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Account got permission for ERC-20 tokens",
+          description: `${spender} gave permission to ${spender} for ${owner1}'s ERC-20 tokens`,
+          alertId: "ICE-PHISHING-ERC20-PERMIT",
+          severity: FindingSeverity.Low,
+          type: FindingType.Suspicious,
+          metadata: {
+            msgSender: spender,
+            owner: owner1,
+            spender,
+            anomalyScore: "0.3",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: spender,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.3,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Permit",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(3);
     });
 
     it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
@@ -605,11 +674,14 @@ describe("ice-phishing bot", () => {
         args: {
           owner: owner1,
           spender: createAddress("0xabcdabcd"),
-          expiry: 8359543534435,
+          deadline: 8359543534435,
         },
       };
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockDAILikePermitFunctionCall])
+        .mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
 
       mockProvider.getCode.mockResolvedValueOnce("0x32523523");
@@ -687,7 +759,7 @@ describe("ice-phishing bot", () => {
         }),
       ]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
-      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(2);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(3);
     });
 
     it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
@@ -733,11 +805,14 @@ describe("ice-phishing bot", () => {
         args: {
           owner: owner1,
           spender: createAddress("0xeeffeeff"),
-          expiry: 8359543534435,
+          deadline: 8359543534435,
         },
       };
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockDAILikePermitFunctionCall])
+        .mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
 
       mockProvider.getCode.mockResolvedValueOnce("0x32523523");
@@ -815,7 +890,7 @@ describe("ice-phishing bot", () => {
         }),
       ]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
-      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(2);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(3);
     });
 
     it("should return findings if there is a high number of ERC1155 ApprovalForAll events", async () => {
@@ -826,7 +901,7 @@ describe("ice-phishing bot", () => {
       }
 
       const tempTxEvent0 = {
-        filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+        filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
         filterLog: jest
           .fn()
           .mockReturnValueOnce([]) // ERC20 approvals
@@ -846,7 +921,7 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(3);
 
       const tempTxEvent1 = {
-        filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+        filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
         filterLog: jest
           .fn()
           .mockReturnValueOnce([]) // ERC20 approvals
@@ -872,7 +947,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValueOnce("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
@@ -930,7 +1005,7 @@ describe("ice-phishing bot", () => {
           mockPersistenceHelper.load.mockReturnValueOnce({});
         }
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -948,7 +1023,6 @@ describe("ice-phishing bot", () => {
         mockProvider.getTransactionCount.mockReturnValue(1);
         await handleTransaction(tempTxEvent);
       }
-      //expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
 
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
@@ -958,14 +1032,12 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockProvider.getTransactionCount.mockReturnValue(1);
       mockCalculateAlertRate.mockReturnValueOnce("0.891023");
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedERC721ApprovalsForAll / mockCounters.totalERC721ApprovalsForAll;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1032,7 +1104,7 @@ describe("ice-phishing bot", () => {
       ];
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1058,7 +1130,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockProvider.getTransactionCount.mockReturnValue(1234454);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
@@ -1104,7 +1176,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([mockApprovalERC20Events[i]]) // ERC20 approvals
@@ -1130,7 +1202,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       expect(mockProvider.getCode).toHaveBeenCalledTimes(3);
       mockCalculateAlertRate.mockReturnValueOnce("0.08910234");
@@ -1178,7 +1250,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1203,7 +1275,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockCalculateAlertRate.mockReturnValueOnce("0.008910234");
 
       const findings = await handleTransaction(mockTxEvent);
@@ -1218,7 +1290,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: "0.008910234"
+            anomalyScore: "0.008910234",
           },
           addresses: [asset],
           labels: [
@@ -1299,7 +1371,7 @@ describe("ice-phishing bot", () => {
           mockPersistenceHelper.load.mockReturnValueOnce({});
         }
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1339,7 +1411,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockCalculateAlertRate.mockReturnValueOnce("0.0008910234");
 
       const findings = await handleTransaction(mockTxEvent);
@@ -1431,7 +1503,7 @@ describe("ice-phishing bot", () => {
           mockPersistenceHelper.load.mockReturnValueOnce({});
         }
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValue([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1466,7 +1538,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
 
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
@@ -1478,7 +1550,7 @@ describe("ice-phishing bot", () => {
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([mockApprovalERC20Events[i]]) // ERC20 approvals
@@ -1500,7 +1572,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([mockApprovalERC20Events[i]]) // ERC20 approvals
@@ -1525,7 +1597,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.4);
 
@@ -1574,7 +1646,7 @@ describe("ice-phishing bot", () => {
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([mockApprovalERC20Events2[i]]) // ERC20 approvals
@@ -1597,7 +1669,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([mockApprovalERC20Events2[i]]) // ERC20 approvals
@@ -1624,7 +1696,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from("100000000000000")); // not drained
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
 
@@ -1639,7 +1711,7 @@ describe("ice-phishing bot", () => {
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1661,7 +1733,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1688,12 +1760,11 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferERC721Events[2]]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
       mockCalculateAlertRate.mockReturnValue(0.42);
 
       const findings = await handleTransaction(mockTxEvent);
-
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1738,7 +1809,7 @@ describe("ice-phishing bot", () => {
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1761,7 +1832,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1785,7 +1856,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([mockTransferSingleEvents[2]]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.421).mockReturnValueOnce(0.1421);
@@ -1802,7 +1873,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             spender,
             owner: owner3,
-            anomalyScore: "0.421"
+            anomalyScore: "0.421",
           },
           addresses: [asset],
           labels: [
@@ -1829,7 +1900,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             firstTxHash: "hash0",
             lastTxHash: "hash2",
-            anomalyScore: "0.1421"
+            anomalyScore: "0.1421",
           },
           addresses: [asset],
           labels: [
@@ -1862,7 +1933,7 @@ describe("ice-phishing bot", () => {
       // Create the Approval events first
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1882,7 +1953,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -1907,7 +1978,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([mockTransferBatchEvents[2]]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.212421).mockReturnValueOnce(0.1212);
@@ -2015,7 +2086,7 @@ describe("ice-phishing bot", () => {
       ];
       for (let i = 0; i < 3; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -2035,7 +2106,7 @@ describe("ice-phishing bot", () => {
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
-          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]),
+          filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]),
           filterLog: jest
             .fn()
             .mockReturnValueOnce([]) // ERC20 approvals
@@ -2067,14 +2138,13 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([mockTransferBatchEvents[2]]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
 
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.11095).mockReturnValueOnce(0.11);
 
       const findings = await handleTransaction(mockTxEvent);
-
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2144,7 +2214,11 @@ describe("ice-phishing bot", () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const tempTxEvent = {
-        filterFunction: jest.fn().mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]),
+        filterFunction: jest
+          .fn()
+          .mockReturnValueOnce([mockPermitFunctionCall])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([]),
         filterLog: jest
           .fn()
           .mockReturnValueOnce([]) // ERC20 approvals
@@ -2161,7 +2235,7 @@ describe("ice-phishing bot", () => {
 
       await handleTransaction(tempTxEvent);
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
@@ -2170,7 +2244,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.095);
 
@@ -2186,7 +2260,7 @@ describe("ice-phishing bot", () => {
           metadata: {
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
-            spender: spender,          
+            spender: spender,
             anomalyScore: "0.095",
           },
           addresses: asset,
@@ -2212,7 +2286,11 @@ describe("ice-phishing bot", () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const tempTxEvent = {
-        filterFunction: jest.fn().mockReturnValueOnce([]).mockReturnValueOnce([mockDAILikePermitFunctionCall]),
+        filterFunction: jest
+          .fn()
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([mockDAILikePermitFunctionCall])
+          .mockReturnValueOnce([]),
         filterLog: jest
           .fn()
           .mockReturnValueOnce([]) // ERC20 approvals
@@ -2226,10 +2304,11 @@ describe("ice-phishing bot", () => {
         from: spender,
       };
       mockProvider.getCode.mockReturnValue("0x");
+      mockCalculateAlertRate.mockReturnValueOnce(0.14111);
 
       await handleTransaction(tempTxEvent);
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
@@ -2238,7 +2317,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.4111);
 
@@ -2255,7 +2334,79 @@ describe("ice-phishing bot", () => {
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
             spender: spender,
-            anomalyScore: "0.4111"
+            anomalyScore: "0.4111",
+          },
+          addresses: asset,
+          labels: [
+            Label.fromObject({
+              entity: spender,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.4,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Transfer",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+    });
+
+    it("should return findings if there's a transfer following a Permit2's permit function call", async () => {
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
+      const tempTxEvent = {
+        filterFunction: jest
+          .fn()
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([mockPermit2FunctionCall]),
+        filterLog: jest
+          .fn()
+          .mockReturnValueOnce([]) // ERC20 approvals
+          .mockReturnValueOnce([]) // ERC721 approvals
+          .mockReturnValueOnce([]) // ApprovalForAll
+          .mockReturnValueOnce([]) // ERC20 transfers
+          .mockReturnValueOnce([]) // ERC721 transfers
+          .mockReturnValueOnce([]), // ERC1155 transfers
+        hash: "hash33",
+        timestamp: 1001,
+        from: spender,
+      };
+      mockProvider.getCode.mockReturnValue("0x");
+
+      await handleTransaction(tempTxEvent);
+
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterLog
+        .mockReturnValueOnce([]) // ERC20 approvals
+        .mockReturnValueOnce([]) // ERC721 approvals
+        .mockReturnValueOnce([]) // ApprovalForAll
+        .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
+        .mockReturnValueOnce([]) // ERC721 transfers
+        .mockReturnValueOnce([]); // ERC1155 transfers
+
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockCalculateAlertRate.mockReturnValueOnce(0.095);
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Previously permitted assets transferred",
+          description: `${spender} transferred ${mockTransferEvents[0].args.value} tokens from ${owner1} to ${mockTransferEvents[0].args.to}`,
+          alertId: "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
+          severity: FindingSeverity.Critical,
+          type: FindingType.Exploit,
+          metadata: {
+            owner: owner1,
+            receiver: mockTransferEvents[0].args.to,
+            spender: spender,
+            anomalyScore: "0.095",
           },
           addresses: asset,
           labels: [
@@ -2307,7 +2458,10 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper.load.mockReturnValueOnce({});
       }
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([mockPermitFunctionCall])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValue("0x");
 
@@ -2330,7 +2484,7 @@ describe("ice-phishing bot", () => {
             msgSender: spender,
             spender: createAddress("0x5050"),
             owner: owner1,
-            anomalyScore: "0.004"
+            anomalyScore: "0.004",
           },
           addresses: [asset],
           labels: [
@@ -2391,7 +2545,10 @@ describe("ice-phishing bot", () => {
         },
       };
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([mockPermitFunctionCall]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([mockPermitFunctionCall])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValue([]);
       mockProvider.getCode.mockReturnValueOnce("0xcccc");
       const axiosResponse1 = { data: { message: "ok", status: "1", result: [] } };
@@ -2405,7 +2562,6 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValueOnce(axiosResponse2);
       mockCalculateAlertRate.mockReturnValueOnce(0.4).mockReturnValueOnce(0.3);
       const findings = await handleTransaction(mockTxEvent);
-
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2503,7 +2659,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
 
       const axiosResponse2 = { data: { "www.scamDomain.com": [spender] } };
       axios.get.mockResolvedValueOnce(axiosResponse2);
@@ -2574,7 +2730,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockCalculateAlertRate.mockReturnValueOnce(0.9);
 
@@ -2677,18 +2833,16 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x333");
 
       const axiosResponse2 = {
         data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
       };
       axios.get.mockResolvedValue(axiosResponse2);
-      mockCalculateAlertRate.mockReturnValue(0.5);
+      mockCalculateAlertRate.mockReturnValueOnce(0.5);
 
       const findings = await handleTransaction(mockTxEvent);
-
-      const mockAnomalyScore = mockCounters.detectedSuspiciousTransfers / mockCounters.totalTransfers;
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -2786,7 +2940,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x333");
 
       const axiosResponse2 = {
@@ -2809,7 +2963,7 @@ describe("ice-phishing bot", () => {
             receiver: suspiciousContractCreator,
             suspiciousContract,
             suspiciousContractCreator,
-            anomalyScore: "0.665"
+            anomalyScore: "0.665",
           },
           addresses: [asset],
           labels: [
@@ -2864,7 +3018,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
 
-      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
       mockCalculateAlertRate.mockReturnValue(0.6);
       const findings = await handleTransaction(mockTxEvent);
@@ -2881,7 +3035,7 @@ describe("ice-phishing bot", () => {
             suspiciousContractCreator: spender,
             owner: owner1,
             suspiciousSpender: spender,
-            anomalyScore: "0.6"
+            anomalyScore: "0.6",
           },
           addresses: [asset],
           labels: [
