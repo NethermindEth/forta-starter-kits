@@ -8,18 +8,22 @@ const MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID = "0x0b241032ca430d9c02eaa6a52d217bb
 const safeBatchTransferFrom1155Sig = "2eb2c2d6";
 const MAX_OBJECT_SIZE = 9 * 1024 * 1024; // 9 MB
 
-// Ignore Approvals to Uniswap Permit 2, OpenSea Conduit and Blur Execution Delegate
+// Ignore Approvals to Uniswap Permit 2, OpenSea Conduit, Blur Execution Delegate and Uniswap Universal Router
 const IGNORED_ADDRESSES = [
   "0x000000000022D473030F116dDEE9F6B43aC78BA3",
   "0x1E0049783F008A0085193E00003D00cd54003c71",
   "0x00000000000111AbE46ff893f3B2fdF1F759a8A8",
+  "0xEf1c6E67703c7BD7107eed8303Fbe6EC2554BF6B",
 ];
 
 const permitFunctionABI =
   "function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external";
 
 const daiPermitFunctionABI =
-  "function permit(address holder, address spender, uint256 nonce, uint256 expiry, bool allowed, uint8 v, bytes32 r, bytes32 s) external";
+  "function permit(address owner, address spender, uint256 nonce, uint256 deadline, bool allowed, uint8 v, bytes32 r, bytes32 s) external";
+
+const uniswapPermitFunctionABI =
+  "function permit(address owner, tuple(tuple(address token, uint160 value, uint48 expiration, uint48 nonce) details, address spender, uint256 deadline) permitSingle, bytes calldata signature) external ";
 
 const approvalEventErc20ABI = "event Approval(address indexed owner, address indexed spender, uint256 value)";
 const approvalEventErc721ABI =
@@ -48,6 +52,7 @@ module.exports = {
   IGNORED_ADDRESSES,
   safeBatchTransferFrom1155Sig,
   permitFunctionABI,
+  uniswapPermitFunctionABI,
   daiPermitFunctionABI,
   approvalEventErc20ABI,
   approvalEventErc721ABI,
