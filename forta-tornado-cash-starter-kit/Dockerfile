@@ -15,6 +15,7 @@ WORKDIR /app
 # COPY --from=builder /app/dist ./src
 # else if using unobfuscated code:
 COPY ./src ./src
+COPY ./LICENSE ./
 COPY package*.json ./
 RUN npm ci --production
 CMD [ "npm", "run", "start:prod" ]

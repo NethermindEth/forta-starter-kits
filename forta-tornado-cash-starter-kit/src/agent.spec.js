@@ -1,40 +1,116 @@
-const { FindingType, FindingSeverity, Finding, Label, EntityType, createTransactionEvent } = require("forta-agent");
-const { provideHandleTranscation, provideHandleBlock, provideInitialize } = require("./agent");
-
-const mockPersistenceHelper = {
-  persist: jest.fn(),
-  load: jest.fn(),
-};
-
-const mockDetectTcFundedAccountContractInteractionsKey =
-  "mock-tc-funded-account-bot-detected-contract-interactions-key";
-const mockTotalContractInteractionsKey = "mock-tc-funded-account-bot-total-contract-interactions-key";
-
-const mockDetectedTcFundedAccountContractInteractions = 121;
-const mockTotalContractInteractions = 8756;
+const {
+  FindingType,
+  FindingSeverity,
+  Finding,
+  Label,
+  EntityType,
+  createTransactionEvent,
+  getEthersProvider,
+} = require("forta-agent");
+const { provideHandleTranscation, provideInitialize } = require("./agent");
+jest.setTimeout(120000);
 
 const mockEthersProvider = { getCode: jest.fn(), getNetwork: jest.fn() };
+const mockCalculateRate = jest.fn();
 
 describe("TornadoCash contract interactions", () => {
   let initialize;
   const mockTxEvent = createTransactionEvent({});
   mockTxEvent.filterLog = jest.fn();
-  const handleTransaction = provideHandleTranscation(mockEthersProvider);
+  const handleTransaction = provideHandleTranscation(mockEthersProvider, mockCalculateRate);
 
   beforeEach(async () => {
     mockTxEvent.filterLog.mockReset();
-    initialize = provideInitialize(
-      mockEthersProvider,
-      mockPersistenceHelper,
-      mockDetectTcFundedAccountContractInteractionsKey,
-      mockTotalContractInteractionsKey
-    );
+    initialize = provideInitialize(mockEthersProvider);
     mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
-    mockPersistenceHelper.load
-      .mockReturnValueOnce(mockDetectedTcFundedAccountContractInteractions)
-      .mockReturnValueOnce(mockTotalContractInteractions);
 
     await initialize();
+  });
+
+  it("tests performance", async () => {
+    const handleRealTransaction = provideHandleTranscation(getEthersProvider(), mockCalculateRate);
+
+    const normalTxEvent = createTransactionEvent({
+      transaction: {
+        to: "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // Uniswap Router
+      },
+    });
+
+    const contractCreationTxEvent = createTransactionEvent({
+      transaction: {
+        to: null,
+      },
+    });
+
+    const TCWithdrawlTxEvent = { filterLog: jest.fn().mockReturnValue([{ args: { to: "0xa" } }]) };
+
+    const contractInteractionTxEvent = {
+      filterLog: jest.fn().mockReturnValue([{ args: { to: "0xa" } }]),
+      transaction: { from: "0xa", to: "0xb", hash: "0xc", data: "0x1234567Test" },
+      to: "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // Uniswap Router
+      from: "0xa",
+    };
+    mockCalculateRate.mockReturnValue(0.01);
+
+    //     Chain: Blocktime, Number of Tx -> Avg processing time in ms target
+    //     Ethereum: 12s, 150 -> 80ms
+    //     BSC: 3s, 70 -> 43ms
+    //     Polygon: 2s, 50 -> 40ms
+    //     Arbitrum: 1s, 5 -> 200ms
+    //     Optimism: 24s, 150 -> 160ms
+
+    //      local testing reveals an avg processing time of 260, which results in the following sharding config:
+    //      Ethereum: 12s, 150 -> 80ms - 4
+    //      BSC: 3s, 70 -> 43ms - 7
+    //      Polygon: 2s, 50 -> 40ms - 7
+    //      Arbitrum: 1s, 5 -> 200ms - 2
+    //      Optimism: 24s, 150 -> 160ms - 2
+
+    const processingRuns = 20;
+    let totalTimeNormalFunding = 0;
+    let totalTimeContractCreationFunding = 0;
+    let totalTimeTcFunding = 0;
+    let totalTimeContractInteractionFunding = 0;
+    for (let i = 0; i < processingRuns; i++) {
+      const startTimeNormalFunding = performance.now();
+      await handleRealTransaction(normalTxEvent);
+      const endTimeNormalFunding = performance.now();
+      totalTimeNormalFunding += endTimeNormalFunding - startTimeNormalFunding;
+
+      const startTimeContractCreationFunding = performance.now();
+      await handleRealTransaction(contractCreationTxEvent);
+      const endTimeContractCreationFunding = performance.now();
+      totalTimeContractCreationFunding += endTimeContractCreationFunding - startTimeContractCreationFunding;
+
+      const startTimeTcFunding = performance.now();
+      await handleRealTransaction(TCWithdrawlTxEvent);
+      const endTimeTcFunding = performance.now();
+      totalTimeTcFunding += endTimeTcFunding - startTimeTcFunding;
+
+      const startTimeContractInteractionFunding = performance.now();
+      await handleRealTransaction(contractInteractionTxEvent);
+      const endTimeContractInteractionFunding = performance.now();
+      totalTimeContractInteractionFunding += endTimeContractInteractionFunding - startTimeContractInteractionFunding;
+    }
+    const processingTimeNormalFundingAvgMs = totalTimeNormalFunding / processingRuns;
+    const processingTimeContractCreationFundingAvgMs = totalTimeContractCreationFunding / processingRuns;
+    const processingTimeTcFundingAvgMs = totalTimeTcFunding / processingRuns;
+    const processingTimeContractInteractionFundingAvgMs = totalTimeContractInteractionFunding / processingRuns;
+    console.log("processingTimeNormalFundingAvgMs", processingTimeNormalFundingAvgMs);
+    console.log("processingTimeContractCreationFundingAvgMs", processingTimeContractCreationFundingAvgMs);
+    console.log("processingTimeTcFundingAvgMs", processingTimeTcFundingAvgMs);
+    console.log("processingTimeContractInteractionFundingAvgMs", processingTimeContractInteractionFundingAvgMs);
+
+    expect(
+      (processingTimeNormalFundingAvgMs * 0.984 +
+        processingTimeContractCreationFundingAvgMs * 0.01 +
+        processingTimeTcFundingAvgMs * 0.001 +
+        processingTimeContractInteractionFundingAvgMs * 0.005) /
+        2
+    ).toBeLessThan(260);
+
+    // const findings = await handleRealTransaction(normalTxEvent);
+    // expect(findings).toStrictEqual([]);
   });
 
   it("returns empty findings if there are no contract interactions with an account that was funded from TornadoCash", async () => {
@@ -66,8 +142,7 @@ describe("TornadoCash contract interactions", () => {
     };
     mockEthersProvider.getCode.mockReturnValue("0x1234");
 
-    const mockAnomalyScore =
-      (mockDetectedTcFundedAccountContractInteractions + 1) / (mockTotalContractInteractions + 1);
+    mockCalculateRate.mockResolvedValueOnce(0.032);
 
     const findings = await handleTransaction(mockTxEvent);
 
@@ -79,8 +154,7 @@ describe("TornadoCash contract interactions", () => {
         severity: FindingSeverity.Low,
         type: FindingType.Suspicious,
         metadata: {
-          anomalyScore:
-            mockAnomalyScore.toFixed(2) === "0.00" ? mockAnomalyScore.toString() : mockAnomalyScore.toFixed(2),
+          anomalyScore: "0.032",
         },
         labels: [
           Label.fromObject({
@@ -137,48 +211,5 @@ describe("TornadoCash contract interactions", () => {
     const findings = await handleTransaction(mockTxEvent);
 
     expect(findings).toStrictEqual([]);
-  });
-});
-
-describe("Block handler test suite", () => {
-  beforeEach(async () => {
-    mockEthersProvider.getNetwork.mockReturnValue({ chainId: 1 });
-
-    initialize = provideInitialize(
-      mockEthersProvider,
-      mockPersistenceHelper,
-      mockDetectTcFundedAccountContractInteractionsKey,
-      mockTotalContractInteractionsKey
-    );
-    await initialize();
-    handleBlock = provideHandleBlock(
-      mockPersistenceHelper,
-      mockDetectTcFundedAccountContractInteractionsKey,
-      mockTotalContractInteractionsKey
-    );
-  });
-
-  afterEach(async () => {
-    mockPersistenceHelper.persist.mockClear();
-  });
-
-  it("should persist the value in a block evenly divisible by 240", async () => {
-    const mockBlockEvent = {
-      blockNumber: 720,
-    };
-
-    await handleBlock(mockBlockEvent);
-
-    expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(2);
-  });
-
-  it("should not persist values because block is not evenly divisible by 240", async () => {
-    const mockBlockEvent = {
-      blockNumber: 600,
-    };
-
-    await handleBlock(mockBlockEvent);
-
-    expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
   });
 });
