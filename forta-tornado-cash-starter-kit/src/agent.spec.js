@@ -96,10 +96,6 @@ describe("TornadoCash contract interactions", () => {
     const processingTimeContractCreationFundingAvgMs = totalTimeContractCreationFunding / processingRuns;
     const processingTimeTcFundingAvgMs = totalTimeTcFunding / processingRuns;
     const processingTimeContractInteractionFundingAvgMs = totalTimeContractInteractionFunding / processingRuns;
-    console.log("processingTimeNormalFundingAvgMs", processingTimeNormalFundingAvgMs);
-    console.log("processingTimeContractCreationFundingAvgMs", processingTimeContractCreationFundingAvgMs);
-    console.log("processingTimeTcFundingAvgMs", processingTimeTcFundingAvgMs);
-    console.log("processingTimeContractInteractionFundingAvgMs", processingTimeContractInteractionFundingAvgMs);
 
     expect(
       (processingTimeNormalFundingAvgMs * 0.984 +
@@ -108,9 +104,6 @@ describe("TornadoCash contract interactions", () => {
         processingTimeContractInteractionFundingAvgMs * 0.005) /
         2
     ).toBeLessThan(260);
-
-    // const findings = await handleRealTransaction(normalTxEvent);
-    // expect(findings).toStrictEqual([]);
   });
 
   it("returns empty findings if there are no contract interactions with an account that was funded from TornadoCash", async () => {
