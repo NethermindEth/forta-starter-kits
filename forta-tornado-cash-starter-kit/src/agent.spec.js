@@ -29,7 +29,8 @@ describe("TornadoCash contract interactions", () => {
 
   it("tests performance", async () => {
     const handleRealTransaction = provideHandleTranscation(getEthersProvider(), mockCalculateRate);
-
+    const block = await getEthersProvider().getBlock(1230000);
+    console.log(block);
     const normalTxEvent = createTransactionEvent({
       transaction: {
         to: "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // Uniswap Router
@@ -59,12 +60,12 @@ describe("TornadoCash contract interactions", () => {
     //     Arbitrum: 1s, 5 -> 200ms
     //     Optimism: 24s, 150 -> 160ms
 
-    //      local testing reveals an avg processing time of 260, which results in the following sharding config:
-    //      Ethereum: 12s, 150 -> 80ms - 4
-    //      BSC: 3s, 70 -> 43ms - 7
-    //      Polygon: 2s, 50 -> 40ms - 7
-    //      Arbitrum: 1s, 5 -> 200ms - 2
-    //      Optimism: 24s, 150 -> 160ms - 2
+    //      local testing reveals an avg processing time of 125, which results in the following sharding config:
+    //      Ethereum: 12s, 150 -> 80ms - 2
+    //      BSC: 3s, 70 -> 43ms - 3
+    //      Polygon: 2s, 50 -> 40ms - 4
+    //      Arbitrum: 1s, 5 -> 200ms - 1
+    //      Optimism: 24s, 150 -> 160ms - 1
 
     const processingRuns = 20;
     let totalTimeNormalFunding = 0;
@@ -102,8 +103,8 @@ describe("TornadoCash contract interactions", () => {
         processingTimeContractCreationFundingAvgMs * 0.01 +
         processingTimeTcFundingAvgMs * 0.001 +
         processingTimeContractInteractionFundingAvgMs * 0.005) /
-        2
-    ).toBeLessThan(260);
+        4
+    ).toBeLessThan(125);
   });
 
   it("returns empty findings if there are no contract interactions with an account that was funded from TornadoCash", async () => {
