@@ -29,8 +29,7 @@ describe("TornadoCash contract interactions", () => {
 
   it("tests performance", async () => {
     const handleRealTransaction = provideHandleTranscation(getEthersProvider(), mockCalculateRate);
-    const block = await getEthersProvider().getBlock(1230000);
-    console.log(block);
+
     const normalTxEvent = createTransactionEvent({
       transaction: {
         to: "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // Uniswap Router
