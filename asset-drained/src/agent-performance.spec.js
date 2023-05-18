@@ -71,7 +71,7 @@ describe("Asset drained bot performance test", () => {
         txReceipts.map(async (txReceipt) => {
           const txEvent = createTransactionEvent({
             transaction: {
-              hash: txReceipt.hash,
+              hash: txReceipt.transactionHash,
               from: txReceipt.from,
               to: txReceipt.to,
             },
