@@ -22,7 +22,7 @@ describe("Asset drained bot performance test", () => {
     //     Arbitrum: 1s,
     //     Optimism: 2s,
     //     Fantom: 1s
-    //     Avalanche: 2s
+    //     Avalanche: 24s
 
     //     Chain: Avg block processing time [choosing the slowest avg time observed]
     //     Ethereum: 2803.19ms (starting block 17278834)
