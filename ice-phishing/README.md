@@ -582,6 +582,59 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `label`: The type of the label, always set to "Transfer"
       - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
 
+- ICE-PHISHING-PULL-SWEEPTOKEN
+
+  - Fired when an attacker tricks the victim into transferring tokens using the "pull & sweepToken" functions technique (e.g. via Uniswap's Router V3)
+  - Severity is always set to "critical"
+  - Type is always set to "suspicious"
+  - Metadata:
+    - `attacker` - the account that received the stolen funds
+    - `victim` - the account that lost funds
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `ICE-PHISHING-PULL-SWEEPTOKEN` out of the total number of token transfers detected by this bot.
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.8"
+    - Label 2:
+      - `entity`: The victim's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim, always set to "0.8"
+    - Label 3:
+      - `entity`: The transfer transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Attack"
+      - `confidence`: The confidence level of the transaction being an attack, always set to "0.8"
+
+- ICE-PHISHING-OPENSEA-PROXY-UPGRADE
+  - Fired when a victim is tricked into upgrading their Opensea Proxy to a malicious implementation contract deployed by the attacker
+  - Severity is always set to "critical"
+  - Type is always set to "suspicious"
+  - Metadata:
+    - `attacker` - the account that deployed the malicious implementation contract
+    - `victim` - the victim of the transaction
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `ICE-PHISHING-PULL-SWEEPTOKEN` out of the total number of contract upgrades detected by this bot.
+  - Labels:
+    - Label 1:
+      - `entity`: The attacker's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.8"
+    - Label 2:
+      - `entity`: The victim's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim, always set to "0.8"
+    - Label 3:
+      - `entity`: The upgrade's transaction hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Attack"
+      - `confidence`: The confidence level of the transaction being an attack, always set to "0.8"
+
 > `^` Anomaly Score differs based on chain.
 
 ## Test Data
