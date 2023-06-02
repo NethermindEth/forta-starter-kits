@@ -27,12 +27,15 @@ const {
   createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
   createTransferSuspiciousContractAlert,
+  createSweepTokenAlert,
+  createOpenseaAlert,
   getAddressType,
   getContractCreator,
   getBalance,
   getERC1155Balance,
   getSuspiciousContracts,
   getTransactions,
+  isOpenseaProxy,
   checkObjectSizeAndCleanup,
 } = require("./helper");
 const {
@@ -48,12 +51,16 @@ const {
   safeBatchTransferFrom1155Sig,
   permitFunctionABI,
   daiPermitFunctionABI,
+  uniswapPermitFunctionABI,
+  pullFunctionABI,
+  sweepTokenFunctionABI,
   approvalEventErc20ABI,
   approvalEventErc721ABI,
   approvalForAllEventABI,
   transferEventErc20ABI,
   transferEventErc721ABI,
   erc1155transferEventABI,
+  upgradedEventABI,
   MAX_OBJECT_SIZE,
 } = require("./utils");
 const AddressType = require("./address-type");
@@ -100,6 +107,7 @@ let objects = {
 };
 
 const DATABASE_KEYS = {
+  totalUpgrades: "nm-icephishing-bot-total-upgrades-key",
   totalPermits: "nm-icephishing-bot-total-permits-key",
   totalApprovals: "nm-icephishing-bot-total-approvals-key",
   totalTransfers: "nm-icephishing-bot-total-transfers-key",
@@ -110,6 +118,7 @@ const DATABASE_KEYS = {
 };
 
 const counters = {
+  totalUpgrades: 0,
   totalPermits: 0,
   totalApprovals: 0,
   totalTransfers: 0,
@@ -144,13 +153,13 @@ const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, 
 let transactions = [];
 
 const provideHandleTransaction =
-  (provider, counters, databaseObjectsKey, persistenceHelper, objects, calculateAlertRate) => async (txEvent) => {
+  (provider, counters, databaseObjectsKey, persistenceHelper, objects, calculateAlertRate, lastBlock) =>
+  async (txEvent) => {
     const findings = [];
     const { hash, timestamp, blockNumber, from: f } = txEvent;
 
     if (blockNumber != lastBlock) {
       objects = await persistenceHelper.load(databaseObjectsKey.key);
-
       if (blockNumber % 240 == 0 || lastBlock === 0) {
         scamSnifferDB = await axios.get(
           "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
@@ -257,6 +266,7 @@ const provideHandleTransaction =
     const permitFunctions = [
       ...txEvent.filterFunction(permitFunctionABI),
       ...txEvent.filterFunction(daiPermitFunctionABI),
+      ...txEvent.filterFunction(uniswapPermitFunctionABI),
     ];
 
     // ERC20 and ERC721 approvals and transfers have the same signature
@@ -273,6 +283,53 @@ const provideHandleTransaction =
       ...txEvent.filterLog(erc1155transferEventABI),
     ];
 
+    if (Number(chainId) === 1) {
+      const upgradedEvents = [...txEvent.filterLog(upgradedEventABI)];
+      if (upgradedEvents.length) {
+        counters.totalUpgrades += 1;
+        // No other events will be emitted in the case of a malicious upgrade
+        if (txEvent.logs.length === 1) {
+          const {
+            address,
+            args: { implementation },
+          } = upgradedEvents[0];
+          const isOpensea = await isOpenseaProxy(address, blockNumber, chainId);
+          if (isOpensea) {
+            const attacker = await getContractCreator(implementation, chainId);
+            const anomalyScore = await calculateAlertRate(
+              chainId,
+              BOT_ID,
+              "ICE-PHISHING-OPENSEA-PROXY-UPGRADE",
+              ScanCountType.CustomScanCount,
+              counters.totalUpgrades
+            );
+            findings.push(createOpenseaAlert(txFrom, attacker, implementation, anomalyScore, hash));
+          }
+        }
+      }
+    }
+
+    const pullFunctions = [...txEvent.filterFunction(pullFunctionABI)];
+    const sweepTokenFunctions = [...txEvent.filterFunction(sweepTokenFunctionABI)];
+    if (pullFunctions.length && sweepTokenFunctions.length) {
+      counters.totalTransfers += 1;
+      for (const [i, pullFunction] of pullFunctions.entries()) {
+        const { token, value } = pullFunction.args;
+        const { token: sweepToken, amountMinimum, recipient } = sweepTokenFunctions[i].args;
+        if (token === sweepToken && value.toString() === amountMinimum.toString() && recipient !== txFrom) {
+          const anomalyScore = await calculateAlertRate(
+            chainId,
+            BOT_ID,
+            "ICE-PHISHING-PULL-SWEEPTOKEN",
+            ScanCountType.CustomScanCount,
+            counters.totalTransfers
+          );
+          findings.push(createSweepTokenAlert(txFrom, recipient, token, value, anomalyScore, hash));
+          return findings;
+        }
+      }
+    }
+
     if (!approvalEvents.length && !permitFunctions.length && !transferEvents.length) {
       return findings;
     }
@@ -280,10 +337,20 @@ const provideHandleTransaction =
     for (const func of permitFunctions) {
       counters.totalPermits += 1;
 
-      const { address: asset } = func;
-      const { owner, spender, deadline, expiry, value } = func.args;
+      let { address: asset } = func;
+      let { owner, spender, deadline, value } = func.args;
+      if (deadline) {
+        deadline = Number(deadline.toString());
+      }
 
-      if (txFrom === owner) {
+      if (func.args.permitSingle) {
+        spender = func.args.permitSingle.spender;
+        deadline = Number(func.args.permitSingle.deadline.toString());
+        value = func.args.permitSingle.details.value.toString();
+        asset = func.args.permitSingle.details.token.toLowerCase();
+      }
+
+      if (txFrom === owner || IGNORED_ADDRESSES.includes(spender)) {
         continue;
       }
 
@@ -320,7 +387,7 @@ const provideHandleTransaction =
           asset,
           owner,
           hash,
-          deadline: deadline ? deadline : expiry,
+          deadline,
           value: value ? value : 0,
         });
         if (spenderType !== AddressType.ScamAddress && msgSenderType !== AddressType.ScamAddress) {
@@ -434,7 +501,7 @@ const provideHandleTransaction =
           asset,
           owner,
           hash,
-          deadline: deadline ? deadline : expiry,
+          deadline,
           value: value ? value : 0,
         });
         const anomalyScore = await calculateAlertRate(
@@ -509,8 +576,9 @@ const provideHandleTransaction =
         ownerType === AddressType.HighNumTxsUnverifiedContract ||
         ownerType === AddressType.LowNumTxsVerifiedContract ||
         ownerType === AddressType.HighNumTxsVerifiedContract
-      )
+      ) {
         continue;
+      }
 
       // Skip if the spender
       // is verified contract with high number of txs
@@ -825,7 +893,9 @@ const provideHandleTransaction =
       const { from, to, value, values, tokenId, tokenIds } = event.args;
 
       // Filter out direct transfers, mints and burns
-      if (from === txFrom || from === ADDRESS_ZERO || to === ADDRESS_ZERO) continue;
+      if (from === txFrom || from === ADDRESS_ZERO || to === ADDRESS_ZERO) {
+        continue;
+      }
 
       let _scamAddresses = [];
       if (scamAddresses.includes(txFrom)) {
@@ -881,35 +951,45 @@ const provideHandleTransaction =
       const spenderPermissionsInfoSeverity = objects.permissionsInfoSeverity[txFrom];
       if (!spenderApprovals && !spenderApprovalsInfoSeverity && !spenderPermissions && !spenderPermissionsInfoSeverity)
         continue;
-      spenderPermissions?.map(async (permission) => {
-        if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-          if (!permission.value || permission.value.toString() === value.toString()) {
-            const anomalyScore = await calculateAlertRate(
-              chainId,
-              BOT_ID,
-              "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
-              isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
-              counters.totalTransfers
-            );
-            findings.push(createPermitTransferAlert(txFrom, from, to, asset, value, anomalyScore, hash));
-          }
-        }
-      });
+      if (spenderPermissions) {
+        await Promise.all(
+          spenderPermissions.map(async (permission) => {
+            if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
+              if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
+                const anomalyScore = await calculateAlertRate(
+                  chainId,
+                  BOT_ID,
+                  "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
+                  isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+                  counters.totalTransfers
+                );
+                findings.push(createPermitTransferAlert(txFrom, from, to, asset, value.toString(), anomalyScore, hash));
+              }
+            }
+          })
+        );
+      }
 
-      spenderPermissionsInfoSeverity?.map(async (permission) => {
-        if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-          if (!permission.value || permission.value.toString() === value.toString()) {
-            const anomalyScore = await calculateAlertRate(
-              chainId,
-              BOT_ID,
-              "ICE-PHISHING-PERMITTED-ERC20-TRANSFER-MEDIUM",
-              isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
-              counters.totalTransfers
-            );
-            findings.push(createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash));
-          }
-        }
-      });
+      if (spenderPermissionsInfoSeverity) {
+        await Promise.all(
+          spenderPermissionsInfoSeverity.map(async (permission) => {
+            if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
+              if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
+                const anomalyScore = await calculateAlertRate(
+                  chainId,
+                  BOT_ID,
+                  "ICE-PHISHING-PERMITTED-ERC20-TRANSFER-MEDIUM",
+                  isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+                  counters.totalTransfers
+                );
+                findings.push(
+                  createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash)
+                );
+              }
+            }
+          })
+        );
+      }
 
       if (spenderApprovals) {
         // Check if we have caught the approval
@@ -1315,7 +1395,8 @@ module.exports = {
     DATABASE_OBJECT_KEY,
     new PersistenceHelper(DATABASE_URL),
     objects,
-    calculateAlertRate
+    calculateAlertRate,
+    lastBlock
   ),
   provideHandleBlock,
   handleBlock: provideHandleBlock(
@@ -1328,6 +1409,8 @@ module.exports = {
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
   getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
+  counters,
+  objects,
   resetLastTimestamp: () => {
     lastTimestamp = 0;
   },
@@ -1337,4 +1420,7 @@ module.exports = {
   resetInit: () => {
     init = false;
   },
+  DATABASE_URL,
+  DATABASE_KEYS,
+  DATABASE_OBJECT_KEY,
 };

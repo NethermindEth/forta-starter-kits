@@ -493,7 +493,8 @@ describe("ice-phishing bot", () => {
         MOCK_DATABASE_OBJECTS_KEYS,
         mockPersistenceHelper,
         mockObjects,
-        mockCalculateAlertRate
+        mockCalculateAlertRate,
+        0
       );
     });
 
@@ -3513,6 +3514,7 @@ describe("ice-phishing bot", () => {
         data: { message: "totally ok", status: "1", result: [{ contractCreator: createAddress("0xbbbb") }] },
       };
       axios.get
+        .mockResolvedValueOnce({}) // Scamsniffer DB
         .mockResolvedValueOnce(axiosResponse1) // Etherscan Past Events
         .mockResolvedValueOnce(axiosResponse2); // Etherscan Contract Creator
       mockCalculateAlertRate.mockReturnValueOnce(0.239);
