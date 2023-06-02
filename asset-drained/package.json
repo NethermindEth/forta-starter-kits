@@ -1,6 +1,6 @@
 {
   "name": "asset-drained",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Detects if an asset is fully drained from a contract",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/asset-drained",
   "chainIds": [
@@ -12,6 +12,24 @@
     42161,
     43114
   ],
+  "chainSettings": {
+    "56": {
+      "shards": 2,
+      "target": 3
+    },
+    "137": {
+      "shards": 2,
+      "target": 3
+    },
+    "250": {
+      "shards": 2,
+      "target": 3
+    },
+    "default": {
+      "shards": 1,
+      "target": 3
+    }
+  },
   "scripts": {
     "start": "npm run start:dev",
     "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec \"forta-agent run\"",
@@ -33,7 +51,7 @@
   "dependencies": {
     "bot-alert-rate": "^0.0.3",
     "dotenv": "^16.0.3",
-    "forta-agent": "^0.1.24",
+    "forta-agent": "^0.1.31",
     "forta-agent-tools": "^3.1.2",
     "lru-cache": "^7.14.0",
     "node-fetch": "^2.6.7"

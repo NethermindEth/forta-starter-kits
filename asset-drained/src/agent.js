@@ -140,7 +140,9 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
     let transfers = Object.values(transfersObj)
       .filter((t) => t.value.lt(ZERO))
       .filter((t) => t.address !== ethers.constants.AddressZero)
-      .filter((t) => t.blockNumber === blockNumber - 1);
+      .filter((t) =>
+        [56, 137, 250].includes(Number(chainId)) ? t.blockNumber === blockNumber - 2 : t.blockNumber === blockNumber - 1
+      );
 
     const balanceCalls = transfers.map((e) => {
       if (e.asset === "native") {
@@ -152,8 +154,14 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
     });
 
     // Get the balances of the addresses pre- and post-drain
-    const balancesPreDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 2);
-    const balancesPostDrain = await ethcallProvider.tryAll(balanceCalls, blockNumber - 1);
+    const balancesPreDrain = await ethcallProvider.tryAll(
+      balanceCalls,
+      [56, 137, 250].includes(Number(chainId)) ? blockNumber - 3 : blockNumber - 2
+    );
+    const balancesPostDrain = await ethcallProvider.tryAll(
+      balanceCalls,
+      [56, 137, 250].includes(Number(chainId)) ? blockNumber - 2 : blockNumber - 1
+    );
 
     let balances = [];
 
@@ -175,7 +183,7 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
           "Failed to get balance for address",
           transfers[i].address,
           "on block",
-          blockNumber - 1,
+          [56, 137, 250].includes(Number(chainId)) ? blockNumber - 2 : blockNumber - 1,
           "balances:",
           balancesPostDrain[i].toString()
         );
@@ -184,7 +192,7 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
           "Failed to get balance for address",
           transfers[i].address,
           "on block",
-          blockNumber - 2,
+          [56, 137, 250].includes(Number(chainId)) ? blockNumber - 3 : blockNumber - 2,
           "balances:",
           balancesPreDrain[i].toString()
         );

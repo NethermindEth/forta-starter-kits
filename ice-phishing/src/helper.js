@@ -669,7 +669,6 @@ function createTransferSuspiciousContractAlert(
     ],
   });
 }
-
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
   return Finding.fromObject({
@@ -806,6 +805,78 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
   });
 }
 
+function createSweepTokenAlert(victim, attacker, asset, value, anomalyScore, txHash) {
+  return Finding.fromObject({
+    name: "Attacker stole funds through Router V3's pull and sweepTokens functions",
+    description: `${attacker} received ${value} tokens (${asset}) from ${victim}`,
+    alertId: "ICE-PHISHING-PULL-SWEEPTOKEN",
+    severity: FindingSeverity.Critical,
+    type: FindingType.Suspicious,
+    metadata: {
+      attacker,
+      victim,
+      anomalyScore: anomalyScore.toString(),
+    },
+    addresses: asset,
+    labels: [
+      Label.fromObject({
+        entity: attacker,
+        entityType: EntityType.Address,
+        label: "Attacker",
+        confidence: 0.8,
+      }),
+      Label.fromObject({
+        entity: victim,
+        entityType: EntityType.Address,
+        label: "Victim",
+        confidence: 0.8,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Attack",
+        confidence: 0.8,
+      }),
+    ],
+  });
+}
+
+function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, txHash) {
+  return Finding.fromObject({
+    name: "Opensea proxy implementation changed to attacker's contract",
+    description: `${victim} was tricked into upgrading their Opensea proxy implementation to ${newImplementation} created by ${attacker}`,
+    alertId: "ICE-PHISHING-OPENSEA-PROXY-UPGRADE",
+    severity: FindingSeverity.Critical,
+    type: FindingType.Suspicious,
+    metadata: {
+      victim,
+      attacker,
+      newImplementation,
+      anomalyScore: anomalyScore.toString(),
+    },
+    labels: [
+      Label.fromObject({
+        entity: attacker,
+        entityType: EntityType.Address,
+        label: "Attacker",
+        confidence: 0.8,
+      }),
+      Label.fromObject({
+        entity: victim,
+        entityType: EntityType.Address,
+        label: "Victim",
+        confidence: 0.8,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Attack",
+        confidence: 0.8,
+      }),
+    ],
+  });
+}
+
 function getBlockExplorerKey(chainId) {
   switch (chainId) {
     case 10:
@@ -851,6 +922,45 @@ function getEtherscanAddressUrl(address, chainId, offset) {
   return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
     offset + 1
   }&sort=asc&apikey=${key}`;
+}
+
+function getEtherscanLogsUrl(address, blockNumber, chainId) {
+  const { urlLogs } = etherscanApis[Number(chainId)];
+  const key = getBlockExplorerKey(Number(chainId));
+  return `${urlLogs}&address=${address}&fromBlock=0&toBlock=${blockNumber}&page=1&offset=5&sort=asc&apikey=${key}`;
+}
+
+async function isOpenseaProxy(address, blockNumber, chainId) {
+  const url = getEtherscanLogsUrl(address, blockNumber - 1, chainId);
+
+  let retries = 2;
+  let result;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(url);
+      // Handle successful response
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to call block explorer (URL: ${url}) failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+
+  const pastEvents = result.data.result;
+  const isOpensea = pastEvents.some((event) => {
+    return (
+      event.topics[0] === "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b" &&
+      event.topics[1] === "0x000000000000000000000000f9e266af4bca5890e2781812cc6a6e89495a79f2"
+    );
+  });
+
+  return isOpensea;
 }
 
 async function getContractCreator(address, chainId) {
@@ -1045,6 +1155,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
 async function getSuspiciousContracts(chainId, blockNumber, init) {
   let contracts = [];
   let startingCursor;
+
   if (!init) {
     const fortaResponse = await getAlerts({
       botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
@@ -1198,6 +1309,8 @@ module.exports = {
   createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
   createTransferSuspiciousContractAlert,
+  createSweepTokenAlert,
+  createOpenseaAlert,
   getAddressType,
   getEoaType,
   getContractCreator,
@@ -1205,5 +1318,6 @@ module.exports = {
   getBalance,
   getERC1155Balance,
   getTransactions,
+  isOpenseaProxy,
   checkObjectSizeAndCleanup,
 };
