@@ -59,12 +59,12 @@ describe("TornadoCash contract interactions", () => {
     //     Arbitrum: 1s, 5 -> 200ms
     //     Optimism: 24s, 150 -> 160ms
 
-    //      local testing reveals an avg processing time of 125, which results in the following sharding config:
-    //      Ethereum: 12s, 150 -> 80ms - 2
-    //      BSC: 3s, 70 -> 43ms - 3
-    //      Polygon: 2s, 50 -> 40ms - 4
-    //      Arbitrum: 1s, 5 -> 200ms - 1
-    //      Optimism: 24s, 150 -> 160ms - 1
+    //      local testing reveals an avg processing time of 560, which results in the following sharding config:
+    //      Ethereum: 12s, 150 -> 80ms - 7
+    //      BSC: 3s, 70 -> 43ms - 13
+    //      Polygon: 2s, 50 -> 40ms - 14
+    //      Arbitrum: 1s, 5 -> 200ms - 3
+    //      Optimism: 24s, 150 -> 160ms - 4
 
     const processingRuns = 20;
     let totalTimeNormalFunding = 0;
@@ -98,12 +98,11 @@ describe("TornadoCash contract interactions", () => {
     const processingTimeContractInteractionFundingAvgMs = totalTimeContractInteractionFunding / processingRuns;
 
     expect(
-      (processingTimeNormalFundingAvgMs * 0.984 +
+      processingTimeNormalFundingAvgMs * 0.984 +
         processingTimeContractCreationFundingAvgMs * 0.01 +
         processingTimeTcFundingAvgMs * 0.001 +
-        processingTimeContractInteractionFundingAvgMs * 0.005) /
-        4
-    ).toBeLessThan(125);
+        processingTimeContractInteractionFundingAvgMs * 0.005
+    ).toBeLessThan(560);
   });
 
   it("returns empty findings if there are no contract interactions with an account that was funded from TornadoCash", async () => {
