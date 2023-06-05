@@ -11,7 +11,7 @@ const {
   DATABASE_KEYS,
   DATABASE_OBJECT_KEY,
 } = require("./agent");
-const { getSuspiciousContracts } = require("./helper");
+// const { getSuspiciousContracts } = require("./helper");
 const { PersistenceHelper } = require("./persistence.helper");
 
 const approveCountThreshold = 0;
@@ -52,7 +52,7 @@ describe("Ice Phishing bot performance test", () => {
       DATABASE_OBJECT_KEY
     );
     let handleBlock = provideHandleBlock(
-      getSuspiciousContracts,
+      // getSuspiciousContracts,
       new PersistenceHelper(DATABASE_URL),
       DATABASE_KEYS,
       counters,
@@ -81,7 +81,7 @@ describe("Ice Phishing bot performance test", () => {
     //     Avalanche: 2s, 5 -> 400ms
     //     Fantom: 1s, 5 -> 200ms
 
-    //      local testing reveals an avg processing time of 680, which results in the following sharding config:
+    //      local testing reveals an avg processing time of 680*, which results in the following sharding config:
     //      Ethereum: 12s, 150 -> 80ms - 9
     //      BSC: 3s, 70 -> 43ms - 16
     //      Polygon: 2s, 50 -> 40ms - 17
@@ -89,6 +89,8 @@ describe("Ice Phishing bot performance test", () => {
     //      Optimism: 24s, 150 -> 160ms - 5
     //      Avalanche: 2s, 5 -> 400ms - 2
     //      Fantom: 1s, 5 -> 200ms - 4
+
+    //  * - subtracting ~600ms from the processing time to account for the time it takes to fetch the block's transactions and the data from the Scam Sniffer DB (which happens once per block)
 
     const normalTxEvent = createTransactionEvent({
       transaction: {
@@ -738,131 +740,89 @@ describe("Ice Phishing bot performance test", () => {
       contractAddress: null,
     });
 
-    // ------ ICE-PHISHING-SUSPICIOUS-APPROVAL ------
-    const suspiciousApprovalTxReceipt = await realProvider.getTransactionReceipt(
-      "0x68148ff74dce0441d3f5bb0f3f89caa0fe4e906c3f313ecea80ef4584c0288e8"
-    );
+    // // ------ ICE-PHISHING-SUSPICIOUS-APPROVAL ------
+    // const suspiciousApprovalTxReceipt = await realProvider.getTransactionReceipt(
+    //   "0x68148ff74dce0441d3f5bb0f3f89caa0fe4e906c3f313ecea80ef4584c0288e8"
+    // );
 
-    const suspiciousApprovalTx = await realProvider.getTransaction(
-      "0x68148ff74dce0441d3f5bb0f3f89caa0fe4e906c3f313ecea80ef4584c0288e8"
-    );
+    // const suspiciousApprovalTx = await realProvider.getTransaction(
+    //   "0x68148ff74dce0441d3f5bb0f3f89caa0fe4e906c3f313ecea80ef4584c0288e8"
+    // );
 
-    // Lowercase all addresses in logs to match the real txEvent logs
-    const suspiciousApprovalLowerCaseLogs = suspiciousApprovalTxReceipt.logs.map((log) => {
-      return {
-        ...log,
-        address: log.address.toLowerCase(),
-      };
-    });
+    // // Lowercase all addresses in logs to match the real txEvent logs
+    // const suspiciousApprovalLowerCaseLogs = suspiciousApprovalTxReceipt.logs.map((log) => {
+    //   return {
+    //     ...log,
+    //     address: log.address.toLowerCase(),
+    //   };
+    // });
 
-    const suspiciousApprovalTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousApprovalTxReceipt.transactionHash,
-        from: suspiciousApprovalTxReceipt.from.toLowerCase(),
-        to: suspiciousApprovalTxReceipt.to.toLowerCase(),
-        nonce: suspiciousApprovalTx.nonce,
-        data: suspiciousApprovalTx.data,
-        gas: "1",
-        gasPrice: suspiciousApprovalTx.gasPrice.toString(),
-        value: "0x0",
-        r: suspiciousApprovalTx.r,
-        s: suspiciousApprovalTx.s,
-        v: suspiciousApprovalTx.v.toFixed(),
-      },
-      block: {
-        number: suspiciousApprovalTxReceipt.blockNumber,
-        hash: suspiciousApprovalTxReceipt.blockHash,
-        timestamp: 1684408535,
-      },
-      logs: suspiciousApprovalLowerCaseLogs,
-      contractAddress: null,
-    });
-    const suspiciousApprovalBlock = await realProvider.getBlock(suspiciousApprovalTxEvent.block.number);
-    const suspiciousApprovalBlockEvent = createBlockEvent({ block: suspiciousApprovalBlock });
+    // const suspiciousApprovalTxEvent = createTransactionEvent({
+    //   transaction: {
+    //     hash: suspiciousApprovalTxReceipt.transactionHash,
+    //     from: suspiciousApprovalTxReceipt.from.toLowerCase(),
+    //     to: suspiciousApprovalTxReceipt.to.toLowerCase(),
+    //     nonce: suspiciousApprovalTx.nonce,
+    //     data: suspiciousApprovalTx.data,
+    //     gas: "1",
+    //     gasPrice: suspiciousApprovalTx.gasPrice.toString(),
+    //     value: "0x0",
+    //     r: suspiciousApprovalTx.r,
+    //     s: suspiciousApprovalTx.s,
+    //     v: suspiciousApprovalTx.v.toFixed(),
+    //   },
+    //   block: {
+    //     number: suspiciousApprovalTxReceipt.blockNumber,
+    //     hash: suspiciousApprovalTxReceipt.blockHash,
+    //     timestamp: 1684408535,
+    //   },
+    //   logs: suspiciousApprovalLowerCaseLogs,
+    //   contractAddress: null,
+    // });
+    // const suspiciousApprovalBlock = await realProvider.getBlock(suspiciousApprovalTxEvent.block.number);
+    // const suspiciousApprovalBlockEvent = createBlockEvent({ block: suspiciousApprovalBlock });
 
-    // ------ ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT ------
-    const suspiciousPermitTxReceipt = await realProvider.getTransactionReceipt(
-      "0xd5faa19239ea4393e7ac432cf7992e36a1b017ed693073b21e98a7a7345d459b"
-    );
+    // // ------ ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT ------
+    // const suspiciousPermitTxReceipt = await realProvider.getTransactionReceipt(
+    //   "0xd5faa19239ea4393e7ac432cf7992e36a1b017ed693073b21e98a7a7345d459b"
+    // );
 
-    const suspiciousPermitTx = await realProvider.getTransaction(
-      "0xd5faa19239ea4393e7ac432cf7992e36a1b017ed693073b21e98a7a7345d459b"
-    );
+    // const suspiciousPermitTx = await realProvider.getTransaction(
+    //   "0xd5faa19239ea4393e7ac432cf7992e36a1b017ed693073b21e98a7a7345d459b"
+    // );
 
-    // Lowercase all addresses in logs to match the real txEvent logs
-    const suspiciousPermitLowerCaseLogs = suspiciousPermitTxReceipt.logs.map((log) => {
-      return {
-        ...log,
-        address: log.address.toLowerCase(),
-      };
-    });
+    // // Lowercase all addresses in logs to match the real txEvent logs
+    // const suspiciousPermitLowerCaseLogs = suspiciousPermitTxReceipt.logs.map((log) => {
+    //   return {
+    //     ...log,
+    //     address: log.address.toLowerCase(),
+    //   };
+    // });
 
-    const suspiciousPermitTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousPermitTxReceipt.transactionHash,
-        from: suspiciousPermitTxReceipt.from.toLowerCase(),
-        to: suspiciousPermitTxReceipt.to.toLowerCase(),
-        nonce: suspiciousPermitTx.nonce,
-        data: suspiciousPermitTx.data,
-        gas: "1",
-        gasPrice: suspiciousPermitTx.gasPrice.toString(),
-        value: "0x0",
-        r: suspiciousPermitTx.r,
-        s: suspiciousPermitTx.s,
-        v: suspiciousPermitTx.v.toFixed(),
-      },
-      block: {
-        number: suspiciousPermitTxReceipt.blockNumber,
-        hash: suspiciousPermitTxReceipt.blockHash,
-        timestamp: 1684408535,
-      },
-      logs: suspiciousPermitLowerCaseLogs,
-      contractAddress: null,
-    });
-    const suspiciousPermitBlock = await realProvider.getBlock(suspiciousPermitTxEvent.block.number);
-    const suspiciousPermitBlockEvent = createBlockEvent({ block: suspiciousPermitBlock });
-
-    // ------ ICE-PHISHING-SUSPICIOUS-TRANSFER ------
-    const suspiciousTransferTxReceipt = await realProvider.getTransactionReceipt(
-      "0x20368a87ad7916c2b64d8d1a2c410897297fdb75a530083fb3e30ce0fd1f946b"
-    );
-
-    const suspiciousTransferTx = await realProvider.getTransaction(
-      "0x20368a87ad7916c2b64d8d1a2c410897297fdb75a530083fb3e30ce0fd1f946b"
-    );
-
-    // Lowercase all addresses in logs to match the real txEvent logs
-    const suspiciousTransferLowerCaseLogs = suspiciousTransferTxReceipt.logs.map((log) => {
-      return {
-        ...log,
-        address: log.address.toLowerCase(),
-      };
-    });
-
-    const suspiciousTransferTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousTransferTxReceipt.transactionHash,
-        from: suspiciousTransferTxReceipt.from.toLowerCase(),
-        to: suspiciousTransferTxReceipt.to.toLowerCase(),
-        nonce: suspiciousTransferTx.nonce,
-        data: suspiciousTransferTx.data,
-        gas: "1",
-        gasPrice: suspiciousTransferTx.gasPrice.toString(),
-        value: "0x0",
-        r: suspiciousTransferTx.r,
-        s: suspiciousTransferTx.s,
-        v: suspiciousTransferTx.v.toFixed(),
-      },
-      block: {
-        number: suspiciousTransferTxReceipt.blockNumber,
-        hash: suspiciousTransferTxReceipt.blockHash,
-        timestamp: 1684408535,
-      },
-      logs: suspiciousTransferLowerCaseLogs,
-      contractAddress: null,
-    });
-    const suspiciousTransferBlock = await realProvider.getBlock(suspiciousTransferTxEvent.block.number);
-    const suspiciousTransferBlockEvent = createBlockEvent({ block: suspiciousTransferBlock });
+    // const suspiciousPermitTxEvent = createTransactionEvent({
+    //   transaction: {
+    //     hash: suspiciousPermitTxReceipt.transactionHash,
+    //     from: suspiciousPermitTxReceipt.from.toLowerCase(),
+    //     to: suspiciousPermitTxReceipt.to.toLowerCase(),
+    //     nonce: suspiciousPermitTx.nonce,
+    //     data: suspiciousPermitTx.data,
+    //     gas: "1",
+    //     gasPrice: suspiciousPermitTx.gasPrice.toString(),
+    //     value: "0x0",
+    //     r: suspiciousPermitTx.r,
+    //     s: suspiciousPermitTx.s,
+    //     v: suspiciousPermitTx.v.toFixed(),
+    //   },
+    //   block: {
+    //     number: suspiciousPermitTxReceipt.blockNumber,
+    //     hash: suspiciousPermitTxReceipt.blockHash,
+    //     timestamp: 1684408535,
+    //   },
+    //   logs: suspiciousPermitLowerCaseLogs,
+    //   contractAddress: null,
+    // });
+    // const suspiciousPermitBlock = await realProvider.getBlock(suspiciousPermitTxEvent.block.number);
+    // const suspiciousPermitBlockEvent = createBlockEvent({ block: suspiciousPermitBlock });
 
     // ------ ICE-PHISHING-SCAM-APPROVAL ------
     const scamApprovalTxReceipt = await realProvider.getTransactionReceipt(
@@ -1373,9 +1333,8 @@ describe("Ice Phishing bot performance test", () => {
     let totalTimeErc1155ApprovalForAll = 0;
     let totalTimeHighNumApprovedTransfersLow = 0;
     let totalTimeHighNumApprovedTransfers = 0;
-    let totalTimeSuspiciousApproval = 0;
-    let totalTimeSuspiciousPermit = 0;
-    let totalTimeSuspiciousTransfer = 0;
+    // let totalTimeSuspiciousApproval = 0;
+    // let totalTimeSuspiciousPermit = 0;
     let totalTimeScamApproval = 0;
     let totalTimeScamTransfer = 0;
     let totalTimePullSweepToken = 0;
@@ -1469,27 +1428,19 @@ describe("Ice Phishing bot performance test", () => {
       const endTimeHighNumApprovedTransfers = performance.now();
       totalTimeHighNumApprovedTransfers += endTimeHighNumApprovedTransfers - startTimeHighNumApprovedTransfers;
 
-      await handleBlock(suspiciousApprovalBlockEvent);
-      const startTimeSuspiciousApproval = performance.now();
-      await handleTransaction(suspiciousApprovalTxEvent);
-      const endTimeSuspiciousApproval = performance.now();
-      totalTimeSuspiciousApproval += endTimeSuspiciousApproval - startTimeSuspiciousApproval;
+      // await handleBlock(suspiciousApprovalBlockEvent);
+      // const startTimeSuspiciousApproval = performance.now();
+      // await handleTransaction(suspiciousApprovalTxEvent);
+      // const endTimeSuspiciousApproval = performance.now();
+      // totalTimeSuspiciousApproval += endTimeSuspiciousApproval - startTimeSuspiciousApproval;
 
-      resetInit();
+      // resetInit();
 
-      await handleBlock(suspiciousPermitBlockEvent);
-      const startTimeSuspiciousPermit = performance.now();
-      await handleTransaction(suspiciousPermitTxEvent);
-      const endTimeSuspiciousPermit = performance.now();
-      totalTimeSuspiciousPermit += endTimeSuspiciousPermit - startTimeSuspiciousPermit;
-
-      resetInit();
-
-      await handleBlock(suspiciousTransferBlockEvent);
-      const startTimeSuspiciousTransfer = performance.now();
-      await handleTransaction(suspiciousTransferTxEvent);
-      const endTimeSuspiciousTransfer = performance.now();
-      totalTimeSuspiciousTransfer += endTimeSuspiciousTransfer - startTimeSuspiciousTransfer;
+      // await handleBlock(suspiciousPermitBlockEvent);
+      // const startTimeSuspiciousPermit = performance.now();
+      // await handleTransaction(suspiciousPermitTxEvent);
+      // const endTimeSuspiciousPermit = performance.now();
+      // totalTimeSuspiciousPermit += endTimeSuspiciousPermit - startTimeSuspiciousPermit;
 
       await handleBlock(scamBlockEvent);
 
@@ -1537,9 +1488,8 @@ describe("Ice Phishing bot performance test", () => {
     const processingTimeErc1155ApprovalForAll = totalTimeErc1155ApprovalForAll / blocksToRun;
     const processingTimeHighNumApprovedTransfersLow = totalTimeHighNumApprovedTransfersLow / blocksToRun;
     const processingTimeHighNumApprovedTransfers = totalTimeHighNumApprovedTransfers / blocksToRun;
-    const processingTimeSuspiciousApproval = totalTimeSuspiciousApproval / blocksToRun;
-    const processingTimeSuspiciousPermit = totalTimeSuspiciousPermit / blocksToRun;
-    const processingTimeSuspiciousTransfer = totalTimeSuspiciousTransfer / blocksToRun;
+    // const processingTimeSuspiciousApproval = totalTimeSuspiciousApproval / blocksToRun;
+    // const processingTimeSuspiciousPermit = totalTimeSuspiciousPermit / blocksToRun;
     const processingTimeScamApproval = totalTimeScamApproval / blocksToRun;
     const processingTimeScamTransfer = totalTimeScamTransfer / blocksToRun;
     const processingTimePullSweepToken = totalTimePullSweepToken / blocksToRun;
@@ -1548,29 +1498,27 @@ describe("Ice Phishing bot performance test", () => {
     const processingTimeScamCreatorApproval = totalTimeScamCreatorApproval / blocksToRun;
 
     expect(
-      (processingTimeNormalTx * 0.89 +
-        processingTimeErc20ApprovalsInfo * 0.01 +
-        processingTimeErc20Approvals * 0.005 +
-        processingTimeErc721ApprovalsInfo * 0.005 +
-        processingTimeErc721Approvals * 0.005 +
-        processingTimeErc20PermitInfo * 0.005 +
-        processingTimeErc20Permit * 0.005 +
-        processingTimeErc721ApprovalForAllInfo * 0.005 +
-        processingTimeErc721ApprovalForAll * 0.005 +
-        processingTimeErc1155ApprovalForAllInfo * 0.005 +
-        processingTimeErc1155ApprovalForAll * 0.005 +
-        processingTimeHighNumApprovedTransfersLow * 0.005 +
-        processingTimeHighNumApprovedTransfers * 0.005 +
-        processingTimeSuspiciousApproval * 0.005 +
-        processingTimeSuspiciousPermit * 0.005 +
-        processingTimeSuspiciousTransfer * 0.005 +
-        processingTimeScamApproval * 0.005 +
-        processingTimeScamTransfer * 0.005 +
-        processingTimePullSweepToken * 0.005 +
-        processingTimeOpenseaProxyUpgrade * 0.005 +
-        processingTimeScamPermit * 0.005 +
-        processingTimeScamCreatorApproval * 0.005) /
-        22
-    ).toBeLessThan(685);
+      processingTimeNormalTx * 0.68 +
+        processingTimeErc20ApprovalsInfo * 0.04 +
+        processingTimeErc20Approvals * 0.02 +
+        processingTimeErc721ApprovalsInfo * 0.02 +
+        processingTimeErc721Approvals * 0.02 +
+        processingTimeErc20PermitInfo * 0.02 +
+        processingTimeErc20Permit * 0.02 +
+        processingTimeErc721ApprovalForAllInfo * 0.02 +
+        processingTimeErc721ApprovalForAll * 0.02 +
+        processingTimeErc1155ApprovalForAllInfo * 0.02 +
+        processingTimeErc1155ApprovalForAll * 0.02 +
+        processingTimeHighNumApprovedTransfersLow * 0.02 +
+        processingTimeHighNumApprovedTransfers * 0.02 +
+        // processingTimeSuspiciousApproval * 0.01 +
+        // processingTimeSuspiciousPermit * 0.01 +
+        processingTimeScamApproval * 0.01 +
+        processingTimeScamTransfer * 0.01 +
+        processingTimePullSweepToken * 0.01 +
+        processingTimeOpenseaProxyUpgrade * 0.01 +
+        processingTimeScamPermit * 0.01 +
+        processingTimeScamCreatorApproval * 0.01
+    ).toBeLessThan(1250);
   });
 });
