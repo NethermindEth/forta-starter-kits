@@ -439,46 +439,46 @@ function createPermitScamCreatorAlert(
   });
 }
 
-function createPermitSuspiciousContractAlert(
-  msgSender,
-  spender,
-  owner,
-  asset,
-  suspiciousContract,
-  anomalyScore,
-  txHash
-) {
-  return Finding.fromObject({
-    name: "Suspicious contract (creator) was involved in an ERC-20 permission",
-    description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
-    alertId: "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
-    severity: FindingSeverity.Medium,
-    type: FindingType.Suspicious,
-    metadata: {
-      suspiciousContract: suspiciousContract.address,
-      suspiciousContractCreator: suspiciousContract.creator,
-      msgSender,
-      spender,
-      owner,
-      anomalyScore: anomalyScore.toString(),
-    },
-    addresses: [asset],
-    labels: [
-      Label.fromObject({
-        entity: spender,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.5,
-      }),
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Permit",
-        confidence: 1,
-      }),
-    ],
-  });
-}
+// function createPermitSuspiciousContractAlert(
+//   msgSender,
+//   spender,
+//   owner,
+//   asset,
+//   suspiciousContract,
+//   anomalyScore,
+//   txHash
+// ) {
+//   return Finding.fromObject({
+//     name: "Suspicious contract (creator) was involved in an ERC-20 permission",
+//     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
+//     alertId: "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
+//     severity: FindingSeverity.Medium,
+//     type: FindingType.Suspicious,
+//     metadata: {
+//       suspiciousContract: suspiciousContract.address,
+//       suspiciousContractCreator: suspiciousContract.creator,
+//       msgSender,
+//       spender,
+//       owner,
+//       anomalyScore: anomalyScore.toString(),
+//     },
+//     addresses: [asset],
+//     labels: [
+//       Label.fromObject({
+//         entity: spender,
+//         entityType: EntityType.Address,
+//         label: "Attacker",
+//         confidence: 0.5,
+//       }),
+//       Label.fromObject({
+//         entity: txHash,
+//         entityType: EntityType.Transaction,
+//         label: "Permit",
+//         confidence: 1,
+//       }),
+//     ],
+//   });
+// }
 
 function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomalyScore, txHash) {
   return Finding.fromObject({
@@ -511,45 +511,45 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
   });
 }
 
-function createApprovalSuspiciousContractAlert(
-  suspiciousSpender,
-  owner,
-  asset,
-  contract,
-  creator,
-  anomalyScore,
-  txHash
-) {
-  return Finding.fromObject({
-    name: "Suspicious contract (creator) got approval to spend assets",
-    description: `Suspicious address ${suspiciousSpender} got approval for ${owner}'s assets`,
-    alertId: "ICE-PHISHING-SUSPICIOUS-APPROVAL",
-    severity: FindingSeverity.Medium,
-    type: FindingType.Suspicious,
-    metadata: {
-      suspiciousSpender,
-      suspiciousContract: contract,
-      suspiciousContractCreator: creator,
-      owner,
-      anomalyScore: anomalyScore.toString(),
-    },
-    addresses: [asset],
-    labels: [
-      Label.fromObject({
-        entity: suspiciousSpender,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.5,
-      }),
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Approval",
-        confidence: 1,
-      }),
-    ],
-  });
-}
+// function createApprovalSuspiciousContractAlert(
+//   suspiciousSpender,
+//   owner,
+//   asset,
+//   contract,
+//   creator,
+//   anomalyScore,
+//   txHash
+// ) {
+//   return Finding.fromObject({
+//     name: "Suspicious contract (creator) got approval to spend assets",
+//     description: `Suspicious address ${suspiciousSpender} got approval for ${owner}'s assets`,
+//     alertId: "ICE-PHISHING-SUSPICIOUS-APPROVAL",
+//     severity: FindingSeverity.Medium,
+//     type: FindingType.Suspicious,
+//     metadata: {
+//       suspiciousSpender,
+//       suspiciousContract: contract,
+//       suspiciousContractCreator: creator,
+//       owner,
+//       anomalyScore: anomalyScore.toString(),
+//     },
+//     addresses: [asset],
+//     labels: [
+//       Label.fromObject({
+//         entity: suspiciousSpender,
+//         entityType: EntityType.Address,
+//         label: "Attacker",
+//         confidence: 0.5,
+//       }),
+//       Label.fromObject({
+//         entity: txHash,
+//         entityType: EntityType.Transaction,
+//         label: "Approval",
+//         confidence: 1,
+//       }),
+//     ],
+//   });
+// }
 
 function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scamDomains, anomalyScore, txHash) {
   return Finding.fromObject({
@@ -623,52 +623,6 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
   });
 }
 
-function createTransferSuspiciousContractAlert(
-  msgSender,
-  owner,
-  receiver,
-  asset,
-  suspiciousContract,
-  anomalyScore,
-  txHash
-) {
-  return Finding.fromObject({
-    name: "Suspicious contract (creator) was involved in an asset transfer",
-    description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
-    alertId: "ICE-PHISHING-SUSPICIOUS-TRANSFER",
-    severity: FindingSeverity.High,
-    type: FindingType.Suspicious,
-    metadata: {
-      suspiciousContract: suspiciousContract.address,
-      suspiciousContractCreator: suspiciousContract.creator,
-      msgSender,
-      owner,
-      receiver,
-      anomalyScore: anomalyScore.toString(),
-    },
-    addresses: [asset],
-    labels: [
-      Label.fromObject({
-        entity: suspiciousContract.address,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.6,
-      }),
-      Label.fromObject({
-        entity: suspiciousContract.creator,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.6,
-      }),
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-    ],
-  });
-}
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
   return Finding.fromObject({
@@ -1152,78 +1106,78 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
   return type;
 }
 
-async function getSuspiciousContracts(chainId, blockNumber, init) {
-  let contracts = [];
-  let startingCursor;
+// async function getSuspiciousContracts(chainId, blockNumber, init) {
+//   let contracts = [];
+//   let startingCursor;
 
-  if (!init) {
-    const fortaResponse = await getAlerts({
-      botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
-      alertId: "SUSPICIOUS-CONTRACT-CREATION",
-      chainId: chainId,
-      blockNumberRange: {
-        startBlockNumber: blockNumber - 20000,
-        endBlockNumber: blockNumber,
-      },
-      first: 5000,
-    });
+//   if (!init) {
+//     const fortaResponse = await getAlerts({
+//       botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
+//       alertId: "SUSPICIOUS-CONTRACT-CREATION",
+//       chainId: chainId,
+//       blockNumberRange: {
+//         startBlockNumber: blockNumber - 20000,
+//         endBlockNumber: blockNumber,
+//       },
+//       first: 5000,
+//     });
 
-    fortaResponse.alerts.forEach((alert) => {
-      contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
-    });
+//     fortaResponse.alerts.forEach((alert) => {
+//       contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+//     });
 
-    startingCursor = fortaResponse.pageInfo.endCursor;
-    while (startingCursor.blockNumber > 0) {
-      const fortaResponse = await getAlerts({
-        botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
-        alertId: "SUSPICIOUS-CONTRACT-CREATION",
-        chainId: chainId,
-        blockNumberRange: {
-          startBlockNumber: blockNumber - 15000,
-          endBlockNumber: blockNumber,
-        },
-        first: 1000,
-        startingCursor: startingCursor,
-      });
+//     startingCursor = fortaResponse.pageInfo.endCursor;
+//     while (startingCursor.blockNumber > 0) {
+//       const fortaResponse = await getAlerts({
+//         botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
+//         alertId: "SUSPICIOUS-CONTRACT-CREATION",
+//         chainId: chainId,
+//         blockNumberRange: {
+//           startBlockNumber: blockNumber - 15000,
+//           endBlockNumber: blockNumber,
+//         },
+//         first: 1000,
+//         startingCursor: startingCursor,
+//       });
 
-      fortaResponse.alerts.forEach((alert) => {
-        contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
-      });
+//       fortaResponse.alerts.forEach((alert) => {
+//         contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+//       });
 
-      startingCursor = fortaResponse.pageInfo.endCursor;
-    }
-    contracts = contracts.map((contract) => {
-      return {
-        address: ethers.utils.getAddress(contract.address),
-        creator: ethers.utils.getAddress(contract.creator),
-      };
-    });
+//       startingCursor = fortaResponse.pageInfo.endCursor;
+//     }
+//     contracts = contracts.map((contract) => {
+//       return {
+//         address: ethers.utils.getAddress(contract.address),
+//         creator: ethers.utils.getAddress(contract.creator),
+//       };
+//     });
 
-    return new Set(contracts);
-  } else {
-    const fortaResponse = await getAlerts({
-      botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
-      alertId: "SUSPICIOUS-CONTRACT-CREATION",
-      chainId: chainId,
-      blockNumberRange: {
-        startBlockNumber: blockNumber - 240,
-        endBlockNumber: blockNumber,
-      },
-      first: 1000,
-    });
+//     return new Set(contracts);
+//   } else {
+//     const fortaResponse = await getAlerts({
+//       botIds: [MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID],
+//       alertId: "SUSPICIOUS-CONTRACT-CREATION",
+//       chainId: chainId,
+//       blockNumberRange: {
+//         startBlockNumber: blockNumber - 240,
+//         endBlockNumber: blockNumber,
+//       },
+//       first: 1000,
+//     });
 
-    fortaResponse.alerts.forEach((alert) => {
-      contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
-    });
-    contracts = contracts.map((contract) => {
-      return {
-        address: ethers.utils.getAddress(contract.address),
-        creator: ethers.utils.getAddress(contract.creator),
-      };
-    });
-    return new Set(contracts);
-  }
-}
+//     fortaResponse.alerts.forEach((alert) => {
+//       contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+//     });
+//     contracts = contracts.map((contract) => {
+//       return {
+//         address: ethers.utils.getAddress(contract.address),
+//         creator: ethers.utils.getAddress(contract.creator),
+//       };
+//     });
+//     return new Set(contracts);
+//   }
+// }
 
 const cachedBalances = new LRU({ max: 100_000 });
 
@@ -1303,18 +1257,17 @@ module.exports = {
   createPermitInfoAlert,
   createPermitScamAlert,
   createPermitScamCreatorAlert,
-  createPermitSuspiciousContractAlert,
+  // createPermitSuspiciousContractAlert,
   createApprovalScamAlert,
   createApprovalScamCreatorAlert,
-  createApprovalSuspiciousContractAlert,
+  // createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
-  createTransferSuspiciousContractAlert,
   createSweepTokenAlert,
   createOpenseaAlert,
   getAddressType,
   getEoaType,
   getContractCreator,
-  getSuspiciousContracts,
+  // getSuspiciousContracts,
   getBalance,
   getERC1155Balance,
   getTransactions,
