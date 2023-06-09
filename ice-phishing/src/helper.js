@@ -669,6 +669,7 @@ function createTransferSuspiciousContractAlert(
     ],
   });
 }
+
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
   return Finding.fromObject({

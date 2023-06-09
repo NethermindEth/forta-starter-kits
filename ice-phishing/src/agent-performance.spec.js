@@ -81,7 +81,7 @@ describe("Ice Phishing bot performance test", () => {
     //     Avalanche: 2s, 5 -> 400ms
     //     Fantom: 1s, 5 -> 200ms
 
-    //      local testing reveals an avg processing time of 680, which results in the following sharding config:
+    //      local testing reveals an avg processing time of 680*, which results in the following sharding config:
     //      Ethereum: 12s, 150 -> 80ms - 9
     //      BSC: 3s, 70 -> 43ms - 16
     //      Polygon: 2s, 50 -> 40ms - 17
@@ -89,6 +89,8 @@ describe("Ice Phishing bot performance test", () => {
     //      Optimism: 24s, 150 -> 160ms - 5
     //      Avalanche: 2s, 5 -> 400ms - 2
     //      Fantom: 1s, 5 -> 200ms - 4
+
+    //  * - subtracting ~600ms from the processing time to account for the time it takes to fetch the block's transactions and the data from the Scam Sniffer DB (which happens once per block)
 
     const normalTxEvent = createTransactionEvent({
       transaction: {
@@ -1477,19 +1479,19 @@ describe("Ice Phishing bot performance test", () => {
 
       resetInit();
 
-      await handleBlock(suspiciousPermitBlockEvent);
-      const startTimeSuspiciousPermit = performance.now();
-      await handleTransaction(suspiciousPermitTxEvent);
-      const endTimeSuspiciousPermit = performance.now();
-      totalTimeSuspiciousPermit += endTimeSuspiciousPermit - startTimeSuspiciousPermit;
-
-      resetInit();
-
       await handleBlock(suspiciousTransferBlockEvent);
       const startTimeSuspiciousTransfer = performance.now();
       await handleTransaction(suspiciousTransferTxEvent);
       const endTimeSuspiciousTransfer = performance.now();
       totalTimeSuspiciousTransfer += endTimeSuspiciousTransfer - startTimeSuspiciousTransfer;
+
+      resetInit();
+
+      await handleBlock(suspiciousPermitBlockEvent);
+      const startTimeSuspiciousPermit = performance.now();
+      await handleTransaction(suspiciousPermitTxEvent);
+      const endTimeSuspiciousPermit = performance.now();
+      totalTimeSuspiciousPermit += endTimeSuspiciousPermit - startTimeSuspiciousPermit;
 
       await handleBlock(scamBlockEvent);
 
@@ -1548,29 +1550,28 @@ describe("Ice Phishing bot performance test", () => {
     const processingTimeScamCreatorApproval = totalTimeScamCreatorApproval / blocksToRun;
 
     expect(
-      (processingTimeNormalTx * 0.89 +
-        processingTimeErc20ApprovalsInfo * 0.01 +
-        processingTimeErc20Approvals * 0.005 +
-        processingTimeErc721ApprovalsInfo * 0.005 +
-        processingTimeErc721Approvals * 0.005 +
-        processingTimeErc20PermitInfo * 0.005 +
-        processingTimeErc20Permit * 0.005 +
-        processingTimeErc721ApprovalForAllInfo * 0.005 +
-        processingTimeErc721ApprovalForAll * 0.005 +
-        processingTimeErc1155ApprovalForAllInfo * 0.005 +
-        processingTimeErc1155ApprovalForAll * 0.005 +
-        processingTimeHighNumApprovedTransfersLow * 0.005 +
-        processingTimeHighNumApprovedTransfers * 0.005 +
-        processingTimeSuspiciousApproval * 0.005 +
-        processingTimeSuspiciousPermit * 0.005 +
-        processingTimeSuspiciousTransfer * 0.005 +
-        processingTimeScamApproval * 0.005 +
-        processingTimeScamTransfer * 0.005 +
-        processingTimePullSweepToken * 0.005 +
-        processingTimeOpenseaProxyUpgrade * 0.005 +
-        processingTimeScamPermit * 0.005 +
-        processingTimeScamCreatorApproval * 0.005) /
-        22
-    ).toBeLessThan(685);
+      processingTimeNormalTx * 0.65 +
+        processingTimeErc20ApprovalsInfo * 0.04 +
+        processingTimeErc20Approvals * 0.02 +
+        processingTimeErc721ApprovalsInfo * 0.02 +
+        processingTimeErc721Approvals * 0.02 +
+        processingTimeErc20PermitInfo * 0.02 +
+        processingTimeErc20Permit * 0.02 +
+        processingTimeErc721ApprovalForAllInfo * 0.02 +
+        processingTimeErc721ApprovalForAll * 0.02 +
+        processingTimeErc1155ApprovalForAllInfo * 0.02 +
+        processingTimeErc1155ApprovalForAll * 0.02 +
+        processingTimeHighNumApprovedTransfersLow * 0.02 +
+        processingTimeHighNumApprovedTransfers * 0.02 +
+        processingTimeSuspiciousApproval * 0.01 +
+        processingTimeSuspiciousPermit * 0.01 +
+        processingTimeSuspiciousTransfer * 0.01 +
+        processingTimeScamApproval * 0.01 +
+        processingTimeScamTransfer * 0.01 +
+        processingTimePullSweepToken * 0.01 +
+        processingTimeOpenseaProxyUpgrade * 0.01 +
+        processingTimeScamPermit * 0.01 +
+        processingTimeScamCreatorApproval * 0.01
+    ).toBeLessThan(1250);
   });
 });
