@@ -10,7 +10,7 @@ const {
   resetLastTimestamp,
   resetInit,
   resetLastBlock,
-  // getSuspiciousContracts,
+  getSuspiciousContracts,
 } = require("./agent");
 
 const approveCountThreshold = 2;
@@ -458,7 +458,7 @@ describe("ice-phishing bot", () => {
     getTransactionCount: jest.fn(),
     getNetwork: jest.fn(),
   };
-  // const mockGetSuspiciousContracts = jest.fn();
+  const mockGetSuspiciousContracts = jest.fn();
   let handleBlock;
 
   describe("provideHandleTransaction", () => {
@@ -669,277 +669,277 @@ describe("ice-phishing bot", () => {
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
-    // it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
-    //   const initialize = provideInitialize(
-    //     mockProvider,
-    //     mockPersistenceHelper,
-    //     MOCK_DATABASE_KEYS,
-    //     mockCounters,
-    //     MOCK_DATABASE_OBJECTS_KEYS
-    //   );
-    //   for (const key in MOCK_DATABASE_KEYS) {
-    //     mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
-    //   }
-    //   await initialize();
+    it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      await initialize();
 
-    //   const mockBlockEvent = { block: { number: 876123 } };
-    //   handleBlock = provideHandleBlock(
-    //     mockGetSuspiciousContracts,
-    //     mockPersistenceHelper,
-    //     MOCK_DATABASE_KEYS,
-    //     mockCounters
-    //   );
+      const mockBlockEvent = { block: { number: 876123 } };
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters
+      );
 
-    //   mockGetSuspiciousContracts.mockResolvedValueOnce(
-    //     new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
-    //   );
-    //   const axiosResponse = { data: [createAddress("0x5050")] };
-    //   axios.get.mockResolvedValueOnce(axiosResponse);
+      mockGetSuspiciousContracts.mockResolvedValueOnce(
+        new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
+      );
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
 
-    //   await handleBlock(mockBlockEvent);
+      await handleBlock(mockBlockEvent);
 
-    //   mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
-    //   for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-    //     mockPersistenceHelper.load.mockReturnValueOnce({});
-    //   }
+      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce({});
+      }
 
-    //   const mockTxEvent = {
-    //     filterLog: jest.fn(),
-    //     filterFunction: jest.fn(),
-    //     hash: "hash2",
-    //     timestamp: 1230000,
-    //     blockNumber: 876123,
-    //     from: createAddress("0x4567"),
-    //   };
+      const mockTxEvent = {
+        filterLog: jest.fn(),
+        filterFunction: jest.fn(),
+        hash: "hash2",
+        timestamp: 1230000,
+        blockNumber: 876123,
+        from: createAddress("0x4567"),
+      };
 
-    //   const mockDAILikePermitFunctionCall = {
-    //     address: asset,
-    //     args: {
-    //       owner: owner1,
-    //       spender: createAddress("0xabcdabcd"),
-    //       deadline: 8359543534435,
-    //     },
-    //   };
+      const mockDAILikePermitFunctionCall = {
+        address: asset,
+        args: {
+          owner: owner1,
+          spender: createAddress("0xabcdabcd"),
+          deadline: 8359543534435,
+        },
+      };
 
-    //   mockTxEvent.filterFunction
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([mockDAILikePermitFunctionCall])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([]);
-    //   mockTxEvent.filterLog.mockReturnValue([]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockDAILikePermitFunctionCall])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
+      mockTxEvent.filterLog.mockReturnValue([]);
 
-    //   mockProvider.getCode.mockResolvedValueOnce("0x32523523");
-    //   const axiosResponse2 = {
-    //     data: { message: "totally ok", status: "1", result: [{ contractCreator: createAddress("0xbbbb") }] },
-    //   };
-    //   const axiosResponse3 = { data: { message: "totally ok", status: "1", result: [createAddress("0xaaaa")] } };
-    //   axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
-    //   mockCalculateAlertRate.mockReturnValueOnce("0.023").mockReturnValueOnce("0.001");
+      mockProvider.getCode.mockResolvedValueOnce("0x32523523");
+      const axiosResponse2 = {
+        data: { message: "totally ok", status: "1", result: [{ contractCreator: createAddress("0xbbbb") }] },
+      };
+      const axiosResponse3 = { data: { message: "totally ok", status: "1", result: [createAddress("0xaaaa")] } };
+      axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
+      mockCalculateAlertRate.mockReturnValueOnce("0.023").mockReturnValueOnce("0.001");
 
-    //   const findings = await handleTransaction(mockTxEvent);
+      const findings = await handleTransaction(mockTxEvent);
 
-    //   expect(findings).toStrictEqual([
-    //     Finding.fromObject({
-    //       name: "Suspicious contract (creator) was involved in an ERC-20 permission",
-    //       description: `${createAddress("0x4567")} gave permission to ${createAddress(
-    //         "0xabcdabcd"
-    //       )} for ${owner1}'s ERC-20 tokens`,
-    //       alertId: "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
-    //       severity: FindingSeverity.Medium,
-    //       type: FindingType.Suspicious,
-    //       metadata: {
-    //         msgSender: createAddress("0x4567"),
-    //         owner: owner1,
-    //         spender: createAddress("0xabcdabcd"),
-    //         suspiciousContract: createAddress("0xabcdabcd"),
-    //         suspiciousContractCreator: createAddress("0xeeffeeff"),
-    //         anomalyScore: "0.023",
-    //       },
-    //       addresses: [asset],
-    //       labels: [
-    //         Label.fromObject({
-    //           entity: createAddress("0xabcdabcd"),
-    //           entityType: EntityType.Address,
-    //           label: "Attacker",
-    //           confidence: 0.5,
-    //         }),
-    //         Label.fromObject({
-    //           entity: "hash2",
-    //           entityType: EntityType.Transaction,
-    //           label: "Permit",
-    //           confidence: 1,
-    //         }),
-    //       ],
-    //     }),
-    //     Finding.fromObject({
-    //       name: "Account got permission for ERC-20 tokens",
-    //       description: `${createAddress("0x4567")} gave permission to ${createAddress(
-    //         "0xabcdabcd"
-    //       )} for ${owner1}'s ERC-20 tokens`,
-    //       alertId: "ICE-PHISHING-ERC20-PERMIT-INFO",
-    //       severity: FindingSeverity.Info,
-    //       type: FindingType.Info,
-    //       metadata: {
-    //         msgSender: createAddress("0x4567"),
-    //         owner: owner1,
-    //         spender: createAddress("0xabcdabcd"),
-    //         anomalyScore: "0.001",
-    //       },
-    //       addresses: [asset],
-    //       labels: [
-    //         Label.fromObject({
-    //           entity: createAddress("0xabcdabcd"),
-    //           entityType: EntityType.Address,
-    //           label: "Attacker",
-    //           confidence: 0.2,
-    //         }),
-    //         Label.fromObject({
-    //           entity: "hash2",
-    //           entityType: EntityType.Transaction,
-    //           label: "Permit",
-    //           confidence: 1,
-    //         }),
-    //       ],
-    //     }),
-    //   ]);
-    //   expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
-    //   expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
-    // });
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Suspicious contract (creator) was involved in an ERC-20 permission",
+          description: `${createAddress("0x4567")} gave permission to ${createAddress(
+            "0xabcdabcd"
+          )} for ${owner1}'s ERC-20 tokens`,
+          alertId: "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
+          severity: FindingSeverity.Medium,
+          type: FindingType.Suspicious,
+          metadata: {
+            msgSender: createAddress("0x4567"),
+            owner: owner1,
+            spender: createAddress("0xabcdabcd"),
+            suspiciousContract: createAddress("0xabcdabcd"),
+            suspiciousContractCreator: createAddress("0xeeffeeff"),
+            anomalyScore: "0.023",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: createAddress("0xabcdabcd"),
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.5,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Permit",
+              confidence: 1,
+            }),
+          ],
+        }),
+        Finding.fromObject({
+          name: "Account got permission for ERC-20 tokens",
+          description: `${createAddress("0x4567")} gave permission to ${createAddress(
+            "0xabcdabcd"
+          )} for ${owner1}'s ERC-20 tokens`,
+          alertId: "ICE-PHISHING-ERC20-PERMIT-INFO",
+          severity: FindingSeverity.Info,
+          type: FindingType.Info,
+          metadata: {
+            msgSender: createAddress("0x4567"),
+            owner: owner1,
+            spender: createAddress("0xabcdabcd"),
+            anomalyScore: "0.001",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: createAddress("0xabcdabcd"),
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.2,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Permit",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
+    });
 
-    // it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
-    //   const initialize = provideInitialize(
-    //     mockProvider,
-    //     mockPersistenceHelper,
-    //     MOCK_DATABASE_KEYS,
-    //     mockCounters,
-    //     MOCK_DATABASE_OBJECTS_KEYS
-    //   );
-    //   for (const key in MOCK_DATABASE_KEYS) {
-    //     mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
-    //   }
-    //   await initialize();
+    it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      await initialize();
 
-    //   const mockBlockEvent = { block: { number: 876126 } };
-    //   const handleBlock = provideHandleBlock(
-    //     mockGetSuspiciousContracts,
-    //     mockPersistenceHelper,
-    //     MOCK_DATABASE_KEYS,
-    //     mockCounters
-    //   );
+      const mockBlockEvent = { block: { number: 876126 } };
+      const handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters
+      );
 
-    //   await handleBlock(mockBlockEvent);
+      await handleBlock(mockBlockEvent);
 
-    //   mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
-    //   for (const key in MOCK_DATABASE_KEYS) {
-    //     mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
-    //   }
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
 
-    //   const mockTxEvent = {
-    //     filterLog: jest.fn(),
-    //     filterFunction: jest.fn(),
-    //     hash: "hash2",
-    //     timestamp: 1230000,
-    //     blockNumber: 876126,
-    //     from: createAddress("0x4567"),
-    //   };
+      const mockTxEvent = {
+        filterLog: jest.fn(),
+        filterFunction: jest.fn(),
+        hash: "hash2",
+        timestamp: 1230000,
+        blockNumber: 876126,
+        from: createAddress("0x4567"),
+      };
 
-    //   const mockDAILikePermitFunctionCall = {
-    //     address: asset,
-    //     args: {
-    //       owner: owner1,
-    //       spender: createAddress("0xeeffeeff"),
-    //       deadline: 8359543534435,
-    //     },
-    //   };
+      const mockDAILikePermitFunctionCall = {
+        address: asset,
+        args: {
+          owner: owner1,
+          spender: createAddress("0xeeffeeff"),
+          deadline: 8359543534435,
+        },
+      };
 
-    //   mockTxEvent.filterFunction
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([mockDAILikePermitFunctionCall])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([]);
-    //   mockTxEvent.filterLog.mockReturnValue([]);
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockDAILikePermitFunctionCall])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
+      mockTxEvent.filterLog.mockReturnValue([]);
 
-    //   mockProvider.getCode.mockResolvedValueOnce("0x32523523");
-    //   const axiosResponse2 = {
-    //     data: { message: "totally ok", status: "1", result: [{ contractCreator: createAddress("0xbbbb") }] },
-    //   };
-    //   const axiosResponse3 = { data: { message: "totally ok", status: "1", result: [createAddress("0xaaaa")] } };
-    //   axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
-    //   mockCalculateAlertRate.mockReturnValueOnce("0.1023").mockReturnValueOnce("0.1001");
+      mockProvider.getCode.mockResolvedValueOnce("0x32523523");
+      const axiosResponse2 = {
+        data: { message: "totally ok", status: "1", result: [{ contractCreator: createAddress("0xbbbb") }] },
+      };
+      const axiosResponse3 = { data: { message: "totally ok", status: "1", result: [createAddress("0xaaaa")] } };
+      axios.get.mockResolvedValue(axiosResponse2).mockResolvedValueOnce(axiosResponse3);
+      mockCalculateAlertRate.mockReturnValueOnce("0.1023").mockReturnValueOnce("0.1001");
 
-    //   const findings = await handleTransaction(mockTxEvent);
+      const findings = await handleTransaction(mockTxEvent);
 
-    //   expect(findings).toStrictEqual([
-    //     Finding.fromObject({
-    //       name: "Suspicious contract (creator) was involved in an ERC-20 permission",
-    //       description: `${createAddress("0x4567")} gave permission to ${createAddress(
-    //         "0xeeffeeff"
-    //       )} for ${owner1}'s ERC-20 tokens`,
-    //       alertId: "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
-    //       severity: FindingSeverity.Medium,
-    //       type: FindingType.Suspicious,
-    //       metadata: {
-    //         msgSender: createAddress("0x4567"),
-    //         owner: owner1,
-    //         spender: createAddress("0xeeffeeff"),
-    //         suspiciousContract: createAddress("0xabcdabcd"),
-    //         suspiciousContractCreator: createAddress("0xeeffeeff"),
-    //         anomalyScore: "0.1023",
-    //       },
-    //       addresses: [asset],
-    //       labels: [
-    //         Label.fromObject({
-    //           entity: createAddress("0xeeffeeff"),
-    //           entityType: EntityType.Address,
-    //           label: "Attacker",
-    //           confidence: 0.5,
-    //         }),
-    //         Label.fromObject({
-    //           entity: "hash2",
-    //           entityType: EntityType.Transaction,
-    //           label: "Permit",
-    //           confidence: 1,
-    //         }),
-    //       ],
-    //     }),
-    //     Finding.fromObject({
-    //       name: "Account got permission for ERC-20 tokens",
-    //       description: `${createAddress("0x4567")} gave permission to ${createAddress(
-    //         "0xeeffeeff"
-    //       )} for ${owner1}'s ERC-20 tokens`,
-    //       alertId: "ICE-PHISHING-ERC20-PERMIT-INFO",
-    //       severity: FindingSeverity.Info,
-    //       type: FindingType.Info,
-    //       metadata: {
-    //         msgSender: createAddress("0x4567"),
-    //         owner: owner1,
-    //         spender: createAddress("0xeeffeeff"),
-    //         anomalyScore: "0.1001",
-    //       },
-    //       addresses: [asset],
-    //       labels: [
-    //         Label.fromObject({
-    //           entity: createAddress("0xeeffeeff"),
-    //           entityType: EntityType.Address,
-    //           label: "Attacker",
-    //           confidence: 0.2,
-    //         }),
-    //         Label.fromObject({
-    //           entity: "hash2",
-    //           entityType: EntityType.Transaction,
-    //           label: "Permit",
-    //           confidence: 1,
-    //         }),
-    //       ],
-    //     }),
-    //   ]);
-    //   expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
-    //   expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
-    // });
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Suspicious contract (creator) was involved in an ERC-20 permission",
+          description: `${createAddress("0x4567")} gave permission to ${createAddress(
+            "0xeeffeeff"
+          )} for ${owner1}'s ERC-20 tokens`,
+          alertId: "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
+          severity: FindingSeverity.Medium,
+          type: FindingType.Suspicious,
+          metadata: {
+            msgSender: createAddress("0x4567"),
+            owner: owner1,
+            spender: createAddress("0xeeffeeff"),
+            suspiciousContract: createAddress("0xabcdabcd"),
+            suspiciousContractCreator: createAddress("0xeeffeeff"),
+            anomalyScore: "0.1023",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: createAddress("0xeeffeeff"),
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.5,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Permit",
+              confidence: 1,
+            }),
+          ],
+        }),
+        Finding.fromObject({
+          name: "Account got permission for ERC-20 tokens",
+          description: `${createAddress("0x4567")} gave permission to ${createAddress(
+            "0xeeffeeff"
+          )} for ${owner1}'s ERC-20 tokens`,
+          alertId: "ICE-PHISHING-ERC20-PERMIT-INFO",
+          severity: FindingSeverity.Info,
+          type: FindingType.Info,
+          metadata: {
+            msgSender: createAddress("0x4567"),
+            owner: owner1,
+            spender: createAddress("0xeeffeeff"),
+            anomalyScore: "0.1001",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: createAddress("0xeeffeeff"),
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.2,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Permit",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
+      expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
+    });
 
     it("should return findings if there is a high number of ERC1155 ApprovalForAll events", async () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
@@ -2730,7 +2730,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValueOnce(axiosResponse);
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters
@@ -2805,7 +2805,7 @@ describe("ice-phishing bot", () => {
     it("should return findings if a contract deployed by a scam address has been given permission", async () => {
       resetInit();
       resetLastBlock();
-      // mockGetSuspiciousContracts.mockResolvedValueOnce(new Set());
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set());
 
       const initialize = provideInitialize(
         mockProvider,
@@ -2820,7 +2820,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x215050")] };
       axios.get.mockResolvedValueOnce(axiosResponse);
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters
@@ -2932,7 +2932,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [spender] };
       axios.get.mockResolvedValueOnce(axiosResponse);
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters
@@ -3012,14 +3012,14 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [spender] };
       axios.get.mockResolvedValueOnce(axiosResponse);
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters
       );
-      // mockGetSuspiciousContracts.mockResolvedValueOnce(
-      //   new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
-      // );
+      mockGetSuspiciousContracts.mockResolvedValueOnce(
+        new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
+      );
       await handleBlock(mockBlockEvent);
 
       const axiosResponse2 = { data: { "www.scamDomain.com": [spender] } };
@@ -3081,77 +3081,309 @@ describe("ice-phishing bot", () => {
       ]);
     });
 
-    // it("should return findings if a creator of a suspicious contract gets approval", async () => {
-    //   resetInit();
+    it("should return findings if a suspicious contract is involved in a transfer", async () => {
+      resetInit();
 
-    //   const mockBlockEvent = { block: { timestamp: 104353 } };
-    //   const axiosResponse = { data: [createAddress("0x23232")] };
-    //   axios.get.mockResolvedValueOnce(axiosResponse);
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      await initialize();
 
-    //   handleBlock = provideHandleBlock(
-    //     mockGetSuspiciousContracts,
-    //     mockPersistenceHelper,
-    //     MOCK_DATABASE_KEYS,
-    //     mockCounters
-    //   );
-    //   mockGetSuspiciousContracts.mockResolvedValueOnce(
-    //     new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0x01") }])
-    //   );
-    //   await handleBlock(mockBlockEvent);
+      const suspiciousReceiver = createChecksumAddress("0xabcdabcd");
+      const suspiciousContractCreator = createChecksumAddress("0xfefefe");
 
-    //   mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters
+      );
 
-    //   mockTxEvent.filterLog
-    //     .mockReturnValueOnce([mockApprovalERC20Events[0]]) // ERC20 approvals
-    //     .mockReturnValueOnce([]) // ERC721 approvals
-    //     .mockReturnValueOnce([]) // ApprovalForAll
-    //     .mockReturnValueOnce([]) // ERC20 transfers
-    //     .mockReturnValueOnce([]) // ERC721 transfers
-    //     .mockReturnValueOnce([]) // ERC1155 transfers
-    //     .mockReturnValueOnce([]); // Upgrades
+      mockGetSuspiciousContracts.mockResolvedValueOnce(
+        new Set([{ address: suspiciousReceiver, creator: suspiciousContractCreator }])
+      );
 
-    //   mockTxEvent.filterFunction
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([])
-    //     .mockReturnValueOnce([]);
-    //   mockProvider.getCode.mockReturnValue("0x");
-    //   mockCalculateAlertRate.mockReturnValue(0.6);
-    //   const findings = await handleTransaction(mockTxEvent);
+      const mockBlockEvent = { block: { timestamp: 1000 } };
 
-    //   expect(findings).toStrictEqual([
-    //     Finding.fromObject({
-    //       name: "Suspicious contract (creator) got approval to spend assets",
-    //       description: `Suspicious address ${spender} got approval for ${owner1}'s assets`,
-    //       alertId: "ICE-PHISHING-SUSPICIOUS-APPROVAL",
-    //       severity: FindingSeverity.Medium,
-    //       type: FindingType.Suspicious,
-    //       metadata: {
-    //         suspiciousContract: createAddress("0xabcdabcd"),
-    //         suspiciousContractCreator: spender,
-    //         owner: owner1,
-    //         suspiciousSpender: spender,
-    //         anomalyScore: "0.6",
-    //       },
-    //       addresses: [asset],
-    //       labels: [
-    //         Label.fromObject({
-    //           entity: spender,
-    //           entityType: EntityType.Address,
-    //           label: "Attacker",
-    //           confidence: 0.5,
-    //         }),
-    //         Label.fromObject({
-    //           entity: "hash2",
-    //           entityType: EntityType.Transaction,
-    //           label: "Approval",
-    //           confidence: 1,
-    //         }),
-    //       ],
-    //     }),
-    //   ]);
-    // });
+      const axiosResponse = { data: [] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
+
+      await handleBlock(mockBlockEvent);
+
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
+      const mockTxEvent = {
+        filterLog: jest.fn(),
+        filterFunction: jest.fn(),
+        hash: "hash2",
+        timestamp: 10000,
+        from: createAddress("0x12331"),
+      };
+      const mockTransferEvent = {
+        address: asset,
+        name: "Transfer",
+        args: {
+          from: owner1,
+          to: suspiciousReceiver,
+          value: ethers.BigNumber.from(210),
+        },
+      };
+
+      mockTxEvent.filterLog
+        .mockReturnValueOnce([]) // ERC20 approvals
+        .mockReturnValueOnce([]) // ERC721 approvals
+        .mockReturnValueOnce([]) // ApprovalForAll
+        .mockReturnValueOnce([mockTransferEvent]) // ERC20 transfers
+        .mockReturnValueOnce([]) // ERC721 transfers
+        .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]); // Upgrades
+
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
+      mockProvider.getCode.mockReturnValue("0x333");
+
+      const axiosResponse2 = {
+        data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
+      };
+      axios.get.mockResolvedValue(axiosResponse2);
+      mockCalculateAlertRate.mockReturnValue(0.5);
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Suspicious contract (creator) was involved in an asset transfer",
+          description: `${createAddress("0x12331")} transferred assets from ${owner1} to ${suspiciousReceiver}`,
+          alertId: "ICE-PHISHING-SUSPICIOUS-TRANSFER",
+          severity: FindingSeverity.High,
+          type: FindingType.Suspicious,
+          metadata: {
+            msgSender: createAddress("0x12331"),
+            owner: owner1,
+            receiver: suspiciousReceiver,
+            suspiciousContract: suspiciousReceiver,
+            suspiciousContractCreator,
+            anomalyScore: "0.5",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: suspiciousReceiver,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.6,
+            }),
+            Label.fromObject({
+              entity: suspiciousContractCreator,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.6,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Transfer",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+    });
+
+    it("should return findings if a creator of a suspicious contract is involved in a transfer", async () => {
+      resetInit();
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEYS
+      );
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      await initialize();
+      const suspiciousContract = createChecksumAddress("0xabcdabcd");
+      const suspiciousContractCreator = createChecksumAddress("0xfefefe");
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters
+      );
+      mockGetSuspiciousContracts.mockResolvedValueOnce(
+        new Set([{ address: suspiciousContract, creator: suspiciousContractCreator }])
+      );
+      const mockBlockEvent = { block: { timestamp: 1000 } };
+      const axiosResponse = { data: [] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
+      await handleBlock(mockBlockEvent);
+
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
+      const mockTxEvent = {
+        filterLog: jest.fn(),
+        filterFunction: jest.fn(),
+        hash: "hash2",
+        timestamp: 10000,
+        from: createAddress("0x12331"),
+      };
+      const mockTransferEvent = {
+        address: asset,
+        name: "Transfer",
+        args: {
+          from: owner1,
+          to: suspiciousContractCreator,
+          value: ethers.BigNumber.from(210),
+        },
+      };
+
+      mockTxEvent.filterLog
+        .mockReturnValueOnce([]) // ERC20 approvals
+        .mockReturnValueOnce([]) // ERC721 approvals
+        .mockReturnValueOnce([]) // ApprovalForAll
+        .mockReturnValueOnce([mockTransferEvent]) // ERC20 transfers
+        .mockReturnValueOnce([]) // ERC721 transfers
+        .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]); // Upgrades
+
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
+      mockProvider.getCode.mockReturnValue("0x333");
+
+      const axiosResponse2 = {
+        data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
+      };
+      axios.get.mockResolvedValue(axiosResponse2);
+      mockCalculateAlertRate.mockReturnValueOnce(0.665);
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Suspicious contract (creator) was involved in an asset transfer",
+          description: `${createAddress("0x12331")} transferred assets from ${owner1} to ${suspiciousContractCreator}`,
+          alertId: "ICE-PHISHING-SUSPICIOUS-TRANSFER",
+          severity: FindingSeverity.High,
+          type: FindingType.Suspicious,
+          metadata: {
+            msgSender: createAddress("0x12331"),
+            owner: owner1,
+            receiver: suspiciousContractCreator,
+            suspiciousContract,
+            suspiciousContractCreator,
+            anomalyScore: "0.665",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: suspiciousContract,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.6,
+            }),
+            Label.fromObject({
+              entity: suspiciousContractCreator,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.6,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Transfer",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+    });
+
+    it("should return findings if a creator of a suspicious contract gets approval", async () => {
+      resetInit();
+
+      const mockBlockEvent = { block: { timestamp: 104353 } };
+      const axiosResponse = { data: [createAddress("0x23232")] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
+
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters
+      );
+      mockGetSuspiciousContracts.mockResolvedValueOnce(
+        new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0x01") }])
+      );
+      await handleBlock(mockBlockEvent);
+
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
+      mockTxEvent.filterLog
+        .mockReturnValueOnce([mockApprovalERC20Events[0]]) // ERC20 approvals
+        .mockReturnValueOnce([]) // ERC721 approvals
+        .mockReturnValueOnce([]) // ApprovalForAll
+        .mockReturnValueOnce([]) // ERC20 transfers
+        .mockReturnValueOnce([]) // ERC721 transfers
+        .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]); // Upgrades
+
+      mockTxEvent.filterFunction
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
+      mockProvider.getCode.mockReturnValue("0x");
+      mockCalculateAlertRate.mockReturnValue(0.6);
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Suspicious contract (creator) got approval to spend assets",
+          description: `Suspicious address ${spender} got approval for ${owner1}'s assets`,
+          alertId: "ICE-PHISHING-SUSPICIOUS-APPROVAL",
+          severity: FindingSeverity.Medium,
+          type: FindingType.Suspicious,
+          metadata: {
+            suspiciousContract: createAddress("0xabcdabcd"),
+            suspiciousContractCreator: spender,
+            owner: owner1,
+            suspiciousSpender: spender,
+            anomalyScore: "0.6",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: spender,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.5,
+            }),
+            Label.fromObject({
+              entity: "hash2",
+              entityType: EntityType.Transaction,
+              label: "Approval",
+              confidence: 1,
+            }),
+          ],
+        }),
+      ]);
+    });
 
     it("should return findings if a victim was tricked into sending funds through the 'pull and sweepToken' technique", async () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
@@ -3338,7 +3570,7 @@ describe("ice-phishing bot", () => {
         mockObjects[s] = {};
       });
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -3354,7 +3586,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { timestamp: 1000 } };
-      // mockGetSuspiciousContracts.mockResolvedValueOnce({});
+      mockGetSuspiciousContracts.mockResolvedValueOnce({});
 
       mockObjects.approvals[spender] = [{ timestamp: 1000 }];
       mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
@@ -3392,7 +3624,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { timestamp: timePeriod } };
-      // mockGetSuspiciousContracts.mockResolvedValueOnce({});
+      mockGetSuspiciousContracts.mockResolvedValueOnce({});
       mockObjects.approvals[spender] = [{ timestamp: timePeriod }];
       mockObjects.approvalsERC20[spender] = [{ timestamp: timePeriod }];
       mockObjects.approvalsERC721[spender] = [{ timestamp: timePeriod }];
@@ -3416,7 +3648,7 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { timestamp: timePeriod } };
-      // mockGetSuspiciousContracts.mockResolvedValueOnce({});
+      mockGetSuspiciousContracts.mockResolvedValueOnce({});
 
       mockObjects.approvals[spender] = [{ timestamp: 1000 }];
       mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
@@ -3437,26 +3669,26 @@ describe("ice-phishing bot", () => {
       expect(Object.keys(mockObjects.transfers).length).toStrictEqual(0);
     });
 
-    // it("should populate the suspicious contracts set correctly", async () => {
-    //   const axiosResponse = { data: [createAddress("0x5050")] };
-    //   axios.get.mockResolvedValue(axiosResponse);
-    //   const mockBlockEvent = { block: { number: 239 } };
-    //   mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
-    //   await handleBlock(mockBlockEvent);
-    //   expect(getSuspiciousContracts().size).toStrictEqual(1);
+    it("should populate the suspicious contracts set correctly", async () => {
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValue(axiosResponse);
+      const mockBlockEvent = { block: { number: 239 } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      await handleBlock(mockBlockEvent);
+      expect(getSuspiciousContracts().size).toStrictEqual(1);
 
-    //   const mockBlockEvent2 = { block: { number: 240 } };
-    //   mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x765756756")]));
-    //   await handleBlock(mockBlockEvent2);
-    //   expect(getSuspiciousContracts().size).toStrictEqual(2);
-    // });
+      const mockBlockEvent2 = { block: { number: 240 } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x765756756")]));
+      await handleBlock(mockBlockEvent2);
+      expect(getSuspiciousContracts().size).toStrictEqual(2);
+    });
 
     it("should persist the value in a block evenly divisible by 240", async () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
 
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -3474,10 +3706,10 @@ describe("ice-phishing bot", () => {
         },
       };
 
-      // mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
       await handleBlock(mockBlockEvent1);
 
-      // mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
       await handleBlock(mockBlockEvent2);
 
       expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(8);
@@ -3488,7 +3720,7 @@ describe("ice-phishing bot", () => {
       axios.get.mockResolvedValue(axiosResponse);
 
       handleBlock = provideHandleBlock(
-        // mockGetSuspiciousContracts,
+        mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters

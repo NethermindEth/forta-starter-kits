@@ -21,18 +21,19 @@ const {
   createPermitInfoAlert,
   createPermitScamAlert,
   createPermitScamCreatorAlert,
-  // createPermitSuspiciousContractAlert,
+  createPermitSuspiciousContractAlert,
   createApprovalScamAlert,
   createApprovalScamCreatorAlert,
-  // createApprovalSuspiciousContractAlert,
+  createApprovalSuspiciousContractAlert,
   createTransferScamAlert,
+  createTransferSuspiciousContractAlert,
   createSweepTokenAlert,
   createOpenseaAlert,
   getAddressType,
   getContractCreator,
   getBalance,
   getERC1155Balance,
-  // getSuspiciousContracts,
+  getSuspiciousContracts,
   getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
@@ -426,30 +427,30 @@ const provideHandleTransaction =
         spenderType === AddressType.LowNumTxsVerifiedContract ||
         spenderType === AddressType.EoaWithHighNonce
       ) {
-        // const suspiciousContractFound = Array.from(suspiciousContracts).find(
-        //   (contract) => contract.address === spender || contract.creator === spender
-        // );
+        const suspiciousContractFound = Array.from(suspiciousContracts).find(
+          (contract) => contract.address === spender || contract.creator === spender
+        );
 
-        // if (suspiciousContractFound) {
-        //   const anomalyScore = await calculateAlertRate(
-        //     chainId,
-        //     BOT_ID,
-        //     "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
-        //     ScanCountType.CustomScanCount,
-        //     counters.totalPermits
-        //   );
-        //   findings.push(
-        //     createPermitSuspiciousContractAlert(
-        //       txFrom,
-        //       spender,
-        //       owner,
-        //       asset,
-        //       suspiciousContractFound,
-        //       anomalyScore,
-        //       hash
-        //     )
-        //   );
-        // }
+        if (suspiciousContractFound) {
+          const anomalyScore = await calculateAlertRate(
+            chainId,
+            BOT_ID,
+            "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
+            ScanCountType.CustomScanCount,
+            counters.totalPermits
+          );
+          findings.push(
+            createPermitSuspiciousContractAlert(
+              txFrom,
+              spender,
+              owner,
+              asset,
+              suspiciousContractFound,
+              anomalyScore,
+              hash
+            )
+          );
+        }
 
         if (spenderType === AddressType.LowNumTxsVerifiedContract) {
           let spenderContractCreator, spenderContractCreatorType;
@@ -703,29 +704,29 @@ const provideHandleTransaction =
           );
           findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
         } else {
-          // const suspiciousContractFound = Array.from(suspiciousContracts).find(
-          //   (contract) => contract.address === spender || contract.creator === spender
-          // );
-          // if (suspiciousContractFound) {
-          //   const anomalyScore = await calculateAlertRate(
-          //     chainId,
-          //     BOT_ID,
-          //     "ICE-PHISHING-SUSPICIOUS-APPROVAL",
-          //     isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
-          //     counters.totalApprovals
-          //   );
-          //   findings.push(
-          //     createApprovalSuspiciousContractAlert(
-          //       spender,
-          //       owner,
-          //       asset,
-          //       suspiciousContractFound.address,
-          //       suspiciousContractFound.creator,
-          //       anomalyScore,
-          //       hash
-          //     )
-          //   );
-          // }
+          const suspiciousContractFound = Array.from(suspiciousContracts).find(
+            (contract) => contract.address === spender || contract.creator === spender
+          );
+          if (suspiciousContractFound) {
+            const anomalyScore = await calculateAlertRate(
+              chainId,
+              BOT_ID,
+              "ICE-PHISHING-SUSPICIOUS-APPROVAL",
+              isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+              counters.totalApprovals
+            );
+            findings.push(
+              createApprovalSuspiciousContractAlert(
+                spender,
+                owner,
+                asset,
+                suspiciousContractFound.address,
+                suspiciousContractFound.creator,
+                anomalyScore,
+                hash
+              )
+            );
+          }
 
           if (
             spenderType === AddressType.LowNumTxsVerifiedContract ||
@@ -924,6 +925,22 @@ const provideHandleTransaction =
         );
         findings.push(
           createTransferScamAlert(txFrom, from, to, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+        );
+      }
+
+      const suspiciousContractFound = Array.from(suspiciousContracts).find(
+        (contract) => contract.address === to || contract.creator === to
+      );
+      if (suspiciousContractFound) {
+        const anomalyScore = await calculateAlertRate(
+          chainId,
+          BOT_ID,
+          "ICE-PHISHING-SUSPICIOUS-TRANSFER",
+          isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+          counters.totalTransfers
+        );
+        findings.push(
+          createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound, anomalyScore, hash)
         );
       }
 
@@ -1156,21 +1173,14 @@ const provideHandleTransaction =
 
 let lastTimestamp = 1678000000;
 let init = false;
-// let suspiciousContracts = new Set();
+let suspiciousContracts = new Set();
 
 const provideHandleBlock =
-  (
-    // getSuspiciousContracts,
-    persistenceHelper,
-    databaseKeys,
-    counters,
-    objects
-  ) =>
-  async (blockEvent) => {
+  (getSuspiciousContracts, persistenceHelper, databaseKeys, counters, objects) => async (blockEvent) => {
     const { timestamp, number } = blockEvent.block;
 
     if (!init) {
-      // suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+      suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
 
       const scamSnifferResponse = await axios.get(
         "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
@@ -1181,13 +1191,13 @@ const provideHandleBlock =
 
       init = true;
     } else if (number % 240 === 0) {
-      // let newSuspiciousContracts;
-      // try {
-      //   newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
-      // } catch {
-      //   newSuspiciousContracts = new Set();
-      // }
-      // newSuspiciousContracts.forEach((contract) => suspiciousContracts.add(contract));
+      let newSuspiciousContracts;
+      try {
+        newSuspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+      } catch {
+        newSuspiciousContracts = new Set();
+      }
+      newSuspiciousContracts.forEach((contract) => suspiciousContracts.add(contract));
       const scamSnifferResponse = await axios.get(
         "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
       );
@@ -1390,7 +1400,7 @@ module.exports = {
   ),
   provideHandleBlock,
   handleBlock: provideHandleBlock(
-    // getSuspiciousContracts,
+    getSuspiciousContracts,
     new PersistenceHelper(DATABASE_URL),
     DATABASE_KEYS,
     counters,
@@ -1398,7 +1408,7 @@ module.exports = {
   ),
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
-  // getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
+  getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
   counters,
   objects,
   resetLastTimestamp: () => {
