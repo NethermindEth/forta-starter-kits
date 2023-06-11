@@ -16,6 +16,13 @@ const IGNORED_ADDRESSES = [
   "0xEf1c6E67703c7BD7107eed8303Fbe6EC2554BF6B",
 ];
 
+const UNISWAP_ROUTER_ADDRESSES = [
+  "0xEf1c6E67703c7BD7107eed8303Fbe6EC2554BF6B", // Uniswap Universal Router
+  "0xe592427a0aece92de3edee1f18e0157c05861564", // Uniswap V3: Router
+  "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45", // Uniswap V3: Router 2
+  "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D", // Uniswap V2: Router 2
+];
+
 const upgradedEventABI = ["event Upgraded(address indexed implementation)"];
 
 const permitFunctionABI =
@@ -55,6 +62,7 @@ module.exports = {
   MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID,
   MAX_OBJECT_SIZE,
   IGNORED_ADDRESSES,
+  UNISWAP_ROUTER_ADDRESSES,
   safeBatchTransferFrom1155Sig,
   permitFunctionABI,
   daiPermitFunctionABI,

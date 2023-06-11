@@ -34,6 +34,7 @@ const {
   getBalance,
   getERC1155Balance,
   getSuspiciousContracts,
+  haveInteractedMoreThanOnce,
   getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
@@ -48,6 +49,7 @@ const {
   TIME_PERIOD,
   ADDRESS_ZERO,
   IGNORED_ADDRESSES,
+  UNISWAP_ROUTER_ADDRESSES,
   safeBatchTransferFrom1155Sig,
   permitFunctionABI,
   daiPermitFunctionABI,
@@ -779,16 +781,29 @@ const provideHandleTransaction =
           objects.approvalsERC20InfoSeverity[spender] &&
           objects.approvalsERC20InfoSeverity[spender].length > approveCountThreshold
         ) {
-          const anomalyScore = await calculateAlertRate(
-            chainId,
-            BOT_ID,
-            "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO",
-            ScanCountType.CustomScanCount,
-            counters.totalERC20Approvals
-          );
-          findings.push(
-            createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
-          );
+          let haveInteractedAgain = true;
+          if (spenderType === AddressType.EoaWithHighNonce) {
+            let assetOwnerArray = objects.approvalsERC20InfoSeverity[spender].map((entry) => [
+              entry.asset,
+              entry.owner,
+            ]);
+            haveInteractedAgain = await haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId);
+            if (haveInteractedAgain) {
+              objects.approvalsERC20InfoSeverity[spender] = [];
+            }
+          }
+          if (spenderType === AddressType.LowNumTxsVerifiedContract || !haveInteractedAgain) {
+            const anomalyScore = await calculateAlertRate(
+              chainId,
+              BOT_ID,
+              "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO",
+              ScanCountType.CustomScanCount,
+              counters.totalERC20Approvals
+            );
+            findings.push(
+              createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+            );
+          }
         }
 
         if (
@@ -836,14 +851,24 @@ const provideHandleTransaction =
         }
       } else {
         if (objects.approvalsERC20[spender] && objects.approvalsERC20[spender].length > approveCountThreshold) {
-          const anomalyScore = await calculateAlertRate(
-            chainId,
-            BOT_ID,
-            "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS",
-            ScanCountType.CustomScanCount,
-            counters.totalERC20Approvals
-          );
-          findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore));
+          let haveInteractedAgain = true;
+          if (spenderType !== AddressType.LowNumTxsUnverifiedContract) {
+            let assetOwnerArray = objects.approvalsERC20[spender].map((entry) => [entry.asset, entry.owner]);
+            haveInteractedAgain = await haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId);
+            if (haveInteractedAgain) {
+              objects.approvalsERC20[spender] = [];
+            }
+          }
+          if (spenderType === AddressType.LowNumTxsUnverifiedContract || !haveInteractedAgain) {
+            const anomalyScore = await calculateAlertRate(
+              chainId,
+              BOT_ID,
+              "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS",
+              ScanCountType.CustomScanCount,
+              counters.totalERC20Approvals
+            );
+            findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore));
+          }
         }
 
         if (objects.approvalsERC721[spender] && objects.approvalsERC721[spender].length > approveCountThreshold) {
@@ -931,7 +956,7 @@ const provideHandleTransaction =
       const suspiciousContractFound = Array.from(suspiciousContracts).find(
         (contract) => contract.address === to || contract.creator === to
       );
-      if (suspiciousContractFound) {
+      if (suspiciousContractFound && !UNISWAP_ROUTER_ADDRESSES.includes(txEvent.to)) {
         const anomalyScore = await calculateAlertRate(
           chainId,
           BOT_ID,
@@ -1012,12 +1037,14 @@ const provideHandleTransaction =
         console.log(`asset: ${asset}`);
 
         // Update the transfers for the spender
-        objects.transfers[txFrom].push({
-          asset,
-          owner: from,
-          hash,
-          timestamp,
-        });
+        if (!objects.transfers[txFrom].some((obj) => obj.owner === from && obj.asset === asset)) {
+          objects.transfers[txFrom].push({
+            asset,
+            owner: from,
+            hash,
+            timestamp,
+          });
+        }
 
         // Filter out old transfers
         objects.transfers[txFrom] = objects.transfers[txFrom].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
@@ -1073,12 +1100,14 @@ const provideHandleTransaction =
         console.log(`asset: ${asset}`);
 
         // Update the transfers for the spender
-        objects.transfersLowSeverity[txFrom].push({
-          asset,
-          owner: from,
-          hash,
-          timestamp,
-        });
+        if (!objects.transfersLowSeverity[txFrom].some((obj) => obj.owner === from && obj.asset === asset)) {
+          objects.transfersLowSeverity[txFrom].push({
+            asset,
+            owner: from,
+            hash,
+            timestamp,
+          });
+        }
 
         // Filter out old transfers
         objects.transfersLowSeverity[txFrom] = objects.transfersLowSeverity[txFrom].filter(
