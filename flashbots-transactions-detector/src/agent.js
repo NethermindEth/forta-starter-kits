@@ -1,4 +1,12 @@
-const { Finding, FindingSeverity, FindingType, getTransactionReceipt, Label, EntityType } = require("forta-agent");
+const {
+  Finding,
+  FindingSeverity,
+  FindingType,
+  getTransactionReceipt,
+  Label,
+  EntityType,
+  getEthersProvider,
+} = require("forta-agent");
 const { PersistenceHelper } = require("./persistence.helper");
 const { default: axios } = require("axios");
 
@@ -20,7 +28,7 @@ function provideInitialize(persistenceHelper, flashbotsKey, totalTxnsKey) {
   };
 }
 
-function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsKey, totalTxnsKey) {
+function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, flashbotsKey, totalTxnsKey) {
   let cachedFindings = [];
   return async (blockEvent) => {
     const numberOfTransactions = blockEvent.block.transactions.length;
@@ -53,6 +61,10 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
           currentBlockFindings = await Promise.all(
             transactions
               .filter((transaction) => transaction.bundle_type !== "mempool")
+              .filter(async (transaction) => {
+                const code = await provider.getCode(transaction.to_address);
+                return code !== "0x";
+              })
               .map(async (transaction) => {
                 const { eoa_address: from, to_address: to, transaction_hash: hash } = transaction;
 
@@ -124,6 +136,7 @@ function provideHandleBlock(getTransactionReceipt, persistenceHelper, flashbotsK
 module.exports = {
   provideHandleBlock,
   handleBlock: provideHandleBlock(
+    getEthersProvider(),
     getTransactionReceipt,
     new PersistenceHelper(DATABASE_URL),
     FLASHBOTS_TXS_KEY,
