@@ -1,6 +1,6 @@
 {
   "name": "flashbots-transactions-detector",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "This bot detects flashbots transactions",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/flashbots-transactions-detector",
   "chainIds": [
@@ -9,7 +9,7 @@
   "chainSettings": {
     "1": {
       "shards": 1,
-      "target": 5
+      "target": 6
     }
   },
   "scripts": {

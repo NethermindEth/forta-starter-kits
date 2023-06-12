@@ -87,6 +87,9 @@ let mockTotalTxns = 2420;
 describe("flashbots transactions detection bot", () => {
   let handleBlock;
   let initialize;
+  const mockProvider = {
+    getCode: jest.fn(),
+  };
   const mockPersistenceHelper = {
     persist: jest.fn(),
     load: jest.fn(),
@@ -97,6 +100,7 @@ describe("flashbots transactions detection bot", () => {
     mockPersistenceHelper.load.mockReturnValueOnce(mockTotalFlashbotsTxns).mockReturnValueOnce(mockTotalTxns);
     await initialize();
     handleBlock = provideHandleBlock(
+      mockProvider,
       mockGetTransactionReceipt,
       mockPersistenceHelper,
       mockFlashbotsTxnsKey,
