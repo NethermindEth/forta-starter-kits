@@ -379,7 +379,7 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
     })
   );
   return Finding.fromObject({
-    name: "Known scam address was involved in an ERC-20 permission",
+    name: "Scam address, flagged in the Scam Sniffer DB, was involved in an ERC-20 permission",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
     alertId: "ICE-PHISHING-ERC20-SCAM-PERMIT",
     severity: FindingSeverity.High,
@@ -408,7 +408,7 @@ function createPermitScamCreatorAlert(
   txHash
 ) {
   return Finding.fromObject({
-    name: "Contract created by a known scam address was involved in an ERC-20 permission",
+    name: "Contract created by a scam address (flagged in the Scam Sniffer DB) was involved in an ERC-20 permission",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
     alertId: "ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT",
     severity: FindingSeverity.High,
@@ -482,7 +482,7 @@ function createPermitSuspiciousContractAlert(
 
 function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomalyScore, txHash) {
   return Finding.fromObject({
-    name: "Known scam address got approval to spend assets",
+    name: "Scam address, flagged in the Scam Sniffer DB, got approval to spend assets",
     description: `Scam address ${scamSpender} got approval for ${owner}'s assets`,
     alertId: "ICE-PHISHING-SCAM-APPROVAL",
     severity: FindingSeverity.High,
@@ -553,7 +553,7 @@ function createApprovalSuspiciousContractAlert(
 
 function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scamDomains, anomalyScore, txHash) {
   return Finding.fromObject({
-    name: "Contract, created by a known scam address, got approval to spend assets",
+    name: "Contract, created by a known scam address (flagged in the Scam Sniffer DB), got approval to spend assets",
     description: `${spender}, created by the scam address ${scamCreator}, got approval for ${owner}'s assets`,
     alertId: "ICE-PHISHING-SCAM-CREATOR-APPROVAL",
     severity: FindingSeverity.High,
@@ -605,7 +605,7 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
   );
 
   return Finding.fromObject({
-    name: "Known scam address was involved in an asset transfer",
+    name: "Scam address, flagged in the Scam Sniffer DB, was involved in an asset transfer",
     description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
     alertId: "ICE-PHISHING-SCAM-TRANSFER",
     severity: FindingSeverity.Critical,
@@ -917,12 +917,12 @@ function getEtherscanContractUrl(address, chainId) {
   return `${urlContract}&address=${address}&apikey=${key}`;
 }
 
-function getEtherscanAddressUrl(address, chainId, offset) {
+function getEtherscanAddressUrl(address, chainId, offset, order) {
   const { urlAccount } = etherscanApis[Number(chainId)];
   const key = getBlockExplorerKey(Number(chainId));
   return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
     offset + 1
-  }&sort=asc&apikey=${key}`;
+  }&sort=${order}&apikey=${key}`;
 }
 
 function getEtherscanLogsUrl(address, blockNumber, chainId) {
@@ -1054,8 +1054,8 @@ async function getContractType(address, chainId) {
 
   const isVerified = result.data.status === "1";
   const url = isVerified
-    ? getEtherscanAddressUrl(address, chainId, verifiedContractTxsThreshold)
-    : getEtherscanAddressUrl(address, chainId, contractTxsThreshold);
+    ? getEtherscanAddressUrl(address, chainId, verifiedContractTxsThreshold, "asc")
+    : getEtherscanAddressUrl(address, chainId, contractTxsThreshold, "asc");
   for (let i = 0; i <= retries; i++) {
     try {
       result = await axios.get(url);
@@ -1151,6 +1151,52 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
 
   if (type) cachedAddresses.set(address, type);
   return type;
+}
+
+async function haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId) {
+  const maxRetries = 3;
+  let result;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      result = await axios.get(getEtherscanAddressUrl(spender, chainId, 9000, "desc"));
+      if (result.data.message.startsWith("NOTOK") || result.data.message.startsWith("Query Timeout")) {
+        console.log(`block explorer error occured (attempt ${attempt}); retrying check for ${spender}`);
+        if (attempt === maxRetries) {
+          console.log(`block explorer error occured (final attempt); skipping check for ${spender}`);
+          return true;
+        }
+      } else {
+        break;
+      }
+    } catch (err) {
+      console.log(err);
+      console.log(`An error occurred during the fetch (attempt ${attempt}):`);
+      if (attempt === maxRetries) {
+        console.log(`Error during fetch (final attempt); skipping check for ${spender}`);
+        return true;
+      }
+    }
+  }
+
+  for (const [asset, owner] of assetOwnerArray) {
+    let numberOfInteractions = 0;
+    for (const tx of result.data.result) {
+      if (
+        tx.from === spender.toLowerCase() &&
+        tx.to === asset &&
+        tx.input.includes(owner.toLowerCase().replace(/^0x/, ""))
+      ) {
+        numberOfInteractions++;
+        if (numberOfInteractions > 1) {
+          console.log(`Found ${numberOfInteractions} interactions between ${spender} and ${asset}`);
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 async function getSuspiciousContracts(chainId, blockNumber, init) {
@@ -1316,6 +1362,7 @@ module.exports = {
   getEoaType,
   getContractCreator,
   getSuspiciousContracts,
+  haveInteractedMoreThanOnce,
   getBalance,
   getERC1155Balance,
   getTransactions,

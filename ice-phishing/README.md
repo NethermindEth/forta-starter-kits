@@ -272,7 +272,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-ERC20-SCAM-PERMIT
 
-  - Fired when a known scam address is involved in an ERC-20 permission.
+  - Fired when a scam address, flagged in the Scam Sniffer DB, is involved in an ERC-20 permission.
     - Severity is always set to "high"
     - Type is always set to "suspicious"
     - Metadata:
@@ -298,7 +298,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT
 
-  - Fired when a verified contract, created by a scam account, is involved in an ERC-20 permission.
+  - Fired when a verified contract, created by a scam account (flagged in the Scam Sniffer DB), is involved in an ERC-20 permission.
     - Severity is always set to "high"
     - Type is always set to "suspicious"
     - Metadata:
@@ -350,7 +350,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-SCAM-APPROVAL
 
-  - Fired when a known scam address gets approval to spend assets.
+  - Fired when a scam address, flagged in the Scam Sniffer DB, gets approval to spend assets.
     - Severity is always set to "high"
     - Type is always set to "suspicious"
     - Metadata:
@@ -374,7 +374,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-SCAM-CREATOR-APPROVAL
 
-  - Fired when a verified contract, created by a known scam address, gets approval to spend assets.
+  - Fired when a verified contract, created by a scam address (flagged in the Scam Sniffer DB), gets approval to spend assets.
     - Severity is always set to "high"
     - Type is always set to "suspicious"
     - Metadata:
@@ -423,7 +423,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-SCAM-TRANSFER
 
-  - Fired when a known scam address is involved in an asset transfer.
+  - Fired when a scam address, flagged in the Scam Sniffer DB, is involved in an asset transfer.
     - Severity is always set to "critical"
     - Type is always set to "exploit"
     - Metadata:
