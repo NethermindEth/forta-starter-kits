@@ -156,12 +156,19 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
     // Get the balances of the addresses pre- and post-drain
     const balancesPreDrain = await ethcallProvider.tryAll(
       balanceCalls,
-      [56, 137, 250].includes(Number(chainId)) ? blockNumber - 3 : blockNumber - 2
+      [56, 137, 250].includes(Number(chainId)) ? blockNumber - 3 : blockNumber - 2,
+      balanceCalls.length // One batch
     );
+
     const balancesPostDrain = await ethcallProvider.tryAll(
       balanceCalls,
-      [56, 137, 250].includes(Number(chainId)) ? blockNumber - 2 : blockNumber - 1
+      [56, 137, 250].includes(Number(chainId)) ? blockNumber - 2 : blockNumber - 1,
+      balanceCalls.length // One batch
     );
+
+    if (balancesPreDrain.length !== balancesPostDrain.length) {
+      return findings;
+    }
 
     let balances = [];
 
