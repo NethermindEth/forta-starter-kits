@@ -79,6 +79,7 @@ class PersistenceHelper {
               permissionsInfoSeverity: {},
               transfers: {},
               transfersLowSeverity: {},
+              pigButcheringTransfers: {},
             };
           } else {
             return 0;
@@ -117,6 +118,7 @@ class PersistenceHelper {
             permissionsInfoSeverity: {},
             transfers: {},
             transfersLowSeverity: {},
+            pigButcheringTransfers: {},
           };
         } else {
           return 0;
