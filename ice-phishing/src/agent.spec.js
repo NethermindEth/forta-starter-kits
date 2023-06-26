@@ -11,7 +11,9 @@ const {
   resetInit,
   resetLastBlock,
   getSuspiciousContracts,
+  initialize,
 } = require("./agent");
+const { STABLECOINS, CEX_ADDRESSES } = require("./utils");
 
 const approveCountThreshold = 2;
 const approveForAllCountThreshold = 2;
@@ -20,6 +22,7 @@ const timePeriodDays = 30;
 const nonceThreshold = 100;
 const maxAddressAlertsPerPeriod = 3;
 const verifiedContractTxsThreshold = 1;
+const pigButcheringTransferCountThreshold = 1;
 
 const mockObjects = {
   approvals: {},
@@ -36,6 +39,7 @@ const mockObjects = {
   permissionsInfoSeverity: {},
   transfers: {},
   transfersLowSeverity: {},
+  pigButcheringTransfers: {},
 };
 
 const spender = createAddress("0x01");
@@ -59,6 +63,7 @@ jest.mock(
     timePeriodDays,
     nonceThreshold,
     verifiedContractTxsThreshold,
+    pigButcheringTransferCountThreshold,
     maxAddressAlertsPerPeriod,
   }),
   { virtual: true }
@@ -472,6 +477,9 @@ describe("ice-phishing bot", () => {
         hash: "hash2",
         timestamp: 10000,
         from: spender,
+        transaction: {
+          data: "0x0",
+        },
       };
       mockTxEvent.filterLog.mockReset();
       mockTxEvent.filterFunction.mockReset();
@@ -1831,6 +1839,9 @@ describe("ice-phishing bot", () => {
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
           from: spender,
+          transaction: {
+            data: "0x0",
+          },
         };
 
         await handleTransaction(tempTxEvent);
@@ -1855,6 +1866,7 @@ describe("ice-phishing bot", () => {
       mockCalculateAlertRate.mockReturnValueOnce(0.4);
 
       const findings = await handleTransaction(mockTxEvent);
+      console.log("AERA22");
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
@@ -1956,6 +1968,9 @@ describe("ice-phishing bot", () => {
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
           from: spender,
+          transaction: {
+            data: "0x0",
+          },
         };
         mockBalanceOf
           .mockResolvedValue(ethers.BigNumber.from("100000000000000"))
@@ -2048,6 +2063,9 @@ describe("ice-phishing bot", () => {
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
           from: spender,
+          transaction: {
+            data: "0x0",
+          },
         };
         if (i === 0) {
           axios.get.mockResolvedValueOnce(axiosResponse);
@@ -2106,6 +2124,12 @@ describe("ice-phishing bot", () => {
               entity: "hash2",
               entityType: EntityType.Transaction,
               label: "Transfer",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entity: "5,0x0000000000000000000000000000000000000005",
+              entityType: EntityType.Address,
+              label: "NFT",
               confidence: 1,
             }),
           ],
@@ -2168,6 +2192,9 @@ describe("ice-phishing bot", () => {
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
           from: spender,
+          transaction: {
+            data: "0x0",
+          },
         };
         await handleTransaction(tempTxEvent);
       }
@@ -2252,6 +2279,12 @@ describe("ice-phishing bot", () => {
               label: "Transfer",
               confidence: 1,
             }),
+            Label.fromObject({
+              entity: "5,0x0000000000000000000000000000000000000005",
+              entityType: EntityType.Address,
+              label: "NFT",
+              confidence: 1,
+            }),
           ],
         }),
       ]);
@@ -2309,6 +2342,9 @@ describe("ice-phishing bot", () => {
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
           from: spender,
+          transaction: {
+            data: "0x0",
+          },
         };
 
         await handleTransaction(tempTxEvent);
@@ -2393,6 +2429,18 @@ describe("ice-phishing bot", () => {
               entity: "hash2",
               entityType: EntityType.Transaction,
               label: "Transfer",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entity: "4,0x0000000000000000000000000000000000000005",
+              entityType: EntityType.Address,
+              label: "NFT",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entity: "5,0x0000000000000000000000000000000000000005",
+              entityType: EntityType.Address,
+              label: "NFT",
               confidence: 1,
             }),
           ],
@@ -2482,6 +2530,9 @@ describe("ice-phishing bot", () => {
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
           from: spender,
+          transaction: {
+            data: "0x0",
+          },
         };
 
         await handleTransaction(tempTxEvent);
@@ -2492,6 +2543,9 @@ describe("ice-phishing bot", () => {
         hash: "hash2",
         timestamp: 10000,
         from: spender,
+        transaction: {
+          data: "0x0",
+        },
       };
 
       mockTxEvent.filterLog
@@ -2573,6 +2627,18 @@ describe("ice-phishing bot", () => {
               entity: "hash2",
               entityType: EntityType.Transaction,
               label: "Transfer",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entity: "4,0x0000000000000000000000000000000000000005",
+              entityType: EntityType.Address,
+              label: "NFT",
+              confidence: 1,
+            }),
+            Label.fromObject({
+              entity: "5,0x0000000000000000000000000000000000000005",
+              entityType: EntityType.Address,
+              label: "NFT",
               confidence: 1,
             }),
           ],
@@ -3231,6 +3297,9 @@ describe("ice-phishing bot", () => {
         hash: "hash2",
         timestamp: 10000,
         from: createAddress("0x12331"),
+        transaction: {
+          data: "0x",
+        },
       };
       const mockTransferEvent = {
         address: asset,
@@ -3344,6 +3413,9 @@ describe("ice-phishing bot", () => {
         hash: "hash2",
         timestamp: 10000,
         from: createAddress("0x12331"),
+        transaction: {
+          data: "0x",
+        },
       };
       const mockTransferEvent = {
         address: asset,
@@ -3664,6 +3736,163 @@ describe("ice-phishing bot", () => {
         }),
       ]);
     });
+
+    it("should return findings when there's a possible pig butchering attack", async () => {
+      const USDT = STABLECOINS[0];
+      const mockTransferEvents = [
+        {
+          address: USDT,
+          name: "Transfer",
+          args: {
+            from: owner1,
+            to: createAddress("0x11"),
+            value: ethers.BigNumber.from(210),
+          },
+        },
+
+        {
+          address: USDT,
+          name: "Transfer",
+          args: {
+            from: owner3,
+            to: createAddress("0x11"),
+            value: ethers.BigNumber.from(11210),
+          },
+        },
+      ];
+
+      const attacker = createAddress("0x812331");
+
+      const mockTxEvent = {
+        filterFunction: jest
+          .fn()
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([]),
+        filterLog: jest
+          .fn()
+          .mockReturnValueOnce([]) // ERC20 approvals
+          .mockReturnValueOnce([]) // ERC721 approvals
+          .mockReturnValueOnce([]) // ApprovalForAll
+          .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
+          .mockReturnValueOnce([]) // ERC721 transfers
+          .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]), // Upgrades
+        hash: "hash33",
+        timestamp: 1001,
+        from: attacker,
+        transaction: {
+          data: "0x23b872dd",
+        },
+      };
+
+      await initialize();
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      const axiosResponse = {
+        data: { message: "okkk", status: "1", result: [] },
+      };
+      axios.get.mockResolvedValue(axiosResponse);
+      mockProvider.getCode.mockReturnValue("0x");
+      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
+      mockProvider.getTransactionCount.mockReturnValue(1);
+      const axiosResponse2 = {
+        data: { message: "okkk", status: "1", result: [{ from: CEX_ADDRESSES[0], functionName: "" }] },
+      };
+      axios.get.mockResolvedValue(axiosResponse2);
+      await handleTransaction(mockTxEvent);
+
+      const axiosResponse1b = {
+        data: { message: "okkk", status: "1", result: [] },
+      };
+      axios.get.mockResolvedValue(axiosResponse1b);
+      mockProvider.getCode.mockReturnValue("0x");
+      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
+      mockProvider.getTransactionCount.mockReturnValue(1);
+      const axiosResponse2b = {
+        data: { message: "okkk", status: "1", result: [{ from: CEX_ADDRESSES[0], functionName: "" }] },
+      };
+      axios.get.mockResolvedValue(axiosResponse2b);
+
+      const mockTxEvent1 = {
+        filterFunction: jest
+          .fn()
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([]),
+        filterLog: jest
+          .fn()
+          .mockReturnValueOnce([]) // ERC20 approvals
+          .mockReturnValueOnce([]) // ERC721 approvals
+          .mockReturnValueOnce([]) // ApprovalForAll
+          .mockReturnValueOnce([mockTransferEvents[1]]) // ERC20 transfers
+          .mockReturnValueOnce([]) // ERC721 transfers
+          .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]), // Upgrades
+        hash: "hash334",
+        timestamp: 1101,
+        from: attacker,
+        transaction: {
+          data: "0x23b872dd",
+        },
+      };
+
+      mockCalculateAlertRate.mockReturnValueOnce("0.3");
+
+      const findings = await handleTransaction(mockTxEvent1);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Possible Pig Butchering Attack",
+          description: `${createAddress("0x11")} received funds through a pig butchering attack`,
+          alertId: "ICE-PHISHING-PIG-BUTCHERING",
+          severity: FindingSeverity.Critical,
+          type: FindingType.Suspicious,
+          metadata: {
+            anomalyScore: "0.3",
+            receiver: createAddress("0x11"),
+            initiator1: attacker,
+            victim1: owner1,
+            victim2: owner3,
+          },
+          labels: [
+            Label.fromObject({
+              entity: "hash334",
+              entityType: EntityType.Transaction,
+              label: "Attack",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entity: createAddress("0x11"),
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entity: attacker,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entity: owner1,
+              entityType: EntityType.Address,
+              label: "Victim",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entity: owner3,
+              entityType: EntityType.Address,
+              label: "Victim",
+              confidence: 0.7,
+            }),
+          ],
+        }),
+      ]);
+    });
   });
 
   describe("handleBlock", () => {
@@ -3708,6 +3937,7 @@ describe("ice-phishing bot", () => {
       mockObjects.approvalsForAll1155InfoSeverity[spender] = [{ timestamp: 1000 }];
       mockObjects.permissionsInfoSeverity[spender] = [{ deadline: 10 }];
       mockObjects.transfersLowSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.pigButcheringTransfers[spender] = [{ timestamp: 1000 }];
       await handleBlock(mockBlockEvent);
 
       expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
@@ -3724,6 +3954,7 @@ describe("ice-phishing bot", () => {
       expect(Object.keys(mockObjects.approvalsForAll1155InfoSeverity).length).toStrictEqual(1);
       expect(Object.keys(mockObjects.permissionsInfoSeverity).length).toStrictEqual(1);
       expect(Object.keys(mockObjects.transfersLowSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.pigButcheringTransfers).length).toStrictEqual(1);
     });
 
     it("should not delete the entry if it was updated recently/permission deadline has not passed", async () => {
@@ -3763,6 +3994,7 @@ describe("ice-phishing bot", () => {
       mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
       mockObjects.permissions[spender] = [{ deadline: 1000 }];
       mockObjects.transfers[spender] = [{ timestamp: 1000 }];
+      mockObjects.pigButcheringTransfers[spender] = [{ timestamp: 1000 }];
 
       await handleBlock(mockBlockEvent);
 
@@ -3773,6 +4005,7 @@ describe("ice-phishing bot", () => {
       expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(0);
       expect(Object.keys(mockObjects.permissions).length).toStrictEqual(0);
       expect(Object.keys(mockObjects.transfers).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.pigButcheringTransfers).length).toStrictEqual(0);
     });
 
     it("should populate the suspicious contracts set correctly", async () => {
