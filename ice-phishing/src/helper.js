@@ -4,7 +4,12 @@ const LRU = require("lru-cache");
 const { nonceThreshold, contractTxsThreshold, verifiedContractTxsThreshold } = require("../bot-config.json");
 const { etherscanApis } = require("./config");
 const { keys } = require("./keys");
-const { MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID, ERC_20_721_INTERFACE, ERC_1155_INTERFACE } = require("./utils");
+const {
+  MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID,
+  ERC_20_721_INTERFACE,
+  ERC_1155_INTERFACE,
+  STABLECOINS,
+} = require("./utils");
 const AddressType = require("./address-type");
 
 // Computes the data needed for an alert
@@ -17,12 +22,23 @@ function getEventInformation(eventsArray) {
   const assets = [...new Set(eventsArray.map((e) => e.asset))];
   const accounts = [...new Set(eventsArray.map((e) => e.owner))];
 
+  // Transfers
+  const assetIdTuples = [
+    ...new Set(
+      eventsArray.map((e) => {
+        const id = e.id ? (Array.isArray(e.id) ? e.id.map((item) => item.toString()) : [e.id.toString()]) : [];
+        return JSON.stringify([id, e.asset]);
+      })
+    ),
+  ].map((str) => JSON.parse(str));
+
   const days = Math.ceil((eventsArray[length - 1].timestamp - eventsArray[0].timestamp) / 86400);
 
   return {
     firstTxHash,
     lastTxHash,
     assets,
+    assetIdTuples,
     accounts,
     days,
   };
@@ -583,8 +599,41 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
   });
 }
 
-function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresses, scamDomains, anomalyScore, txHash) {
+function createTransferScamAlert(
+  msgSender,
+  owner,
+  receiver,
+  asset,
+  id,
+  scamAddresses,
+  scamDomains,
+  anomalyScore,
+  txHash
+) {
   let labels = [];
+  if (id) {
+    if (Array.isArray(id)) {
+      id.map((item) => {
+        labels.push(
+          Label.fromObject({
+            entity: item.toString() + "," + asset,
+            entityType: EntityType.Address,
+            label: "NFT",
+            confidence: 1,
+          })
+        );
+      });
+    } else {
+      labels.push(
+        Label.fromObject({
+          entity: id.toString() + "," + asset,
+          entityType: EntityType.Address,
+          label: "NFT",
+          confidence: 1,
+        })
+      );
+    }
+  }
   scamAddresses.map((scamAddress) => {
     labels.push(
       Label.fromObject({
@@ -619,7 +668,7 @@ function createTransferScamAlert(msgSender, owner, receiver, asset, scamAddresse
       anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
-    labels: labels,
+    labels,
   });
 }
 
@@ -628,10 +677,56 @@ function createTransferSuspiciousContractAlert(
   owner,
   receiver,
   asset,
+  id,
   suspiciousContract,
   anomalyScore,
   txHash
 ) {
+  let labels = [
+    Label.fromObject({
+      entity: suspiciousContract.address,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.6,
+    }),
+    Label.fromObject({
+      entity: suspiciousContract.creator,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.6,
+    }),
+    Label.fromObject({
+      entity: txHash,
+      entityType: EntityType.Transaction,
+      label: "Transfer",
+      confidence: 1,
+    }),
+  ];
+
+  if (id) {
+    if (Array.isArray(id)) {
+      id.map((item) => {
+        labels.push(
+          Label.fromObject({
+            entity: item.toString() + "," + asset,
+            entityType: EntityType.Address,
+            label: "NFT",
+            confidence: 1,
+          })
+        );
+      });
+    } else {
+      labels.push(
+        Label.fromObject({
+          entity: id.toString() + "," + asset,
+          entityType: EntityType.Address,
+          label: "NFT",
+          confidence: 1,
+        })
+      );
+    }
+  }
+
   return Finding.fromObject({
     name: "Suspicious contract (creator) was involved in an asset transfer",
     description: `${msgSender} transferred assets from ${owner} to ${receiver}`,
@@ -647,31 +742,58 @@ function createTransferSuspiciousContractAlert(
       anomalyScore: anomalyScore.toString(),
     },
     addresses: [asset],
-    labels: [
-      Label.fromObject({
-        entity: suspiciousContract.address,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.6,
-      }),
-      Label.fromObject({
-        entity: suspiciousContract.creator,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.6,
-      }),
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-    ],
+    labels,
   });
 }
 
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
+  const { firstTxHash, lastTxHash, assets, assetIdTuples, accounts, days } = getEventInformation(transfersArray);
+  let labels = [
+    Label.fromObject({
+      entity: spender,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.4,
+    }),
+    Label.fromObject({
+      entity: firstTxHash,
+      entityType: EntityType.Transaction,
+      label: "Transfer",
+      confidence: 1,
+    }),
+    Label.fromObject({
+      entity: lastTxHash,
+      entityType: EntityType.Transaction,
+      label: "Transfer",
+      confidence: 1,
+    }),
+  ];
+
+  assetIdTuples.map((tuple) => {
+    if (tuple[0]) {
+      if (Array.isArray(tuple[0])) {
+        tuple[0].map((item) => {
+          labels.push(
+            Label.fromObject({
+              entity: item + "," + tuple[1],
+              entityType: EntityType.Address,
+              label: "NFT",
+              confidence: 1,
+            })
+          );
+        });
+      } else {
+        labels.push(
+          Label.fromObject({
+            entity: tuple[0] + "," + tuple[1],
+            entityType: EntityType.Address,
+            label: "NFT",
+            confidence: 1,
+          })
+        );
+      }
+    }
+  });
   return Finding.fromObject({
     name: "Previously approved assets transferred",
     description: `${spender} transferred ${assets.length} assets from ${accounts.length} accounts over period of ${days} days.`,
@@ -684,31 +806,57 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
       anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
-    labels: [
-      Label.fromObject({
-        entity: spender,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.4,
-      }),
-      Label.fromObject({
-        entity: firstTxHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-      Label.fromObject({
-        entity: lastTxHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-    ],
+    labels,
   });
 }
 
 function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomalyScore) {
-  const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(transfersArray);
+  const { firstTxHash, lastTxHash, assets, assetIdTuples, accounts, days } = getEventInformation(transfersArray);
+  let labels = [
+    Label.fromObject({
+      entity: spender,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.25,
+    }),
+    Label.fromObject({
+      entity: firstTxHash,
+      entityType: EntityType.Transaction,
+      label: "Transfer",
+      confidence: 1,
+    }),
+    Label.fromObject({
+      entity: lastTxHash,
+      entityType: EntityType.Transaction,
+      label: "Transfer",
+      confidence: 1,
+    }),
+  ];
+  assetIdTuples.map((tuple) => {
+    if (tuple[0]) {
+      if (Array.isArray(tuple[0])) {
+        tuple[0].map((item) => {
+          labels.push(
+            Label.fromObject({
+              entity: item + "," + tuple[1],
+              entityType: EntityType.Address,
+              label: "NFT",
+              confidence: 1,
+            })
+          );
+        });
+      } else {
+        labels.push(
+          Label.fromObject({
+            entity: tuple[0] + "," + tuple[1],
+            entityType: EntityType.Address,
+            label: "NFT",
+            confidence: 1,
+          })
+        );
+      }
+    }
+  });
   return Finding.fromObject({
     name: "Previously approved assets transferred",
     description: `${spender} transferred ${assets.length} assets from ${accounts.length} accounts over period of ${days} days.`,
@@ -721,26 +869,77 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
       anomalyScore: anomalyScore.toString(),
     },
     addresses: assets,
-    labels: [
+    labels,
+  });
+}
+
+function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore) {
+  let labels = [];
+  let metadata = {};
+  metadata["receiver"] = receiver;
+  metadata["anomalyScore"] = anomalyScore.toString();
+
+  const uniqueInitiators = new Set();
+
+  labels.push(
+    Label.fromObject({
+      entity: txHash,
+      entityType: EntityType.Transaction,
+      label: "Attack",
+      confidence: 0.7,
+    })
+  );
+
+  labels.push(
+    Label.fromObject({
+      entity: receiver,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.7,
+    })
+  );
+
+  let initiatorIndex = 1;
+  for (let index = 1; index <= transfersArray.length; index++) {
+    const { initiator, owner } = transfersArray[index - 1];
+
+    // Add initiator to the uniqueInitiators set if it's not already present
+    if (!uniqueInitiators.has(initiator)) {
+      uniqueInitiators.add(initiator);
+      metadata[`initiator${initiatorIndex}`] = initiator;
+      initiatorIndex++;
+
+      labels.push(
+        Label.fromObject({
+          entity: initiator,
+          entityType: EntityType.Address,
+          label: "Attacker",
+          confidence: 0.7,
+        })
+      );
+    }
+
+    metadata[`victim${index}`] = owner;
+
+    // Add labels for owners as "Victim" with confidence 0.7
+    labels.push(
       Label.fromObject({
-        entity: spender,
+        entity: owner,
         entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.25,
-      }),
-      Label.fromObject({
-        entity: firstTxHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-      Label.fromObject({
-        entity: lastTxHash,
-        entityType: EntityType.Transaction,
-        label: "Transfer",
-        confidence: 1,
-      }),
-    ],
+        label: "Victim",
+        confidence: 0.7,
+      })
+    );
+  }
+
+  return Finding.fromObject({
+    name: "Possible Pig Butchering Attack",
+    description: `${receiver} received funds through a pig butchering attack`,
+    alertId: "ICE-PHISHING-PIG-BUTCHERING",
+    severity: FindingSeverity.Critical,
+    type: FindingType.Suspicious,
+    metadata,
+    labels,
   });
 }
 
@@ -925,6 +1124,12 @@ function getEtherscanAddressUrl(address, chainId, offset, order) {
   }&sort=${order}&apikey=${key}`;
 }
 
+function getEtherscanTokenTxUrl(address, token, chainId) {
+  const { urlAccountToken } = etherscanApis[Number(chainId)];
+  const key = getBlockExplorerKey(Number(chainId));
+  return `${urlAccountToken}&contractaddress=${token}&address=${address}&startblock=0&endblock=99999999&page=1&offset=1&sort=asc&apikey=${key}`;
+}
+
 function getEtherscanLogsUrl(address, blockNumber, chainId) {
   const { urlLogs } = etherscanApis[Number(chainId)];
   const key = getBlockExplorerKey(Number(chainId));
@@ -1001,6 +1206,81 @@ async function getContractCreator(address, chainId) {
   } else {
     return contractCreator;
   }
+}
+
+async function hasTransferredNonStablecoins(address, chainId) {
+  const url = getEtherscanAddressUrl(address, chainId, 100, "desc");
+  let result;
+
+  let retries = 2;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(url);
+      // Handle successful response
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to call block explorer (URL: ${url}) failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+  const hasTransferredNonStablecoins = result.data.result.some(
+    (tx) => tx.functionName.startsWith("transferFrom") && !STABLECOINS.includes(tx.to)
+  );
+
+  return hasTransferredNonStablecoins;
+}
+
+async function getInitialERC20Funder(address, token, chainId) {
+  const url = getEtherscanTokenTxUrl(address, token, chainId);
+  let result;
+  let initialFunder = "";
+
+  let retries = 2;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(url);
+      // Handle successful response
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to call block explorer (URL: ${url}) failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+
+  initialFunder = result.data.result[0].from;
+  return initialFunder;
+}
+
+async function getLabel(address) {
+  const maxRetries = 3;
+
+  const url = `https://api.forta.network/labels/state?entities=${address}&sourceIds=etherscan-tags&limit=1`;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await (await fetch(url)).json();
+      return response.events.length > 0 ? response.events[0]["label"]["label"] : "";
+    } catch (error) {
+      console.log(`Error fetching label: ${error}`);
+
+      // wait for 1 second before retrying
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  return "";
 }
 
 async function getEoaType(address, provider, blockNumber) {
@@ -1340,6 +1620,7 @@ module.exports = {
   createHighNumApprovalsInfoAlertERC721,
   createHighNumTransfersAlert,
   createHighNumTransfersLowSeverityAlert,
+  createPigButcheringAlert,
   createPermitTransferAlert,
   createPermitTransferMediumSeverityAlert,
   createApprovalForAllAlertERC721,
@@ -1361,6 +1642,9 @@ module.exports = {
   getAddressType,
   getEoaType,
   getContractCreator,
+  hasTransferredNonStablecoins,
+  getInitialERC20Funder,
+  getLabel,
   getSuspiciousContracts,
   haveInteractedMoreThanOnce,
   getBalance,

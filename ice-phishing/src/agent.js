@@ -11,6 +11,7 @@ const {
   createHighNumApprovalsInfoAlertERC721,
   createHighNumTransfersAlert,
   createHighNumTransfersLowSeverityAlert,
+  createPigButcheringAlert,
   createPermitTransferAlert,
   createPermitTransferMediumSeverityAlert,
   createApprovalForAllAlertERC721,
@@ -31,6 +32,9 @@ const {
   createOpenseaAlert,
   getAddressType,
   getContractCreator,
+  hasTransferredNonStablecoins,
+  getLabel,
+  getInitialERC20Funder,
   getBalance,
   getERC1155Balance,
   getSuspiciousContracts,
@@ -43,6 +47,7 @@ const {
   approveCountThreshold,
   approveForAllCountThreshold,
   transferCountThreshold,
+  pigButcheringTransferCountThreshold,
   maxAddressAlertsPerPeriod,
 } = require("../bot-config.json");
 const {
@@ -50,7 +55,10 @@ const {
   ADDRESS_ZERO,
   IGNORED_ADDRESSES,
   UNISWAP_ROUTER_ADDRESSES,
+  STABLECOINS,
   safeBatchTransferFrom1155Sig,
+  transferFromSig,
+  CEX_ADDRESSES,
   permitFunctionABI,
   daiPermitFunctionABI,
   uniswapPermitFunctionABI,
@@ -88,7 +96,7 @@ let scamSnifferDB = {
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 const DATABASE_OBJECT_KEY = {
-  key: "nm-icephishing-bot-objects-shard",
+  key: "nm-icephishing-bot-objects-v6-shard",
 };
 
 let objects = {
@@ -106,6 +114,7 @@ let objects = {
   permissionsInfoSeverity: {},
   transfers: {},
   transfersLowSeverity: {},
+  pigButcheringTransfers: {},
 };
 
 const DATABASE_KEYS = {
@@ -209,6 +218,7 @@ const provideHandleTransaction =
       );
       console.log("Permits Size:", Buffer.from(JSON.stringify(objects.permissions)).length);
       console.log("Permits Info Size:", Buffer.from(JSON.stringify(objects.permissionsInfoSeverity)).length);
+      console.log("Pig Butchering Transfers Size:", Buffer.from(JSON.stringify(objects.pigButcheringTransfers)).length);
 
       lastBlock = blockNumber;
       console.log(`-----Transactions processed in block ${blockNumber - 3}: ${transactionsProcessed}-----`);
@@ -922,6 +932,64 @@ const provideHandleTransaction =
         continue;
       }
 
+      let id = tokenId || tokenIds;
+
+      // Pig Butchering logic
+      if (txEvent.transaction.data.startsWith(transferFromSig) && STABLECOINS.includes(asset)) {
+        const isOwnerAlreadyCounted = objects.pigButcheringTransfers[to]?.some(
+          (a) => a.owner === from && a.asset === asset
+        );
+        if (isOwnerAlreadyCounted) continue;
+        if (!(await hasTransferredNonStablecoins(txFrom, chainId))) {
+          const label = await getLabel(txFrom);
+          if (!label || ["xploit", "hish", "heist"].some((keyword) => label.includes(keyword))) {
+            if (ethers.BigNumber.from(value).gt(ethers.BigNumber.from(0)) && (await provider.getCode(from)) === "0x") {
+              const balanceAfter = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
+              const balanceBefore = balanceAfter.add(ethers.BigNumber.from(value));
+              if (balanceAfter.lt(balanceBefore.div(100)) && (await provider.getTransactionCount(from)) < 3) {
+                const initialFunder = await getInitialERC20Funder(from, asset, chainId);
+                if (CEX_ADDRESSES.includes(initialFunder)) {
+                  // Initialize the transfers array for the receiver if it doesn't exist
+                  if (!objects.pigButcheringTransfers[to]) objects.pigButcheringTransfers[to] = [];
+
+                  console.log("Detected possible malicious pig butchering transfer");
+                  console.log(`owner: ${from}`);
+                  console.log(`spender: ${txFrom}`);
+                  console.log(`receiver: ${to}`);
+                  console.log(`asset: ${asset}`);
+
+                  // Update the transfers for the spender
+                  objects.pigButcheringTransfers[to].push({
+                    asset,
+                    initiator: txFrom,
+                    owner: from,
+                    hash,
+                    timestamp,
+                  });
+
+                  // Filter out old transfers
+                  objects.pigButcheringTransfers[to] = objects.pigButcheringTransfers[to].filter(
+                    (a) => timestamp - a.timestamp < TIME_PERIOD
+                  );
+                  if (objects.pigButcheringTransfers[to].length > pigButcheringTransferCountThreshold) {
+                    const anomalyScore = await calculateAlertRate(
+                      chainId,
+                      BOT_ID,
+                      "ICE-PHISHING-PIG-BUTCHERING",
+                      isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+                      counters.totalTransfers
+                    );
+                    findings.push(createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore));
+                    objects.pigButcheringTransfers[to] = [];
+                    await persistenceHelper.persist(objects, databaseObjectsKey.key);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       let _scamAddresses = [];
       if (scamAddresses.includes(txFrom)) {
         if (!cachedAddresses.has(txFrom) || cachedAddresses.get(txFrom) !== AddressType.ScamAddress) {
@@ -949,7 +1017,7 @@ const provideHandleTransaction =
           counters.totalTransfers
         );
         findings.push(
-          createTransferScamAlert(txFrom, from, to, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+          createTransferScamAlert(txFrom, from, to, asset, id, _scamAddresses, scamDomains, anomalyScore, hash)
         );
       }
 
@@ -965,7 +1033,16 @@ const provideHandleTransaction =
           counters.totalTransfers
         );
         findings.push(
-          createTransferSuspiciousContractAlert(txFrom, from, to, asset, suspiciousContractFound, anomalyScore, hash)
+          createTransferSuspiciousContractAlert(
+            txFrom,
+            from,
+            to,
+            asset,
+            id,
+            suspiciousContractFound,
+            anomalyScore,
+            hash
+          )
         );
       }
 
@@ -1038,8 +1115,10 @@ const provideHandleTransaction =
 
         // Update the transfers for the spender
         if (!objects.transfers[txFrom].some((obj) => obj.owner === from && obj.asset === asset)) {
+          if (!id) id = "";
           objects.transfers[txFrom].push({
             asset,
+            id,
             owner: from,
             hash,
             timestamp,
@@ -1101,8 +1180,10 @@ const provideHandleTransaction =
 
         // Update the transfers for the spender
         if (!objects.transfersLowSeverity[txFrom].some((obj) => obj.owner === from && obj.asset === asset)) {
+          if (!id) id = "";
           objects.transfersLowSeverity[txFrom].push({
             asset,
+            id,
             owner: from,
             hash,
             timestamp,
@@ -1260,6 +1341,7 @@ const provideHandleBlock =
       );
       console.log(`Permissions Info Severity before: ${Object.keys(objects.permissionsInfoSeverity).length}`);
       console.log(`Transfers Low Severity before: ${Object.keys(objects.transfersLowSeverity).length}`);
+      console.log(`Pig Butchering Transfers before: ${Object.keys(objects.pigButcheringTransfers).length}`);
 
       Object.entries(objects.approvals).forEach(([spender, data]) => {
         const { length } = data;
@@ -1373,6 +1455,14 @@ const provideHandleBlock =
         }
       });
 
+      Object.entries(objects.pigButcheringTransfers).forEach(([receiver, data]) => {
+        const { length } = data;
+        // Clear the transfers if the last transfer to a receiver is more than timePeriodDays ago
+        if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+          delete objects.pigButcheringTransfers[receiver];
+        }
+      });
+
       console.log(`Approvals after: ${Object.keys(objects.approvals).length}`);
       console.log(`Approvals ERC20 after: ${Object.keys(objects.approvalsERC20).length}`);
       console.log(`Approvals ERC721 after: ${Object.keys(objects.approvalsERC721).length}`);
@@ -1391,6 +1481,7 @@ const provideHandleBlock =
       );
       console.log(`Permissions Info Severity after: ${Object.keys(objects.permissionsInfoSeverity).length}`);
       console.log(`Transfers Low Severity after: ${Object.keys(objects.transfersLowSeverity).length}`);
+      console.log(`Pig Butchering Transfers after: ${Object.keys(objects.pigButcheringTransfers).length}`);
 
       // Reset ignored addresses
       cachedAddresses.entries(([address, type]) => {

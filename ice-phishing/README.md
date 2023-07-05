@@ -441,11 +441,16 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
         - `entityType`: The type of the entity, always set to "Address"
         - `label`: The type of the label, always set to "Attacker"
         - `confidence`: The confidence level of the address being an attacker, always set to "0.95"
-      - Last Label :
+      - Second-to-last Label:
         - `entity`: The transfer transaction hash
         - `entityType`: The type of the entity, always set to "Transaction"
         - `label`: The type of the label, always set to "Transfer"
         - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+      - Last Label (if applicable):
+        - `entity`: The info of the transferred ERC-721 or ERC-1155, in the format "ID,address"
+        - `entityType`: The type of the entity, always set to "Address"
+        - `label`: The type of the label, always set to "NFT"
+        - `confidence`: The confidence level of the label being a NFT, always set to "1"
 
 - ICE-PHISHING-SUSPICIOUS-TRANSFER
 
@@ -477,6 +482,11 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `entityType`: The type of the entity, always set to "Transaction"
       - `label`: The type of the label, always set to "Transfer"
       - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+    - Last Label (if applicable):
+      - `entity`: The info of the transferred ERC-721 or ERC-1155, in the format "ID,address"
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "NFT"
+      - `confidence`: The confidence level of the label being a NFT, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS
 
@@ -505,6 +515,11 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `entityType`: The type of the entity, always set to "Transaction"
       - `label`: The type of the label, always set to "Transfer"
       - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+    - Last Label (if applicable):
+      - `entity`: The info of the transferred ERC-721 or ERC-1155, in the format "ID,address"
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "NFT"
+      - `confidence`: The confidence level of the label being a NFT, always set to "1"
 
 - ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW
 
@@ -533,6 +548,11 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `entityType`: The type of the entity, always set to "Transaction"
       - `label`: The type of the label, always set to "Transfer"
       - `confidence`: The confidence level of the transaction being a token transfer, always set to "1"
+    - Last Label (if applicable):
+      - `entity`: The info of the transferred ERC-721 or ERC-1155, in the format "ID,address"
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "NFT"
+      - `confidence`: The confidence level of the label being a NFT, always set to "1"
 
 - ICE-PHISHING-PERMITTED-ERC20-TRANSFER
 
@@ -610,6 +630,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `confidence`: The confidence level of the transaction being an attack, always set to "0.8"
 
 - ICE-PHISHING-OPENSEA-PROXY-UPGRADE
+
   - Fired when a victim is tricked into upgrading their Opensea Proxy to a malicious implementation contract deployed by the attacker
   - Severity is always set to "critical"
   - Type is always set to "suspicious"
@@ -635,7 +656,40 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `label`: The type of the label, always set to "Attack"
       - `confidence`: The confidence level of the transaction being an attack, always set to "0.8"
 
+- ICE-PHISHING-PIG-BUTCHERING
+  - Fired when an account received funds through a pig butchering scam attack.
+  - Severity is always set to "critical"
+  - Type is always set to "suspicious"
+  - Metadata:
+    - `receiver` - the account that received the funds
+    - `inititator#`^^ - the initiators of the transfers
+    - `victim#`^^ - the victims of the transfers
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `ICE-PHISHING-PIG-BUTCHERING` out of the total number of transfers detected by this bot.
+  - Labels:
+  - Label 1:
+    - `entity`: The transaction hash of the transfer that exceeds the threshold
+    - `entityType`: The type of the entity, always set to "Transaction"
+    - `label`: The type of the label, always set to "Attack"
+    - `confidence`: The confidence level of the transaction being an attack, always set to "0.7"
+  - Label 2:
+    - `entity`: The receiver's address
+    - `entityType`: The type of the entity, always set to "Address"
+    - `label`: The type of the label, always set to "Attacker"
+    - `confidence`: The confidence level of the address being an attacker, always set to "0.7"
+  - Label 3-X:
+    - `entity`: The initiator's address
+    - `entityType`: The type of the entity, always set to "Address"
+    - `label`: The type of the label, always set to "Victim"
+    - `confidence`: The confidence level of the address being a victim, always set to "0.7"
+  - Label X+1 - Y:
+    - `entity`: The victim's address
+    - `entityType`: The type of the entity, always set to "Address"
+    - `label`: The type of the label, always set to "Victim"
+    - `confidence`: The confidence level of the address being a victim, always set to "0.7"
+
 > `^` Anomaly Score differs based on chain.
+> `^^` indicates this property could have more than one instance appear in the alert's `metadata`, and thus each will be properly enumerated.
 
 ## Test Data
 

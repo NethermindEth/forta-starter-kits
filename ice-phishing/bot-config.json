@@ -6,6 +6,7 @@
   "verifiedContractTxsThreshold": 1999,
   "approveCountThreshold": 3,
   "approveForAllCountThreshold": 1,
+  "pigButcheringTransferCountThreshold": 3,
   "transferCountThreshold": 2,
   "maxAddressAlertsPerPeriod": 3
 }
