@@ -581,6 +581,7 @@ describe("Ice Phishing bot performance test", () => {
       permissionsInfoSeverity: {},
       transfers: {},
       transfersLowSeverity: {},
+      pigButcheringTransfers: {},
     };
 
     const highNumApprovedTransfersLowTxReceipt = await realProvider.getTransactionReceipt(
@@ -699,6 +700,7 @@ describe("Ice Phishing bot performance test", () => {
       permissionsInfoSeverity: {},
       transfers: {},
       transfersLowSeverity: {},
+      pigButcheringTransfers: {},
     };
 
     const highNumApprovedTransfersTxReceipt = await realProvider.getTransactionReceipt(
