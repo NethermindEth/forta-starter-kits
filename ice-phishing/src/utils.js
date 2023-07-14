@@ -8,6 +8,7 @@ const MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID = "0x0b241032ca430d9c02eaa6a52d217bb
 const safeBatchTransferFrom1155Sig = "2eb2c2d6";
 const transferFromSig = "0x23b872dd";
 const MAX_OBJECT_SIZE = 9 * 1024 * 1024; // 9 MB
+const BOT_ID = "0x8badbf2ad65abc3df5b1d9cc388e419d9255ef999fb69aac6bf395646cf01c14";
 
 // Ignore Approvals to Uniswap Permit 2, OpenSea Conduit, Blur Execution Delegate and Uniswap Universal Router
 const IGNORED_ADDRESSES = [
@@ -356,4 +357,5 @@ module.exports = {
   ERC_20_721_INTERFACE,
   ERC_1155_ABI,
   ERC_1155_INTERFACE,
+  BOT_ID,
 };
