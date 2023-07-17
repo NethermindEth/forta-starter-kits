@@ -2,7 +2,7 @@ const { ethers } = require("forta-agent");
 const { ScanCountType } = require("bot-alert-rate");
 const { pullFunctionABI, sweepTokenFunctionABI, BOT_ID } = require("./utils");
 const { createSweepTokenAlert } = require("./helper");
-const sweepTokenHandleTransaction = async (txEvent, counters, chainId, findings, calculateAlertRate) => {
+const sweepTokenHandleTransaction = async (txEvent, counters, chainId, findings, calculateAlertRate, shouldReturn) => {
   const txFrom = ethers.utils.getAddress(txEvent.from);
   const pullFunctions = [...txEvent.filterFunction(pullFunctionABI)];
   const sweepTokenFunctions = [...txEvent.filterFunction(sweepTokenFunctionABI)];
@@ -19,14 +19,8 @@ const sweepTokenHandleTransaction = async (txEvent, counters, chainId, findings,
           ScanCountType.CustomScanCount,
           counters.totalTransfers
         );
-        console.log(chainId);
-        console.log(BOT_ID);
-        console.log(ScanCountType.CustomScanCount);
-        console.log(counters.totalTransfers);
-        console.log(counters);
-        console.log("Anomaly score: ", anomalyScore);
         findings.push(createSweepTokenAlert(txFrom, recipient, token, value, anomalyScore, txEvent.hash));
-        return findings;
+        shouldReturn.flag = true;
       }
     }
   }

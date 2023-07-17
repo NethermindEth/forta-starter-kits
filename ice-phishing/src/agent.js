@@ -240,11 +240,14 @@ const provideHandleTransaction =
       ...txEvent.filterLog(erc1155transferEventABI),
     ];
 
+    shouldReturn = {
+      flag: false
+    }
     await Promise.all([
       openseaHandleTransaction(txEvent, chainId, counters, findings, calculateAlertRate),
-      sweepTokenHandleTransaction(txEvent, counters, chainId, findings, calculateAlertRate),
+      sweepTokenHandleTransaction(txEvent, counters, chainId, findings, calculateAlertRate, shouldReturn),
     ]);
-
+    if (shouldReturn.flag) return findings
     if (!approvalEvents.length && !permitFunctions.length && !transferEvents.length) {
       return findings;
     }
@@ -296,7 +299,51 @@ const provideHandleTransaction =
       findings,
       calculateAlertRate
     );
+    if (hash === transactions[transactions.length - 1].hash) {
+      // Load the existing object from the database
+      const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
 
+      // Merge the persisted object with the new object
+      const mergedObj = {
+        ...objects,
+        ...persistedObj,
+      };
+
+      // Iterate through the keys of the objects
+      for (const key of Object.keys(objects)) {
+        const subObj = objects[key];
+
+        // Check if the sub-object has any keys
+        if (Object.keys(subObj).length > 0) {
+          const persistedSubObj = persistedObj[key] || {};
+          const mergedSubObj = {
+            ...subObj,
+            ...persistedSubObj,
+          };
+
+          // Iterate through the keys of the sub-object
+          for (const subKey of Object.keys(subObj)) {
+            const subArray = subObj[subKey];
+            const persistedSubArray = persistedSubObj[subKey] || [];
+
+            // Merge the two arrays
+            const mergedSubArray = [...subArray];
+            for (const obj of persistedSubArray) {
+              if (!mergedSubArray.some((o) => JSON.stringify(o) === JSON.stringify(obj))) {
+                mergedSubArray.push(obj);
+              }
+            }
+
+            mergedSubObj[subKey] = mergedSubArray;
+          }
+
+          mergedObj[key] = mergedSubObj;
+        }
+      }
+
+      // Persist the merged object in the database
+      await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
+    }
     const et1 = new Date().getTime();
     if (et1 - st1 > 80) {
       console.log(`Time taken for transaction: ${et1 - st1} ms`, hash);
