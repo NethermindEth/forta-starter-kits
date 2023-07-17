@@ -12,5 +12,5 @@ const ZETTABLOCK_API_KEY = "";
 
 module.exports = {
   keys,
-  ZETTABLOCK_API_KEY
+  ZETTABLOCK_API_KEY,
 };

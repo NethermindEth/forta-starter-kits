@@ -44,6 +44,180 @@ function getEventInformation(eventsArray) {
   };
 }
 
+// clean objects data
+function cleanData(objects, timestamp, TIME_PERIOD, cachedAddresses) {
+  console.log("Cleaning");
+  console.log(`Approvals before: ${Object.keys(objects.approvals).length}`);
+  console.log(`Approvals ERC20 before: ${Object.keys(objects.approvalsERC20).length}`);
+  console.log(`Approvals ERC721 before: ${Object.keys(objects.approvalsERC721).length}`);
+  console.log(`ApprovalsForAll ERC721 before: ${Object.keys(objects.approvalsForAll721).length}`);
+  console.log(`ApprovalsForAll ERC1155 before: ${Object.keys(objects.approvalsForAll1155).length}`);
+  console.log(`Permissions before: ${Object.keys(objects.permissions).length}`);
+  console.log(`Transfers before: ${Object.keys(objects.transfers).length}`);
+  console.log(`Approvals Info Severity before: ${Object.keys(objects.approvalsInfoSeverity).length}`);
+  console.log(`Approvals ERC20 Info Severity before: ${Object.keys(objects.approvalsERC20InfoSeverity).length}`);
+  console.log(`Approvals ERC721 Info Severity before: ${Object.keys(objects.approvalsERC721InfoSeverity).length}`);
+  console.log(
+    `ApprovalsForAll ERC721 Info Severity before: ${Object.keys(objects.approvalsForAll721InfoSeverity).length}`
+  );
+  console.log(
+    `ApprovalsForAll ERC1155 Info Severity before: ${Object.keys(objects.approvalsForAll1155InfoSeverity).length}`
+  );
+  console.log(`Permissions Info Severity before: ${Object.keys(objects.permissionsInfoSeverity).length}`);
+  console.log(`Transfers Low Severity before: ${Object.keys(objects.transfersLowSeverity).length}`);
+  console.log(`Pig Butchering Transfers before: ${Object.keys(objects.pigButcheringTransfers).length}`);
+
+  Object.entries(objects.approvals).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvals[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsERC20).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsERC20[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsERC721).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsERC721[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsForAll721).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsForAll721[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsForAll1155).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsForAll1155[spender];
+    }
+  });
+
+  Object.keys(objects.permissions).forEach((spender) => {
+    objects.permissions[spender] = objects.permissions[spender].filter((entry) => entry.deadline > timestamp);
+    if (!(objects.permissions[spender].length > 0)) {
+      delete objects.permissions[spender];
+    }
+  });
+
+  Object.entries(objects.transfers).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the transfers if the last transfer from a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.transfers[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsInfoSeverity).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsInfoSeverity[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsERC20InfoSeverity).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsERC20InfoSeverity[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsERC721InfoSeverity).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsERC721InfoSeverity[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsForAll721InfoSeverity).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsForAll721InfoSeverity[spender];
+    }
+  });
+
+  Object.entries(objects.approvalsForAll1155InfoSeverity).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the approvals if the last approval for a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.approvalsForAll1155InfoSeverity[spender];
+    }
+  });
+
+  Object.keys(objects.permissionsInfoSeverity).forEach((spender) => {
+    objects.permissionsInfoSeverity[spender] = objects.permissionsInfoSeverity[spender].filter(
+      (entry) => entry.deadline > timestamp
+    );
+    if (!(objects.permissionsInfoSeverity[spender].length > 0)) {
+      delete objects.permissionsInfoSeverity[spender];
+    }
+  });
+
+  Object.entries(objects.transfersLowSeverity).forEach(([spender, data]) => {
+    const { length } = data;
+    // Clear the transfers if the last transfer from a spender is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.transfersLowSeverity[spender];
+    }
+  });
+
+  Object.entries(objects.pigButcheringTransfers).forEach(([receiver, data]) => {
+    const { length } = data;
+    // Clear the transfers if the last transfer to a receiver is more than timePeriodDays ago
+    if (timestamp - data[length - 1].timestamp > TIME_PERIOD) {
+      delete objects.pigButcheringTransfers[receiver];
+    }
+  });
+
+  console.log(`Approvals after: ${Object.keys(objects.approvals).length}`);
+  console.log(`Approvals ERC20 after: ${Object.keys(objects.approvalsERC20).length}`);
+  console.log(`Approvals ERC721 after: ${Object.keys(objects.approvalsERC721).length}`);
+  console.log(`ApprovalsForAll ERC721 after: ${Object.keys(objects.approvalsForAll721).length}`);
+  console.log(`ApprovalsForAll ERC1155 after: ${Object.keys(objects.approvalsForAll1155).length}`);
+  console.log(`Permissions after: ${Object.keys(objects.permissions).length}`);
+  console.log(`Transfers after: ${Object.keys(objects.transfers).length}`);
+  console.log(`Approvals Info Severity after: ${Object.keys(objects.approvalsInfoSeverity).length}`);
+  console.log(`Approvals ERC20 Info Severity after: ${Object.keys(objects.approvalsERC20InfoSeverity).length}`);
+  console.log(`Approvals ERC721 Info Severity after: ${Object.keys(objects.approvalsERC721InfoSeverity).length}`);
+  console.log(
+    `ApprovalsForAll ERC721 Info Severity after: ${Object.keys(objects.approvalsForAll721InfoSeverity).length}`
+  );
+  console.log(
+    `ApprovalsForAll ERC1155 Info Severity after: ${Object.keys(objects.approvalsForAll1155InfoSeverity).length}`
+  );
+  console.log(`Permissions Info Severity after: ${Object.keys(objects.permissionsInfoSeverity).length}`);
+  console.log(`Transfers Low Severity after: ${Object.keys(objects.transfersLowSeverity).length}`);
+  console.log(`Pig Butchering Transfers after: ${Object.keys(objects.pigButcheringTransfers).length}`);
+
+  // Reset ignored addresses
+  cachedAddresses.entries(([address, type]) => {
+    if (type === AddressType.IgnoredEoa) {
+      cachedAddresses.set(address, AddressType.EoaWithLowNonce);
+    }
+
+    if (type === AddressType.IgnoredContract) {
+      cachedAddresses.set(address, AddressType.LowNumTxsUnverifiedContract);
+    }
+  });
+}
 function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   return Finding.fromObject({
@@ -1652,4 +1826,5 @@ module.exports = {
   getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
+  cleanData,
 };
