@@ -694,7 +694,7 @@ const provideHandleTransaction =
         objects.approvalsInfoSeverity,
       ]) {
         if (!_approvals[spender]) continue;
-        _approvals[spender].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
+        _approvals[spender] = _approvals[spender].filter((a) => timestamp - a.timestamp < TIME_PERIOD);
       }
 
       if (
