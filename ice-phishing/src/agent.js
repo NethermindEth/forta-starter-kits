@@ -208,7 +208,6 @@ const provideHandleTransaction =
         );
 
         if (scamSnifferDB && scamSnifferDB.data) {
-          console.log("In SCAM SNIFFER MAP POPULATER");
           await populateScamSnifferMap(scamSnifferDB.data);
         }
       }
