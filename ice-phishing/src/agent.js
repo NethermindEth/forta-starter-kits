@@ -93,6 +93,8 @@ let scamSnifferDB = {
   data: {},
 };
 
+let scamSnifferMap = new Map();
+
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 const DATABASE_OBJECT_KEY = {
@@ -139,6 +141,35 @@ const counters = {
   totalERC1155ApprovalsForAll: 0,
 };
 
+const populateScamSnifferMap = async (scamSnifferDB) => {
+  scamSnifferMap = new Map();
+
+  await Promise.all(
+    Object.keys(scamSnifferDB).map((key) => {
+      const addresses = scamSnifferDB[key];
+
+      for (const address of addresses) {
+        scamSnifferMap.set(address, key);
+      }
+    })
+  );
+
+  return scamSnifferMap;
+};
+
+const fetchScamDomains = async (addresses) => {
+  const scamDomains = [];
+
+  addresses.forEach((address) => {
+    address = address.toLowerCase();
+    if (scamSnifferMap.has(address)) {
+      scamDomains.push(scamSnifferMap.get(address));
+    }
+  });
+
+  return scamDomains;
+};
+
 const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, databaseObjectsKey) => {
   return async () => {
     ({ chainId } = await provider.getNetwork());
@@ -175,6 +206,11 @@ const provideHandleTransaction =
         scamSnifferDB = await axios.get(
           "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
         );
+
+        if (scamSnifferDB && scamSnifferDB.data) {
+          console.log("In SCAM SNIFFER MAP POPULATER");
+          await populateScamSnifferMap(scamSnifferDB.data);
+        }
       }
 
       transactions = await getTransactions(provider, blockNumber);
@@ -412,11 +448,7 @@ const provideHandleTransaction =
           );
           findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
         } else {
-          const scamDomains = Object.keys(scamSnifferDB.data).filter(
-            (key) =>
-              scamSnifferDB.data[key].includes(txFrom.toLowerCase()) ||
-              scamSnifferDB.data[key].includes(spender.toLowerCase())
-          );
+          const scamDomains = await fetchScamDomains([txFrom, spender]);
           let _scamAddresses = [];
           if (spenderType === AddressType.ScamAddress) {
             _scamAddresses.push(spender);
@@ -481,9 +513,7 @@ const provideHandleTransaction =
           }
 
           if (spenderContractCreator && spenderContractCreatorType === AddressType.ScamAddress) {
-            const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-              scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
-            );
+            const scamDomains = await fetchScamDomains([spenderContractCreator]);
             if (scamDomains.length > 0) {
               const anomalyScore = await calculateAlertRate(
                 chainId,
@@ -704,9 +734,7 @@ const provideHandleTransaction =
         spenderType === AddressType.EoaWithLowNonce
       ) {
         if (spenderType === AddressType.ScamAddress) {
-          const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-            scamSnifferDB.data[key].includes(spender.toLowerCase())
-          );
+          const scamDomains = await fetchScamDomains([spender]);
           const anomalyScore = await calculateAlertRate(
             chainId,
             BOT_ID,
@@ -746,9 +774,7 @@ const provideHandleTransaction =
           ) {
             const spenderContractCreator = await getContractCreator(spender, chainId);
             if (spenderContractCreator && scamAddresses.includes(ethers.utils.getAddress(spenderContractCreator))) {
-              const scamDomains = Object.keys(scamSnifferDB.data).filter((key) =>
-                scamSnifferDB.data[key].includes(spenderContractCreator.toLowerCase())
-              );
+              const scamDomains = await fetchScamDomains([spenderContractCreator]);
               const anomalyScore = await calculateAlertRate(
                 chainId,
                 BOT_ID,
@@ -1005,10 +1031,7 @@ const provideHandleTransaction =
       }
 
       if (_scamAddresses.length > 0) {
-        const scamDomains = Object.keys(scamSnifferDB.data).filter(
-          (key) =>
-            scamSnifferDB.data[key].includes(txFrom.toLowerCase()) || scamSnifferDB.data[key].includes(to.toLowerCase())
-        );
+        const scamDomains = await fetchScamDomains([txFrom, to]);
         const anomalyScore = await calculateAlertRate(
           chainId,
           BOT_ID,
