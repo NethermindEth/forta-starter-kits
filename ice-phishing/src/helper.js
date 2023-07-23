@@ -26,11 +26,15 @@ function getEventInformation(eventsArray) {
   const assetIdTuples = [
     ...new Set(
       eventsArray.map((e) => {
-        const id = e.id ? (Array.isArray(e.id) ? e.id.map((item) => item.toString()) : [e.id.toString()]) : [];
+        const id = e.id
+          ? Array.isArray(e.id)
+            ? e.id.map((item) => ethers.BigNumber.from(item).toString())
+            : [ethers.BigNumber.from(e.id).toString()]
+          : [];
         return JSON.stringify([id, e.asset]);
       })
     ),
-  ].map((str) => JSON.parse(str));
+  ].map(JSON.parse);
 
   const days = Math.ceil((eventsArray[length - 1].timestamp - eventsArray[0].timestamp) / 86400);
 
