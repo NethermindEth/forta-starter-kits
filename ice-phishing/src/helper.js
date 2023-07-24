@@ -1613,6 +1613,35 @@ function checkObjectSizeAndCleanup(obj) {
   }
 }
 
+const populateScamSnifferMap = async (scamSnifferDB) => {
+  const scamSnifferMap = new Map();
+
+  await Promise.all(
+    Object.keys(scamSnifferDB).map((key) => {
+      const addresses = scamSnifferDB[key];
+
+      for (const address of addresses) {
+        scamSnifferMap.set(address, key);
+      }
+    })
+  );
+
+  return scamSnifferMap;
+};
+
+const fetchScamDomains = async (scamSnifferMap, addresses) => {
+  const scamDomains = [];
+
+  addresses.forEach((address) => {
+    address = address.toLowerCase();
+    if (scamSnifferMap.has(address)) {
+      scamDomains.push(scamSnifferMap.get(address));
+    }
+  });
+
+  return scamDomains;
+};
+
 module.exports = {
   createHighNumApprovalsAlertERC20,
   createHighNumApprovalsInfoAlertERC20,
@@ -1652,4 +1681,6 @@ module.exports = {
   getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
+  populateScamSnifferMap,
+  fetchScamDomains,
 };
