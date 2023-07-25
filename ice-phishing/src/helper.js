@@ -1624,7 +1624,12 @@ const populateScamSnifferMap = (scamSnifferDB) => {
     const addresses = scamSnifferDB[key];
 
     for (const address of addresses) {
-      scamSnifferMap.set(address, key);
+      if (scamSnifferMap.has(address)) {
+        const domains = scamSnifferMap.get(address);
+        domains.push(key);
+      } else {
+        scamSnifferMap.set(address, [key]);
+      }
     }
   });
 
@@ -1632,16 +1637,16 @@ const populateScamSnifferMap = (scamSnifferDB) => {
 };
 
 const fetchScamDomains = (scamSnifferMap, addresses) => {
-  const scamDomains = [];
+  let scamDomains = [];
 
   addresses.forEach((address) => {
     address = address.toLowerCase();
     if (scamSnifferMap.has(address)) {
-      scamDomains.push(scamSnifferMap.get(address));
+      scamDomains = [...scamDomains, ...scamSnifferMap.get(address)];
     }
   });
 
-  return scamDomains;
+  return [...new Set(scamDomains)];
 };
 
 module.exports = {
