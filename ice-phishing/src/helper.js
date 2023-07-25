@@ -1617,23 +1617,21 @@ function checkObjectSizeAndCleanup(obj) {
   }
 }
 
-const populateScamSnifferMap = async (scamSnifferDB) => {
+const populateScamSnifferMap = (scamSnifferDB) => {
   const scamSnifferMap = new Map();
 
-  await Promise.all(
-    Object.keys(scamSnifferDB).map((key) => {
-      const addresses = scamSnifferDB[key];
+  Object.keys(scamSnifferDB).map((key) => {
+    const addresses = scamSnifferDB[key];
 
-      for (const address of addresses) {
-        scamSnifferMap.set(address, key);
-      }
-    })
-  );
+    for (const address of addresses) {
+      scamSnifferMap.set(address, key);
+    }
+  });
 
   return scamSnifferMap;
 };
 
-const fetchScamDomains = async (scamSnifferMap, addresses) => {
+const fetchScamDomains = (scamSnifferMap, addresses) => {
   const scamDomains = [];
 
   addresses.forEach((address) => {

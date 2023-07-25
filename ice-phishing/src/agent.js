@@ -181,7 +181,7 @@ const provideHandleTransaction =
         );
 
         if (scamSnifferDB && scamSnifferDB.data) {
-          scamSnifferMap = await populateScamSnifferMap(scamSnifferDB.data);
+          scamSnifferMap = populateScamSnifferMap(scamSnifferDB.data);
         }
       }
 
@@ -420,7 +420,7 @@ const provideHandleTransaction =
           );
           findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
         } else {
-          const scamDomains = await fetchScamDomains(scamSnifferMap, [txFrom, spender]);
+          const scamDomains = fetchScamDomains(scamSnifferMap, [txFrom, spender]);
           let _scamAddresses = [];
           if (spenderType === AddressType.ScamAddress) {
             _scamAddresses.push(spender);
@@ -485,7 +485,7 @@ const provideHandleTransaction =
           }
 
           if (spenderContractCreator && spenderContractCreatorType === AddressType.ScamAddress) {
-            const scamDomains = await fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
+            const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
             if (scamDomains.length > 0) {
               const anomalyScore = await calculateAlertRate(
                 chainId,
@@ -706,7 +706,7 @@ const provideHandleTransaction =
         spenderType === AddressType.EoaWithLowNonce
       ) {
         if (spenderType === AddressType.ScamAddress) {
-          const scamDomains = await fetchScamDomains(scamSnifferMap, [spender]);
+          const scamDomains = fetchScamDomains(scamSnifferMap, [spender]);
           const anomalyScore = await calculateAlertRate(
             chainId,
             BOT_ID,
@@ -746,7 +746,7 @@ const provideHandleTransaction =
           ) {
             const spenderContractCreator = await getContractCreator(spender, chainId);
             if (spenderContractCreator && scamAddresses.includes(ethers.utils.getAddress(spenderContractCreator))) {
-              const scamDomains = await fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
+              const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
               const anomalyScore = await calculateAlertRate(
                 chainId,
                 BOT_ID,
@@ -1003,7 +1003,7 @@ const provideHandleTransaction =
       }
 
       if (_scamAddresses.length > 0) {
-        const scamDomains = await fetchScamDomains(scamSnifferMap, [txFrom, to]);
+        const scamDomains = fetchScamDomains(scamSnifferMap, [txFrom, to]);
         const anomalyScore = await calculateAlertRate(
           chainId,
           BOT_ID,
