@@ -1617,6 +1617,38 @@ function checkObjectSizeAndCleanup(obj) {
   }
 }
 
+const populateScamSnifferMap = (scamSnifferDB) => {
+  const scamSnifferMap = new Map();
+
+  Object.keys(scamSnifferDB).map((key) => {
+    const addresses = scamSnifferDB[key];
+
+    for (const address of addresses) {
+      if (scamSnifferMap.has(address)) {
+        const domains = scamSnifferMap.get(address);
+        domains.push(key);
+      } else {
+        scamSnifferMap.set(address, [key]);
+      }
+    }
+  });
+
+  return scamSnifferMap;
+};
+
+const fetchScamDomains = (scamSnifferMap, addresses) => {
+  let scamDomains = [];
+
+  addresses.forEach((address) => {
+    address = address.toLowerCase();
+    if (scamSnifferMap.has(address)) {
+      scamDomains = [...scamDomains, ...scamSnifferMap.get(address)];
+    }
+  });
+
+  return [...new Set(scamDomains)];
+};
+
 module.exports = {
   createHighNumApprovalsAlertERC20,
   createHighNumApprovalsInfoAlertERC20,
@@ -1656,4 +1688,6 @@ module.exports = {
   getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
+  populateScamSnifferMap,
+  fetchScamDomains,
 };
