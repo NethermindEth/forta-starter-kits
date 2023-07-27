@@ -939,6 +939,8 @@ const provideHandleTransaction =
         );
         if (isOwnerAlreadyCounted) continue;
         if (!(await hasTransferredNonStablecoins(txFrom, chainId))) {
+          const nonce = await provider.getTransactionCount(txFrom);
+          if (nonce > 50000) continue;
           const label = await getLabel(txFrom);
           if (!label || ["xploit", "hish", "heist"].some((keyword) => label.includes(keyword))) {
             if (ethers.BigNumber.from(value).gt(ethers.BigNumber.from(0)) && (await provider.getCode(from)) === "0x") {
