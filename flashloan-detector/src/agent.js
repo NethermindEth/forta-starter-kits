@@ -81,8 +81,6 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             const tokenProfits = helper.calculateTokenProfits(transferEvents, account);
             const nativeProfit = helper.calculateNativeProfit(traces, account);
 
-            // console.log(tokenProfits["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"].toString());
-
             flashLoanTokenProfitCalculated[account] = true;
             flashLoanNativeProfitCalculated[account] = true;
 
@@ -193,6 +191,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           // Check the profit of the initiator if not on mainnet
           // or if no traces only during the last flashloan
         } else if (flashloanIndex === numOfFlashloans - 1) {
+          console.log("Seventh If");
           const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
           Object.entries(tokenProfits).forEach(([address, profit]) => {
             if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;

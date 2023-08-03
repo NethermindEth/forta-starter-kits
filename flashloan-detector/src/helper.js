@@ -106,6 +106,10 @@ module.exports = {
   calculateTokenProfits(events, account) {
     const profits = {};
 
+    if (account === ethers.constants.AddressZero) {
+      return profits;
+    }
+
     events.forEach((event) => {
       const { src: s, dst: d, wad } = event.args;
       const { address } = event;
