@@ -1,6 +1,7 @@
 {
   "name": "flashbots-transactions-detector",
-  "version": "0.0.6",
+  "version": "0.0.7",
+  "displayName": "Flashbots Transactions Detector",
   "description": "This bot detects flashbots transactions",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/flashbots-transactions-detector",
   "chainIds": [
@@ -30,7 +31,7 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "forta-agent": "^0.1.32",
+    "forta-agent": "^0.1.36",
     "node-fetch": "^2.6.7",
     "dotenv": "^16.0.3"
   },
