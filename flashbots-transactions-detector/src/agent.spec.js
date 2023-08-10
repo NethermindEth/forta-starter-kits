@@ -214,8 +214,8 @@ describe("flashbots transactions detection bot", () => {
 
     // Only block2 should be processed
     const response2 = { data: { blocks: [block1, block2] } };
-    const logs2 = [{ address: to2 }];
-    const logs3 = [{ address: to3 }];
+    const logs2 = [{ address: to2, topics: ["0xe78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
+    const logs3 = [{ address: to3, topics: ["0xe78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs2 });
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs3 });
     axios.get.mockResolvedValueOnce(response2);
@@ -293,10 +293,103 @@ describe("flashbots transactions detection bot", () => {
     expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(3);
   });
 
+  it("should return findings with swap alert type if there are new flashbots blocks with swaps", async () => {
+    const response1 = { data: { blocks: [block1] } };
+    const logs1 = [];
+    mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs1 });
+    axios.get.mockResolvedValueOnce(response1);
+    const mockBlockEvent1 = {
+      block: {
+        transactions: ["0x1", "0x2", "0x3"],
+      },
+    };
+    await handleBlock(mockBlockEvent1);
+
+    // Only block2 should be processed
+    const response2 = { data: { blocks: [block1, block2] } };
+    const logs2 = [{ address: to2, topics: ["0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
+    const logs3 = [{ address: to3, topics: ["0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
+    mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs2 });
+    mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs3 });
+    axios.get.mockResolvedValueOnce(response2);
+
+    const mockBlockEvent2 = {
+      block: {
+        transactions: ["0x4", "0x5", "0x6", "0x7"],
+      },
+    };
+    const mockAnomalyScore1 = (mockTotalFlashbotsTxns + 2) / (mockTotalTxns + 7);
+    const mockAnomalyScore2 = (mockTotalFlashbotsTxns + 3) / (mockTotalTxns + 7);
+
+    const findings = await handleBlock(mockBlockEvent2);
+
+    expect(findings).toStrictEqual([
+      Finding.fromObject({
+        name: "Flashbots transactions",
+        description: `${from2} interacted with ${to2} in a flashbots transaction`,
+        alertId: "FLASHBOTS-SWAP-TRANSACTIONS",
+        severity: FindingSeverity.Low,
+        type: FindingType.Info,
+        addresses: [to2],
+        metadata: {
+          from: from2,
+          to: to2,
+          hash: "0x2",
+          blockNumber: block2.block_number,
+          anomalyScore: mockAnomalyScore1.toFixed(2),
+        },
+        labels: [
+          Label.fromObject({
+            entity: from2,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
+          Label.fromObject({
+            entity: "0x2",
+            entityType: EntityType.Transaction,
+            label: "Suspicious",
+            confidence: 0.7,
+          }),
+        ],
+      }),
+      Finding.fromObject({
+        name: "Flashbots transactions",
+        description: `${from3} interacted with ${to3} in a flashbots transaction`,
+        alertId: "FLASHBOTS-SWAP-TRANSACTIONS",
+        severity: FindingSeverity.Low,
+        type: FindingType.Info,
+        addresses: [to3],
+        metadata: {
+          from: from3,
+          to: to3,
+          hash: "0x3",
+          blockNumber: block2.block_number,
+          anomalyScore: mockAnomalyScore2.toFixed(2),
+        },
+        labels: [
+          Label.fromObject({
+            entity: from3,
+            entityType: EntityType.Address,
+            label: "Attacker",
+            confidence: 0.6,
+          }),
+          Label.fromObject({
+            entity: "0x3",
+            entityType: EntityType.Transaction,
+            label: "Suspicious",
+            confidence: 0.7,
+          }),
+        ],
+      }),
+    ]);
+    expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(3);
+  });
+
   it("should filter out 2 mempool transactions and return 2 findings for the flashbots transactions", async () => {
     const response = { data: { blocks: [block3] } };
-    const logs = [{ address: to2 }];
-    const logs2 = [{ address: to3 }];
+    const logs = [{ address: to2, topics: ["0xe78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
+    const logs2 = [{ address: to3, topics: ["0xe78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs });
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs2 });
     axios.get.mockResolvedValueOnce(response);
