@@ -10,7 +10,7 @@ const {
 const { PersistenceHelper } = require("./persistence.helper");
 const { default: axios } = require("axios");
 
-const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=7";
+const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=4";
 let lastBlockNumber = 0;
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
@@ -70,13 +70,26 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
 
                 // Use the tx logs to get the impacted contracts
                 const { logs } = await getTransactionReceipt(hash);
-                let addresses = logs.map((log) => log.address.toLowerCase());
+                let alertId = "FLASHBOTS-TRANSACTIONS";
+
+                let addresses = logs.map((log) => {
+                  // Check if the transaction is a swap
+                  // 0xd78ad95... is the swap topic for Uniswap v2 & 0xc42079f... is the swap topic for Uniswap v3
+                  if (
+                    log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
+                    log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
+                  ) {
+                    alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                  }
+                  return log.address.toLowerCase();
+                });
+
                 addresses = [...new Set(addresses)];
 
                 return Finding.fromObject({
                   name: "Flashbots transactions",
                   description: `${from} interacted with ${to} in a flashbots transaction`,
-                  alertId: "FLASHBOTS-TRANSACTIONS",
+                  alertId: alertId,
                   severity: FindingSeverity.Low,
                   type: FindingType.Info,
                   addresses,
