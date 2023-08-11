@@ -31,14 +31,15 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "bot-alert-rate": "^0.0.4",
+    "dotenv": "^16.0.3",
     "forta-agent": "^0.1.36",
-    "node-fetch": "^2.6.7",
-    "dotenv": "^16.0.3"
+    "node-fetch": "^2.6.7"
   },
   "devDependencies": {
+    "forta-agent-tools": "^3.1.2",
     "jest": "^27.0.6",
     "nodemon": "^2.0.8",
-    "prettier": "^2.7.1",
-    "forta-agent-tools": "^3.1.2"
+    "prettier": "^2.7.1"
   }
 }

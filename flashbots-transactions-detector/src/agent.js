@@ -9,31 +9,47 @@ const {
 } = require("forta-agent");
 const { PersistenceHelper } = require("./persistence.helper");
 const { default: axios } = require("axios");
+const { default: calculateAlertRate } = require("bot-alert-rate");
+const { ScanCountType } = require("bot-alert-rate");
+const { ZETTABLOCK_API_KEY } = require("./keys");
 
 const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=4";
 let lastBlockNumber = 0;
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
-const FLASHBOTS_TXS_KEY = "nm-flashbots-bot-txs-key";
-const TOTAL_TXS_KEY = "nm-flashbots-bot-total-txs-key";
+const FLASHBOTS_TXS_KEY = "nm-flashbots-bot-txs-key-1";
+const SWAP_FLASHBOTS_TXS_KEY = "nm-swap-flashbots-bot-txs-key-1";
 
 let totalFlashbotsTxns = 0;
-let totalTxns = 0;
+let totalSwapFlashbotsTxns = 0;
+let chainId;
+let isRelevantChain;
+const BOT_ID = "0xbc06a40c341aa1acc139c900fd1b7e3999d71b80c13a9dd50a369d8f923757f5";
 
-function provideInitialize(persistenceHelper, flashbotsKey, totalTxnsKey) {
+function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashbotsKey) {
   return async () => {
     totalFlashbotsTxns = await persistenceHelper.load(flashbotsKey);
-    totalTxns = await persistenceHelper.load(totalTxnsKey);
+    totalSwapFlashbotsTxns = await persistenceHelper.load(swapFlashbotsKey);
+
+    ({ chainId } = await provider.getNetwork());
+    process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
+
+    //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
+    isRelevantChain = [10, 250, 43114].includes(Number(chainId));
   };
 }
 
-function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, flashbotsKey, totalTxnsKey) {
+function provideHandleBlock(
+  calculateAlertRate,
+  provider,
+  getTransactionReceipt,
+  persistenceHelper,
+  flashbotsKey,
+  swapFlashbotsKey
+) {
   let cachedFindings = [];
   return async (blockEvent) => {
-    const numberOfTransactions = blockEvent.block.transactions.length;
-    totalTxns += numberOfTransactions;
-
     if (cachedFindings.length >= 10) {
       cachedFindings.splice(0, 10);
     } else {
@@ -84,6 +100,30 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
                   return log.address.toLowerCase();
                 });
 
+                let anomalyScore;
+
+                if (alertId === "FLASHBOTS-TRANSACTIONS") {
+                  totalFlashbotsTxns += 1;
+
+                  anomalyScore = await calculateAlertRate(
+                    Number(chainId),
+                    BOT_ID,
+                    alertId,
+                    isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
+                    totalFlashbotsTxns // No issue in passing 0 for non-relevant chains
+                  );
+                } else {
+                  totalSwapFlashbotsTxns += 1;
+
+                  anomalyScore = await calculateAlertRate(
+                    Number(chainId),
+                    BOT_ID,
+                    alertId,
+                    isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
+                    totalSwapFlashbotsTxns // No issue in passing 0 for non-relevant chains
+                  );
+                }
+
                 addresses = [...new Set(addresses)];
 
                 return Finding.fromObject({
@@ -98,6 +138,7 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
                     to,
                     hash,
                     blockNumber,
+                    anomalyScore: anomalyScore.toString(),
                   },
                   labels: [
                     Label.fromObject({
@@ -126,20 +167,11 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
 
     findings = findings.flat().filter((f) => !!f);
 
-    findings.map((f) => {
-      totalFlashbotsTxns += 1;
-      const anomalyScore = totalFlashbotsTxns / totalTxns;
-      f.metadata.anomalyScore =
-        Math.min(1, anomalyScore).toFixed(2) === "0.00"
-          ? Math.min(1, anomalyScore).toString()
-          : Math.min(1, anomalyScore).toFixed(2);
-    });
-
     cachedFindings.push(...findings);
 
     if (blockEvent.blockNumber % 240 === 0) {
       await persistenceHelper.persist(totalFlashbotsTxns, flashbotsKey);
-      await persistenceHelper.persist(totalTxns, totalTxnsKey);
+      await persistenceHelper.persist(totalSwapFlashbotsTxns, swapFlashbotsKey);
     }
 
     return cachedFindings.slice(0, 10);
@@ -149,14 +181,20 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
 module.exports = {
   provideHandleBlock,
   handleBlock: provideHandleBlock(
+    calculateAlertRate,
     getEthersProvider(),
     getTransactionReceipt,
     new PersistenceHelper(DATABASE_URL),
     FLASHBOTS_TXS_KEY,
-    TOTAL_TXS_KEY
+    SWAP_FLASHBOTS_TXS_KEY
   ),
   provideInitialize,
-  initialize: provideInitialize(new PersistenceHelper(DATABASE_URL), FLASHBOTS_TXS_KEY, TOTAL_TXS_KEY),
+  initialize: provideInitialize(
+    getEthersProvider(),
+    new PersistenceHelper(DATABASE_URL),
+    FLASHBOTS_TXS_KEY,
+    SWAP_FLASHBOTS_TXS_KEY
+  ),
   resetLastBlockNumber: () => {
     lastBlockNumber = 0;
   }, // Exported for unit tests

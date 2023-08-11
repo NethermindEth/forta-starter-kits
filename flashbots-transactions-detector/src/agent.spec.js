@@ -77,18 +77,20 @@ const block3 = {
 jest.mock("axios");
 
 const mockGetTransactionReceipt = jest.fn();
+const mockCalculateAlertRate = jest.fn();
 
 const mockFlashbotsTxnsKey = "mock-nm-flashbots-bot-txs-key";
-const mockTotalTxnsKey = "mock-nm-flashbots-bot-total-txs-key";
+const mockSwapFlashbotsTxnsKey = "mock-nm-swap-flashbots-bot-key";
 
 let mockTotalFlashbotsTxns = 121;
-let mockTotalTxns = 2420;
+let mockSwapFlashbotsTxns = 2420;
 
 describe("flashbots transactions detection bot", () => {
   let handleBlock;
   let initialize;
   const mockProvider = {
     getCode: jest.fn(),
+    getNetwork: jest.fn(),
   };
   const mockPersistenceHelper = {
     persist: jest.fn(),
@@ -96,18 +98,21 @@ describe("flashbots transactions detection bot", () => {
   };
 
   beforeEach(async () => {
-    initialize = provideInitialize(mockPersistenceHelper, mockFlashbotsTxnsKey, mockTotalTxnsKey);
-    mockPersistenceHelper.load.mockReturnValueOnce(mockTotalFlashbotsTxns).mockReturnValueOnce(mockTotalTxns);
+    mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+    initialize = provideInitialize(mockProvider, mockPersistenceHelper, mockFlashbotsTxnsKey, mockSwapFlashbotsTxnsKey);
+    mockPersistenceHelper.load.mockReturnValueOnce(mockTotalFlashbotsTxns).mockReturnValueOnce(mockSwapFlashbotsTxns);
     await initialize();
     handleBlock = provideHandleBlock(
+      mockCalculateAlertRate,
       mockProvider,
       mockGetTransactionReceipt,
       mockPersistenceHelper,
       mockFlashbotsTxnsKey,
-      mockTotalTxnsKey
+      mockSwapFlashbotsTxnsKey
     );
     mockGetTransactionReceipt.mockReset();
     resetLastBlockNumber();
+    mockCalculateAlertRate.mockReturnValue("0.3");
   });
 
   afterEach(() => {
@@ -163,7 +168,6 @@ describe("flashbots transactions detection bot", () => {
         transactions: ["0x3", "0x4"],
       },
     };
-    const mockAnomalyScore = (mockTotalFlashbotsTxns + 1) / (mockTotalTxns + 4);
 
     const findings = await handleBlock(mockBlockEvent2);
 
@@ -179,7 +183,7 @@ describe("flashbots transactions detection bot", () => {
           to: to1,
           hash: "0x1",
           blockNumber: block1.block_number,
-          anomalyScore: mockAnomalyScore.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
@@ -225,8 +229,6 @@ describe("flashbots transactions detection bot", () => {
         transactions: ["0x4", "0x5", "0x6", "0x7"],
       },
     };
-    const mockAnomalyScore1 = (mockTotalFlashbotsTxns + 2) / (mockTotalTxns + 7);
-    const mockAnomalyScore2 = (mockTotalFlashbotsTxns + 3) / (mockTotalTxns + 7);
 
     const findings = await handleBlock(mockBlockEvent2);
 
@@ -243,7 +245,7 @@ describe("flashbots transactions detection bot", () => {
           to: to2,
           hash: "0x2",
           blockNumber: block2.block_number,
-          anomalyScore: mockAnomalyScore1.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
@@ -272,7 +274,7 @@ describe("flashbots transactions detection bot", () => {
           to: to3,
           hash: "0x3",
           blockNumber: block2.block_number,
-          anomalyScore: mockAnomalyScore2.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
@@ -303,6 +305,7 @@ describe("flashbots transactions detection bot", () => {
         transactions: ["0x1", "0x2", "0x3"],
       },
     };
+
     await handleBlock(mockBlockEvent1);
 
     // Only block2 should be processed
@@ -318,8 +321,6 @@ describe("flashbots transactions detection bot", () => {
         transactions: ["0x4", "0x5", "0x6", "0x7"],
       },
     };
-    const mockAnomalyScore1 = (mockTotalFlashbotsTxns + 2) / (mockTotalTxns + 7);
-    const mockAnomalyScore2 = (mockTotalFlashbotsTxns + 3) / (mockTotalTxns + 7);
 
     const findings = await handleBlock(mockBlockEvent2);
 
@@ -336,7 +337,7 @@ describe("flashbots transactions detection bot", () => {
           to: to2,
           hash: "0x2",
           blockNumber: block2.block_number,
-          anomalyScore: mockAnomalyScore1.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
@@ -365,7 +366,7 @@ describe("flashbots transactions detection bot", () => {
           to: to3,
           hash: "0x3",
           blockNumber: block2.block_number,
-          anomalyScore: mockAnomalyScore2.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
@@ -390,6 +391,7 @@ describe("flashbots transactions detection bot", () => {
     const response = { data: { blocks: [block3] } };
     const logs = [{ address: to2, topics: ["0xe78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
     const logs2 = [{ address: to3, topics: ["0xe78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"] }];
+
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs });
     mockGetTransactionReceipt.mockResolvedValueOnce({ logs: logs2 });
     axios.get.mockResolvedValueOnce(response);
@@ -398,9 +400,6 @@ describe("flashbots transactions detection bot", () => {
         transactions: ["0x1", "0x2", "0x3"],
       },
     };
-
-    const mockAnomalyScore1 = (mockTotalFlashbotsTxns + 1) / (mockTotalTxns + 3);
-    const mockAnomalyScore2 = (mockTotalFlashbotsTxns + 2) / (mockTotalTxns + 3);
 
     const findings = await handleBlock(mockBlockEvent1);
 
@@ -417,7 +416,7 @@ describe("flashbots transactions detection bot", () => {
           to: to2,
           hash: "0x2",
           blockNumber: block3.block_number,
-          anomalyScore: mockAnomalyScore1.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
@@ -446,7 +445,7 @@ describe("flashbots transactions detection bot", () => {
           to: to3,
           hash: "0x3",
           blockNumber: block3.block_number,
-          anomalyScore: mockAnomalyScore2.toFixed(2),
+          anomalyScore: "0.3",
         },
         labels: [
           Label.fromObject({
