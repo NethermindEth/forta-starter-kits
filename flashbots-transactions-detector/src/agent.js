@@ -24,7 +24,6 @@ const SWAP_FLASHBOTS_TXS_KEY = "nm-swap-flashbots-bot-txs-key-1";
 let totalFlashbotsTxns = 0;
 let totalSwapFlashbotsTxns = 0;
 let chainId;
-let isRelevantChain;
 const BOT_ID = "0xbc06a40c341aa1acc139c900fd1b7e3999d71b80c13a9dd50a369d8f923757f5";
 
 function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashbotsKey) {
@@ -34,9 +33,6 @@ function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashb
 
     ({ chainId } = await provider.getNetwork());
     process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
-
-    //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
-    isRelevantChain = [10, 250, 43114].includes(Number(chainId));
   };
 }
 
@@ -113,7 +109,7 @@ function provideHandleBlock(
                     Number(chainId),
                     BOT_ID,
                     alertId,
-                    isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
+                    ScanCountType.TransferCount,
                     totalFlashbotsTxns // No issue in passing 0 for non-relevant chains
                   );
                 } else {
@@ -123,7 +119,7 @@ function provideHandleBlock(
                     Number(chainId),
                     BOT_ID,
                     alertId,
-                    isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
+                    ScanCountType.TransferCount,
                     totalSwapFlashbotsTxns // No issue in passing 0 for non-relevant chains
                   );
                 }
