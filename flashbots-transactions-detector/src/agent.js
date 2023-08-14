@@ -24,6 +24,7 @@ const SWAP_FLASHBOTS_TXS_KEY = "nm-swap-flashbots-bot-txs-key-1";
 let totalFlashbotsTxns = 0;
 let totalSwapFlashbotsTxns = 0;
 let chainId;
+let isRelevantChain;
 const BOT_ID = "0xbc06a40c341aa1acc139c900fd1b7e3999d71b80c13a9dd50a369d8f923757f5";
 
 function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashbotsKey) {
@@ -33,6 +34,9 @@ function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashb
 
     ({ chainId } = await provider.getNetwork());
     process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
+
+    //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
+    isRelevantChain = [10, 250, 43114].includes(Number(chainId));
   };
 }
 
@@ -82,18 +86,19 @@ function provideHandleBlock(
 
                 // Use the tx logs to get the impacted contracts
                 const { logs } = await getTransactionReceipt(hash);
-                console.log("logs", logs);
+
                 let alertId = "FLASHBOTS-TRANSACTIONS";
 
                 let addresses = logs.map((log) => {
                   // Check if the transaction is a swap
                   // 0xd78ad95... is the swap topic for Uniswap v2 & 0xc42079f... is the swap topic for Uniswap v3
-
-                  if (
-                    log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
-                    log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
-                  ) {
-                    alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                  if (logs.length < 10) {
+                    if (
+                      log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
+                      log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
+                    ) {
+                      alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                    }
                   }
 
                   return log.address.toLowerCase();
@@ -108,7 +113,7 @@ function provideHandleBlock(
                     Number(chainId),
                     BOT_ID,
                     alertId,
-                    ScanCountType.TransferCount,
+                    isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
                     totalFlashbotsTxns // No issue in passing 0 for non-relevant chains
                   );
                 } else {
@@ -118,7 +123,7 @@ function provideHandleBlock(
                     Number(chainId),
                     BOT_ID,
                     alertId,
-                    ScanCountType.TransferCount,
+                    isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
                     totalSwapFlashbotsTxns // No issue in passing 0 for non-relevant chains
                   );
                 }
