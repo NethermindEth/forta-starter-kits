@@ -86,14 +86,16 @@ function provideHandleBlock(
 
                 // Use the tx logs to get the impacted contracts
                 const { logs } = await getTransactionReceipt(hash);
+
                 let alertId = "FLASHBOTS-TRANSACTIONS";
 
                 let addresses = logs.map((log) => {
                   // Check if the transaction is a swap
                   // 0xd78ad95... is the swap topic for Uniswap v2 & 0xc42079f... is the swap topic for Uniswap v3
                   if (
-                    log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
-                    log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
+                    (log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
+                      log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")) &&
+                    logs.length < 10
                   ) {
                     alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
                   }
