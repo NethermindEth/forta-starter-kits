@@ -1,6 +1,6 @@
 {
   "name": "asset-drained",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Detects if an asset is fully drained from a contract",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/asset-drained",
   "chainIds": [
