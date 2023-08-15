@@ -83,4 +83,8 @@ The bot behaviour can be verified by running:
 - `npm run block 15572488,15572489` (WinterMute exploit).
 - `npm run block 15794364,15794365` (OlympusDAO exploit).
 
+### BNB Smart Chain
+
+- `npm run block 30235565,30235566` (Liquidity Removal Alert)
+
 Every block we process the transactions from the previous one so when testing you should provide the exploit block and the next one.
