@@ -18,10 +18,12 @@ const AddressType = require("./address-type");
 
 const ZERO = ethers.constants.Zero;
 const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address indexed to, uint256 value)";
+const ERC20_BURN_EVENT = "event Burn(address indexed sender, uint amount0, uint amount1, address indexed to)";
 
 let chainId;
 let isRelevantChain;
 let transfersCount = 0;
+let liqRemovalTransfersCount = 0;
 const BOT_ID = "0xe4a8660b5d79c0c64ac6bfd3b9871b77c98eaaa464aa555c00635e9d8b33f77f";
 
 const ethcallProvider = new MulticallProvider(getEthersProvider());
@@ -30,6 +32,7 @@ const cachedAddresses = new LRU({ max: 100_000 });
 const cachedAssetSymbols = new LRU({ max: 100_000 });
 
 let transfersObj = {};
+let burnEventsArray = [];
 
 const provideInitialize = (provider) => {
   return async () => {
@@ -124,6 +127,10 @@ const provideHandleTransaction = () => {
       }
     });
 
+    if (txEvent.filterLog(ERC20_BURN_EVENT).length) {
+      burnEventsArray.push(txEvent.hash);
+    }
+
     return [];
   };
 };
@@ -147,6 +154,8 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
           ? t.blockNumber === blockNumber - 2
           : t.blockNumber === blockNumber - 1
       );
+
+    if (!transfers.length) return findings;
 
     const balanceCalls = transfers.map((e) => {
       if (e.asset === "native") {
@@ -276,7 +285,17 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
 
     await Promise.all(
       filteredTransfers.map(async (t, i) => {
-        if (isRelevantChain) transfersCount++;
+        const txsHashes = Object.values(t.txs)
+          .flat()
+          .map((tx) => tx.hash);
+
+        // check if any of the txsHashes is in burnEventsArray
+        txsHashes.forEach((txHash) => {
+          if (burnEventsArray.includes(txHash)) {
+            t.isBurn = true;
+          }
+        });
+
         const initiators = [
           ...new Set(
             Object.values(t.txs)
@@ -293,18 +312,40 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
             confidence: 0.5,
           })
         );
-        const anomalyScore = await calculateAlertRate(
-          Number(chainId),
-          BOT_ID,
-          "ASSET-DRAINED",
-          isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
-          transfersCount // No issue in passing 0 for non-relevant chains
-        );
+
+        // check if the tx is liquidity removal
+        let anomalyScore;
+        let alertId;
+
+        if (t.isBurn) {
+          if (isRelevantChain) liqRemovalTransfersCount++;
+          alertId = "ASSET-DRAINED-LIQUIDITY-REMOVAL";
+
+          anomalyScore = await calculateAlertRate(
+            Number(chainId),
+            BOT_ID,
+            alertId,
+            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
+            liqRemovalTransfersCount // No issue in passing 0 for non-relevant chains
+          );
+        } else {
+          if (isRelevantChain) transfersCount++;
+          alertId = "ASSET-DRAINED";
+
+          anomalyScore = await calculateAlertRate(
+            Number(chainId),
+            BOT_ID,
+            alertId,
+            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.TransferCount,
+            transfersCount // No issue in passing 0 for non-relevant chains
+          );
+        }
+
         findings.push(
           Finding.fromObject({
             name: "Asset drained",
             description: `99% or more of ${t.address}'s ${t.symbol} tokens were drained`,
-            alertId: "ASSET-DRAINED",
+            alertId: alertId,
             severity: FindingSeverity.High,
             type: FindingType.Exploit,
             metadata: {
@@ -341,6 +382,7 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
     const et = new Date();
     console.log(`previous block processed in ${et - st}ms`);
     transfersObj = {};
+    burnEventsArray = [];
     return findings;
   };
 };
