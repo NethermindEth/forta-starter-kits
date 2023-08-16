@@ -46,7 +46,7 @@ This bot detects if a contract has had 99% or more of one of its assets drained 
   - Addresses contain the list of addresses that received the assets from the drained contract
 
 - ASSET-DRAINED-LIQUIDITY-REMOVAL
-  - Fired when a contract has had 99% or more of one of its assets drained by _liqudity removal_
+  - Fired when a contract has had 99% or more of one of its assets drained by _liquidity removal_
   - Severity is always set to "high"
   - Type is always set to "suspicious"
   - Metadata:
