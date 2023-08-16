@@ -19,6 +19,8 @@ const AddressType = require("./address-type");
 const ZERO = ethers.constants.Zero;
 const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address indexed to, uint256 value)";
 const ERC20_BURN_EVENT = "event Burn(address indexed sender, uint amount0, uint amount1, address indexed to)";
+const CRV_REMOVE_LIQ_EVENT =
+  "event RemoveLiquidityOne(address indexed provider, uint256 token_amount, uint256 coin_amount, uint256 token_supply)";
 
 let chainId;
 let isRelevantChain;
@@ -127,7 +129,7 @@ const provideHandleTransaction = () => {
       }
     });
 
-    if (txEvent.filterLog(ERC20_BURN_EVENT).length) {
+    if (txEvent.filterLog([ERC20_BURN_EVENT, CRV_REMOVE_LIQ_EVENT]).length) {
       burnEventsArray.push(txEvent.hash);
     }
 
