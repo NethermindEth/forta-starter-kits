@@ -39,7 +39,6 @@ const {
   getERC1155Balance,
   getSuspiciousContracts,
   haveInteractedMoreThanOnce,
-  getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
   populateScamSnifferMap,
@@ -89,7 +88,6 @@ const cachedERC1155Tokens = new LRU({ max: 100_000 });
 let chainId;
 let isRelevantChain;
 const BOT_ID = "0x8badbf2ad65abc3df5b1d9cc388e419d9255ef999fb69aac6bf395646cf01c14";
-let transactionsProcessed = 0;
 let lastBlock = 0;
 let scamSnifferDB = {
   data: {},
@@ -100,7 +98,7 @@ let scamSnifferMap = new Map();
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 const DATABASE_OBJECT_KEY = {
-  key: "nm-icephishing-bot-objects-v6-shard",
+  key: "nm-icephishing-bot-objects-v6-testAug23-shard",
 };
 
 let objects = {
@@ -160,21 +158,16 @@ const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, 
     }
 
     databaseObjectsKey.key = `${databaseObjectsKey.key}-${chainId}`;
-
     objects = await persistenceHelper.load(databaseObjectsKey.key);
   };
 };
 
-let transactions = [];
-
 const provideHandleTransaction =
-  (provider, counters, databaseObjectsKey, persistenceHelper, objects, calculateAlertRate, lastBlock) =>
-  async (txEvent) => {
+  (provider, counters, databaseObjectsKey, persistenceHelper, calculateAlertRate, lastBlock) => async (txEvent) => {
     const findings = [];
     const { hash, timestamp, blockNumber, from: f } = txEvent;
 
     if (blockNumber != lastBlock) {
-      objects = await persistenceHelper.load(databaseObjectsKey.key);
       if (blockNumber % 240 == 0 || lastBlock === 0) {
         scamSnifferDB = await axios.get(
           "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
@@ -185,22 +178,14 @@ const provideHandleTransaction =
         }
       }
 
-      transactions = await getTransactions(provider, blockNumber);
-
-      if (!chainId) {
-        ({ chainId } = transactions[0]);
-        Object.keys(DATABASE_KEYS).forEach((key) => {
-          DATABASE_KEYS[key] = `${DATABASE_KEYS[key]}-${chainId}`;
-        });
-        databaseObjectsKey.key = `${databaseObjectsKey.key}-${chainId}`;
-      }
-
       const objectsSize = Buffer.from(JSON.stringify(objects)).length;
       console.log("Objects Size:", objectsSize);
 
       if (objectsSize > MAX_OBJECT_SIZE) {
         Object.values(objects).forEach((obj) => checkObjectSizeAndCleanup(obj));
         console.log("Objects Size After Cleanup:", Buffer.from(JSON.stringify(objects)).length);
+        await persistenceHelper.persist(databaseObjectsKey.key, objects);
+        console.log("Objects Persisted After Cleanup");
       }
 
       console.log("Approvals Size:", Buffer.from(JSON.stringify(objects.approvals)).length);
@@ -229,57 +214,53 @@ const provideHandleTransaction =
       console.log("Pig Butchering Transfers Size:", Buffer.from(JSON.stringify(objects.pigButcheringTransfers)).length);
 
       lastBlock = blockNumber;
-      console.log(`-----Transactions processed in block ${blockNumber - 3}: ${transactionsProcessed}-----`);
-      transactionsProcessed = 0;
     }
-    transactionsProcessed += 1;
 
-    const st1 = new Date().getTime();
-    if (hash === transactions[transactions.length - 1].hash) {
-      // Load the existing object from the database
-      const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
+    // if (hash === transactions[transactions.length - 1].hash) {
+    //   // Load the existing object from the database
+    //   const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
 
-      // Merge the persisted object with the new object
-      const mergedObj = {
-        ...objects,
-        ...persistedObj,
-      };
+    //   // Merge the persisted object with the new object
+    //   const mergedObj = {
+    //     ...objects,
+    //     ...persistedObj,
+    //   };
 
-      // Iterate through the keys of the objects
-      for (const key of Object.keys(objects)) {
-        const subObj = objects[key];
+    //   // Iterate through the keys of the objects
+    //   for (const key of Object.keys(objects)) {
+    //     const subObj = objects[key];
 
-        // Check if the sub-object has any keys
-        if (Object.keys(subObj).length > 0) {
-          const persistedSubObj = persistedObj[key] || {};
-          const mergedSubObj = {
-            ...subObj,
-            ...persistedSubObj,
-          };
+    //     // Check if the sub-object has any keys
+    //     if (Object.keys(subObj).length > 0) {
+    //       const persistedSubObj = persistedObj[key] || {};
+    //       const mergedSubObj = {
+    //         ...subObj,
+    //         ...persistedSubObj,
+    //       };
 
-          // Iterate through the keys of the sub-object
-          for (const subKey of Object.keys(subObj)) {
-            const subArray = subObj[subKey];
-            const persistedSubArray = persistedSubObj[subKey] || [];
+    //       // Iterate through the keys of the sub-object
+    //       for (const subKey of Object.keys(subObj)) {
+    //         const subArray = subObj[subKey];
+    //         const persistedSubArray = persistedSubObj[subKey] || [];
 
-            // Merge the two arrays
-            const mergedSubArray = [...subArray];
-            for (const obj of persistedSubArray) {
-              if (!mergedSubArray.some((o) => JSON.stringify(o) === JSON.stringify(obj))) {
-                mergedSubArray.push(obj);
-              }
-            }
+    //         // Merge the two arrays
+    //         const mergedSubArray = [...subArray];
+    //         for (const obj of persistedSubArray) {
+    //           if (!mergedSubArray.some((o) => JSON.stringify(o) === JSON.stringify(obj))) {
+    //             mergedSubArray.push(obj);
+    //           }
+    //         }
 
-            mergedSubObj[subKey] = mergedSubArray;
-          }
+    //         mergedSubObj[subKey] = mergedSubArray;
+    //       }
 
-          mergedObj[key] = mergedSubObj;
-        }
-      }
+    //       mergedObj[key] = mergedSubObj;
+    //     }
+    //   }
 
-      // Persist the merged object in the database
-      await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
-    }
+    //   // Persist the merged object in the database
+    //   await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
+    // }
 
     const txFrom = ethers.utils.getAddress(f);
 
@@ -981,7 +962,6 @@ const provideHandleTransaction =
                     );
                     findings.push(createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore));
                     objects.pigButcheringTransfers[to] = [];
-                    await persistenceHelper.persist(objects, databaseObjectsKey.key);
                   }
                 }
               }
@@ -1225,10 +1205,71 @@ const provideHandleTransaction =
       }
     }
 
-    if (hash === transactions[transactions.length - 1].hash) {
+    // if (hash === transactions[transactions.length - 1].hash) {
+    //   // Load the existing object from the database
+    //   const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
+
+    //   // Merge the persisted object with the new object
+    //   const mergedObj = {
+    //     ...objects,
+    //     ...persistedObj,
+    //   };
+
+    //   // Iterate through the keys of the objects
+    //   for (const key of Object.keys(objects)) {
+    //     const subObj = objects[key];
+
+    //     // Check if the sub-object has any keys
+    //     if (Object.keys(subObj).length > 0) {
+    //       const persistedSubObj = persistedObj[key] || {};
+    //       const mergedSubObj = {
+    //         ...subObj,
+    //         ...persistedSubObj,
+    //       };
+
+    //       // Iterate through the keys of the sub-object
+    //       for (const subKey of Object.keys(subObj)) {
+    //         const subArray = subObj[subKey];
+    //         const persistedSubArray = persistedSubObj[subKey] || [];
+
+    //         // Merge the two arrays
+    //         const mergedSubArray = [...subArray];
+    //         for (const obj of persistedSubArray) {
+    //           if (!mergedSubArray.some((o) => JSON.stringify(o) === JSON.stringify(obj))) {
+    //             mergedSubArray.push(obj);
+    //           }
+    //         }
+
+    //         mergedSubObj[subKey] = mergedSubArray;
+    //       }
+
+    //       mergedObj[key] = mergedSubObj;
+    //     }
+    //   }
+
+    //   // Persist the merged object in the database
+    //   await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
+    // }
+
+    return findings;
+  };
+
+let lastTimestamp = 1692024016;
+let init = false;
+let suspiciousContracts = new Set();
+let lastExecutedMinute = 0;
+
+const provideHandleBlock =
+  (getSuspiciousContracts, persistenceHelper, databaseKeys, databaseObjectsKey, counters, lastExecutedMinute) =>
+  async (blockEvent) => {
+    const { timestamp, number } = blockEvent.block;
+
+    const date = new Date();
+    const minutes = date.getMinutes();
+    if (minutes % 5 === 0 && minutes !== lastExecutedMinute) {
+      lastExecutedMinute = minutes;
       // Load the existing object from the database
       const persistedObj = await persistenceHelper.load(databaseObjectsKey.key);
-
       // Merge the persisted object with the new object
       const mergedObj = {
         ...objects,
@@ -1267,24 +1308,11 @@ const provideHandleTransaction =
         }
       }
 
+      objects = mergedObj;
+
       // Persist the merged object in the database
       await persistenceHelper.persist(mergedObj, databaseObjectsKey.key);
     }
-
-    const et1 = new Date().getTime();
-    if (et1 - st1 > 80) {
-      console.log(`Time taken for transaction: ${et1 - st1} ms`, hash);
-    }
-    return findings;
-  };
-
-let lastTimestamp = 1678000000;
-let init = false;
-let suspiciousContracts = new Set();
-
-const provideHandleBlock =
-  (getSuspiciousContracts, persistenceHelper, databaseKeys, counters, objects) => async (blockEvent) => {
-    const { timestamp, number } = blockEvent.block;
 
     if (!init) {
       suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
@@ -1511,7 +1539,6 @@ module.exports = {
     counters,
     DATABASE_OBJECT_KEY,
     new PersistenceHelper(DATABASE_URL),
-    objects,
     calculateAlertRate,
     lastBlock
   ),
@@ -1520,8 +1547,9 @@ module.exports = {
     getSuspiciousContracts,
     new PersistenceHelper(DATABASE_URL),
     DATABASE_KEYS,
+    DATABASE_OBJECT_KEY,
     counters,
-    objects
+    lastExecutedMinute
   ),
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,

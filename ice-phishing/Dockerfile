@@ -1,4 +1,4 @@
-FROM node:16-alpine
+FROM node:18-alpine3.17 AS builder
 ENV NODE_OPTIONS=--max_old_space_size=4096
 ENV NODE_ENV=production
 # Uncomment the following line to enable agent logging
