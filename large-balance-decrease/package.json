@@ -1,7 +1,9 @@
 {
   "name": "large-balance-decrease-bot",
+  "displayName": "Large Balance Decrease Bot",
   "version": "0.0.3",
   "description": "Detects if the balance of a protocol decreases significantly",
+  "longDescription": "The bot is centered around monitoring the financial stability of protocols. Its primary role involves identifying instances where the balance of a specific bridge experiences a substantial decrease. By actively tracking these significant declines in balance, the bot alerts to potential deviations that may warrant further investigation or action.",
   "chainIds": [
     1,
     10,
@@ -30,7 +32,7 @@
   },
   "dependencies": {
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.17",
+    "forta-agent": "^0.1.36",
     "node-fetch": "^2.6.7",
     "dotenv": "^16.0.3"
   },

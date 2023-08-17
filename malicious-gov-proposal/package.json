@@ -1,7 +1,9 @@
 {
   "name": "malicious-governance-proposal",
+  "displayName": "Malicious Governance Proposal",
   "version": "0.0.1",
   "description": "This bot detects if a proposal gets submitted with unreasonable parameters",
+  "longDescription": "This bot identifies instances where proposals are submitted with parameters that appear unreasonable. Its primary function involves systematically scrutinizing proposed parameters within the context of governance proposals, aiming to recognize and flag situations where these parameters deviate significantly from established norms or rational considerations.",
   "chainIds": [
     1,
     10,
@@ -27,7 +29,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "forta-agent": "^0.1.9"
+    "forta-agent": "^0.1.36"
   },
   "devDependencies": {
     "eslint": "^8.20.0",

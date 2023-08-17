@@ -1,7 +1,9 @@
 {
   "name": "bridge-balance-difference-bot",
+  "displayName": "Bridge Balance Difference Bot",
   "version": "0.0.1",
   "description": "Detects if two sides of the bridge show significant balance difference",
+  "longDescription": "The bot operates as a monitoring tool that focuses on the balances of two interconnected sides of a bridge. Its primary function lies in identifying instances where a substantial disparity in balances exists between these two sides of the bridge. This discrepancy detection serves as a mechanism to ensure the integrity and equilibrium of the blockchain's interlinked components, allowing stakeholders to be informed of potential imbalances that may require attention or investigation.",
   "chainIds": [
     1,
     10,
@@ -28,7 +30,7 @@
   },
   "dependencies": {
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.9"
+    "forta-agent": "^0.1.36"
   },
   "devDependencies": {
     "eslint": "^8.20.0",

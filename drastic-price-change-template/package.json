@@ -1,7 +1,9 @@
 {
   "name": "drastic-price-change-anomaly-bot",
+  "displayName": "Drastic Price Change Anomaly Bot",
   "version": "0.0.1",
   "description": "Detects if the price of an asset changes drastically or there is a large discrepancy between an on-chain and an off-chain oracle",
+  "longDescription": "The bot operates as an observer with a primary objective of identifying significant variations in asset prices or notable disparities between on-chain and off-chain oracles. By closely monitoring price fluctuations, the bot notifies when abrupt price changes occur or when there is a substantial inconsistency between the data provided by on-chain sources and external oracles.",
   "chainIds": [
     1,
     10,
@@ -29,7 +31,7 @@
   "dependencies": {
     "arima": "^0.2.5",
     "axios": "^0.27.2",
-    "forta-agent": "^0.1.9"
+    "forta-agent": "^0.1.36"
   },
   "devDependencies": {
     "eslint": "^8.20.0",

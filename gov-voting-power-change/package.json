@@ -1,7 +1,9 @@
 {
   "name": "gov-voting-power-change",
+  "displayName": "Governance Voting Power Change",
   "version": "0.0.1",
   "description": "This bot detects changes in voting power for a specific address for a specific Governance protocol",
+  "longDescription": "This bot's primary function revolves around detecting shifts in voting power attributed to a specified address within a designated governance framework. By closely monitoring and identifying changes in the influence a particular address holds over governance decisions, the bot offers insights into alterations that might impact the decision-making dynamics of the specified protocol.",
   "chainIds": [
     1,
     137,
@@ -28,7 +30,7 @@
   "dependencies": {
     "@types/jest": "^27.5.1",
     "ethers-multicall": "^0.2.3",
-    "forta-agent": "^0.1.6"
+    "forta-agent": "^0.1.36"
   },
   "devDependencies": {
     "jest": "^27.0.6",
