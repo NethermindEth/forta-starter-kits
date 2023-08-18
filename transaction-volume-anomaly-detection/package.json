@@ -1,7 +1,9 @@
 {
   "name": "transaction-volume-anomaly-detection",
+  "displayName": "Transaction Volume Anomaly Detection",
   "version": "0.0.1",
   "description": "This bot detects Transactions with Anomalies in Volume",
+  "longDescription": "This bot identifies transactions that exhibit irregularities in their volume. Its core purpose revolves around systematically monitoring transactional activities and pinpointing instances where there are notable deviations from expected volume patterns.",
   "chainIds": [
     1,
     56,
@@ -29,7 +31,7 @@
   "dependencies": {
     "@types/jest": "^27.4.1",
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.3"
+    "forta-agent": "^0.1.36"
   },
   "devDependencies": {
     "jest": "^27.0.6",
