@@ -6,7 +6,6 @@ const {
   provideHandleBlock,
   resetInit,
   counters,
-  objects,
   DATABASE_URL,
   DATABASE_KEYS,
   DATABASE_OBJECT_KEY,
@@ -55,15 +54,15 @@ describe("Ice Phishing bot performance test", () => {
       getSuspiciousContracts,
       new PersistenceHelper(DATABASE_URL),
       DATABASE_KEYS,
+      DATABASE_OBJECT_KEY,
       counters,
-      objects
+      1
     );
     let handleTransaction = provideHandleTransaction(
       realProvider,
       counters,
       DATABASE_OBJECT_KEY,
       new PersistenceHelper(DATABASE_URL),
-      objects,
       calculateAlertRate,
       0
     );
@@ -505,85 +504,6 @@ describe("Ice Phishing bot performance test", () => {
     });
 
     // ------ ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW ------
-    const helperApprovalLowTxReceipt = await realProvider.getTransactionReceipt(
-      "0x2ea11c83c1f8400e65f8863bebe42e47e520a4d51270c539e885df2949abdbed"
-    );
-
-    const helperApprovalLowTx = await realProvider.getTransaction(
-      "0x2ea11c83c1f8400e65f8863bebe42e47e520a4d51270c539e885df2949abdbed"
-    );
-
-    // Lowercase all addresses in logs to match the real txEvent logs
-    const helperApprovalLowLowerCaseLogs = helperApprovalLowTxReceipt.logs.map((log) => {
-      return {
-        ...log,
-        address: log.address.toLowerCase(),
-      };
-    });
-
-    const helperApprovalLowTxEvent = createTransactionEvent({
-      transaction: {
-        hash: helperApprovalLowTxReceipt.transactionHash,
-        from: helperApprovalLowTxReceipt.from.toLowerCase(),
-        to: helperApprovalLowTxReceipt.to.toLowerCase(),
-        nonce: helperApprovalLowTx.nonce,
-        data: helperApprovalLowTx.data,
-        gas: "1",
-        gasPrice: helperApprovalLowTx.gasPrice.toString(),
-        value: "0x0",
-        r: helperApprovalLowTx.r,
-        s: helperApprovalLowTx.s,
-        v: helperApprovalLowTx.v.toFixed(),
-      },
-      block: {
-        number: helperApprovalLowTxReceipt.blockNumber,
-        hash: helperApprovalLowTxReceipt.blockHash,
-        timestamp: 1685570639,
-      },
-      logs: helperApprovalLowLowerCaseLogs,
-      contractAddress: null,
-    });
-
-    const objectToPassLow = {
-      approvals: {},
-      approvalsERC20: {},
-      approvalsERC721: {},
-      approvalsForAll721: {},
-      approvalsForAll1155: {},
-      approvalsInfoSeverity: {
-        "0xdc50dBE174fbCE4eC9653c667aD3E04aB121A611": [
-          {
-            asset: "0xdac17f958d2ee523a2206206994597c13d831ec7",
-            owner: "0x08Cb76FDC8086AafBeB38637b044e07BA5ff3db2",
-            hash: "0x2ea11c83c1f8400e65f8863bebe42e47e520a4d51270c539e885df2949abdbed",
-            timestamp: 1685570639,
-            tokenId: undefined,
-            isApprovalForAll: false,
-          },
-        ],
-      },
-      approvalsERC20InfoSeverity: {
-        "0xdc50dBE174fbCE4eC9653c667aD3E04aB121A611": [
-          {
-            asset: "0xdac17f958d2ee523a2206206994597c13d831ec7",
-            owner: "0x08Cb76FDC8086AafBeB38637b044e07BA5ff3db2",
-            hash: "0x2ea11c83c1f8400e65f8863bebe42e47e520a4d51270c539e885df2949abdbed",
-            timestamp: 1685570639,
-            tokenId: undefined,
-            isApprovalForAll: false,
-          },
-        ],
-      },
-      approvalsERC721InfoSeverity: {},
-      approvalsForAll721InfoSeverity: {},
-      approvalsForAll1155InfoSeverity: {},
-      permissions: {},
-      permissionsInfoSeverity: {},
-      transfers: {},
-      transfersLowSeverity: {},
-      pigButcheringTransfers: {},
-    };
-
     const highNumApprovedTransfersLowTxReceipt = await realProvider.getTransactionReceipt(
       "0x2c2cea42ba4f9333035eecb85c1f8fa9e91da069084478c2e634f552594e590c"
     );
@@ -624,85 +544,6 @@ describe("Ice Phishing bot performance test", () => {
     });
 
     // ------ ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS ------
-    const helperApprovalTxReceipt = await realProvider.getTransactionReceipt(
-      "0x9f964693709ef329fc1a950bff92289108db76a91b81848c2a32e0e01834cd68"
-    );
-
-    const helperApprovalTx = await realProvider.getTransaction(
-      "0x9f964693709ef329fc1a950bff92289108db76a91b81848c2a32e0e01834cd68"
-    );
-
-    // Lowercase all addresses in logs to match the real txEvent logs
-    const helperApprovalLowerCaseLogs = helperApprovalTxReceipt.logs.map((log) => {
-      return {
-        ...log,
-        address: log.address.toLowerCase(),
-      };
-    });
-
-    const helperApprovalTxEvent = createTransactionEvent({
-      transaction: {
-        hash: helperApprovalTxReceipt.transactionHash,
-        from: helperApprovalTxReceipt.from.toLowerCase(),
-        to: helperApprovalTxReceipt.to.toLowerCase(),
-        nonce: helperApprovalTx.nonce,
-        data: helperApprovalTx.data,
-        gas: "1",
-        gasPrice: helperApprovalTx.gasPrice.toString(),
-        value: "0x0",
-        r: helperApprovalTx.r,
-        s: helperApprovalTx.s,
-        v: helperApprovalTx.v.toFixed(),
-      },
-      block: {
-        number: helperApprovalTxReceipt.blockNumber,
-        hash: helperApprovalTxReceipt.blockHash,
-        timestamp: 1685506139,
-      },
-      logs: helperApprovalLowerCaseLogs,
-      contractAddress: null,
-    });
-
-    const objectToPass = {
-      approvals: {
-        "0xeebCfc9d9D8B81c30F467A72B872d2c68dBB2ad2": [
-          {
-            asset: "0xa5c807a62cd6774d6bf518dd2dec0ae17446ad8d",
-            owner: "0x17601516Ca1922Ed1299093e9cdabeAb6A69Cb56",
-            hash: "0x9f964693709ef329fc1a950bff92289108db76a91b81848c2a32e0e01834cd68",
-            timestamp: 1685506139,
-            tokenId: undefined,
-            isApprovalForAll: true,
-          },
-        ],
-      },
-      approvalsERC20: {},
-      approvalsERC721: {},
-      approvalsForAll721: {
-        "0xeebCfc9d9D8B81c30F467A72B872d2c68dBB2ad2": [
-          {
-            asset: "0xa5c807a62cd6774d6bf518dd2dec0ae17446ad8d",
-            owner: "0x17601516Ca1922Ed1299093e9cdabeAb6A69Cb56",
-            hash: "0x9f964693709ef329fc1a950bff92289108db76a91b81848c2a32e0e01834cd68",
-            timestamp: 1685506139,
-            tokenId: undefined,
-            isApprovalForAll: true,
-          },
-        ],
-      },
-      approvalsForAll1155: {},
-      approvalsInfoSeverity: {},
-      approvalsERC20InfoSeverity: {},
-      approvalsERC721InfoSeverity: {},
-      approvalsForAll721InfoSeverity: {},
-      approvalsForAll1155InfoSeverity: {},
-      permissions: {},
-      permissionsInfoSeverity: {},
-      transfers: {},
-      transfersLowSeverity: {},
-      pigButcheringTransfers: {},
-    };
-
     const highNumApprovedTransfersTxReceipt = await realProvider.getTransactionReceipt(
       "0x359a5b3931a21abcb52cd2ee302eb4af472efc3038dae03050aebf89682c4641"
     );
@@ -1443,31 +1284,11 @@ describe("Ice Phishing bot performance test", () => {
       const endTimeErc1155ApprovalForAll = performance.now();
       totalTimeErc1155ApprovalForAll += endTimeErc1155ApprovalForAll - startTimeErc1155ApprovalForAll;
 
-      await handleTransaction(helperApprovalLowTxEvent);
-      handleTransaction = provideHandleTransaction(
-        realProvider,
-        counters,
-        DATABASE_OBJECT_KEY,
-        new PersistenceHelper(DATABASE_URL),
-        objectToPassLow,
-        calculateAlertRate,
-        highNumApprovedTransfersLowTxEvent.block.number
-      );
       const startTimeHighNumApprovedTransfersLow = performance.now();
       await handleTransaction(highNumApprovedTransfersLowTxEvent);
       const endTimeHighNumApprovedTransfersLow = performance.now();
       totalTimeHighNumApprovedTransfersLow += endTimeHighNumApprovedTransfersLow - startTimeHighNumApprovedTransfersLow;
 
-      await handleTransaction(helperApprovalTxEvent);
-      handleTransaction = provideHandleTransaction(
-        realProvider,
-        counters,
-        DATABASE_OBJECT_KEY,
-        new PersistenceHelper(DATABASE_URL),
-        objectToPass,
-        calculateAlertRate,
-        highNumApprovedTransfersTxEvent.block.number
-      );
       const startTimeHighNumApprovedTransfers = performance.now();
       await handleTransaction(highNumApprovedTransfersTxEvent);
       const endTimeHighNumApprovedTransfers = performance.now();

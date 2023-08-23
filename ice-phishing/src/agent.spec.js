@@ -428,21 +428,8 @@ const MOCK_DATABASE_KEYS = {
   totalERC1155ApprovalsForAll: "nm-icephishing-bot-total-erc1155-approvalsforall-key",
 };
 
-const MOCK_DATABASE_OBJECTS_KEYS = {
-  approvals: "nm-icephishing-bot-approvals-key-shard",
-  approvalsERC20: "nm-icephishing-bot-approvals-erc20-key-shard",
-  approvalsERC721: "nm-icephishing-bot-approvals-erc721-key-shard",
-  approvalsForAll721: "nm-icephishing-bot-approvals-for-all-721-key-shard",
-  approvalsForAll1155: "nm-icephishing-bot-approvals-for-all-1155-key-shard",
-  approvalsInfoSeverity: "nm-icephishing-bot-approvals-info-severity-key-shard",
-  approvalsERC20InfoSeverity: "nm-icephishing-bot-approvals-erc20-info-severity-key-shard",
-  approvalsERC721InfoSeverity: "nm-icephishing-bot-approvals-erc721-info-severity-key-shard",
-  approvalsForAll721InfoSeverity: "nm-icephishing-bot-approvals-for-all-721-info-severity-key-shard",
-  approvalsForAll1155InfoSeverity: "nm-icephishing-bot-approvals-for-all-1155-info-severity-key-shard",
-  permissions: "nm-icephishing-bot-permissions-key-shard",
-  permissionsInfoSeverity: "nm-icephishing-bot-permissions-info-severity-key-shard",
-  transfers: "nm-icephishing-bot-transfers-key-shard",
-  transfersLowSeverity: "nm-icephishing-bot-transfers-low-severity-key-shard",
+const MOCK_DATABASE_OBJECTS_KEY = {
+  key: "test-nm-icephishing-bot-objects-v6-shard",
 };
 
 const mockCounters = {
@@ -498,17 +485,14 @@ describe("ice-phishing bot", () => {
       handleTransaction = provideHandleTransaction(
         mockProvider,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
         mockPersistenceHelper,
-        mockObjects,
         mockCalculateAlertRate,
         0
       );
     });
 
     it("should return empty findings if there are no Approval & Transfer events and no permit functions", async () => {
-      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
-
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
@@ -516,7 +500,6 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]); // ERC1155 transfers
-
       mockTxEvent.filterFunction
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
@@ -524,7 +507,6 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
       const findings = await handleTransaction(mockTxEvent);
-
       expect(findings).toStrictEqual([]);
       expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
@@ -683,19 +665,25 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       await initialize();
 
       const mockBlockEvent = { block: { number: 876123 } };
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
 
       mockGetSuspiciousContracts.mockResolvedValueOnce(
@@ -707,10 +695,6 @@ describe("ice-phishing bot", () => {
       await handleBlock(mockBlockEvent);
 
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
-
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
 
       const mockTxEvent = {
         filterLog: jest.fn(),
@@ -822,19 +806,25 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       await initialize();
 
       const mockBlockEvent = { block: { number: 876126 } };
-      const handleBlock = provideHandleBlock(
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
 
       await handleBlock(mockBlockEvent);
@@ -952,10 +942,6 @@ describe("ice-phishing bot", () => {
     it("should return findings if there is a high number of ERC1155 ApprovalForAll events", async () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
-
       const tempTxEvent0 = {
         filterFunction: jest
           .fn()
@@ -1068,18 +1054,16 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
-      await initialize();
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
+      await initialize();
+
       for (let i = 0; i < 2; i++) {
-        for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-          mockPersistenceHelper.load.mockReturnValueOnce({});
-        }
         const tempTxEvent = {
           filterFunction: jest
             .fn()
@@ -1329,6 +1313,15 @@ describe("ice-phishing bot", () => {
       };
       axios.get.mockResolvedValueOnce(axiosResponse);
       mockCalculateAlertRate.mockReturnValueOnce("0.08910234");
+      const alertId = "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -1364,6 +1357,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -1374,10 +1368,13 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
-      await initialize();
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      await initialize();
 
       for (let i = 0; i < 2; i++) {
         const tempTxEvent = {
@@ -1487,13 +1484,23 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]);
       mockCalculateAlertRate.mockReturnValueOnce("0.008910234");
 
+      const alertId = "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
           name: "High number of accounts granted approvals for ERC-721 tokens",
           description: `${spender} obtained transfer approval for 1 ERC-721 tokens by 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS",
+          alertId,
           severity: FindingSeverity.Low,
           type: FindingType.Suspicious,
           metadata: {
@@ -1522,6 +1529,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -1532,13 +1540,14 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
-
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
       await initialize();
+
       const spender = createAddress("0xeded");
 
       resetLastBlock();
@@ -1573,12 +1582,8 @@ describe("ice-phishing bot", () => {
           },
         },
       ];
-      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       for (let i = 0; i < 3; i++) {
-        for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-          mockPersistenceHelper.load.mockReturnValueOnce({});
-        }
         const tempTxEvent = {
           filterFunction: jest
             .fn()
@@ -1612,11 +1617,6 @@ describe("ice-phishing bot", () => {
         mockProvider.getCode.mockReturnValueOnce("0x").mockReturnValueOnce("0xa342a");
         await handleTransaction(tempTxEvent);
       }
-
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
-
       mockTxEvent.blockNumber = 23;
       mockTxEvent.filterLog
         .mockReturnValueOnce([]) // ERC20 approvals
@@ -1634,6 +1634,15 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
       mockCalculateAlertRate.mockReturnValueOnce("0.0008910234");
+      const alertId = "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1641,7 +1650,7 @@ describe("ice-phishing bot", () => {
         Finding.fromObject({
           name: "High number of accounts granted approvals for ERC-721 tokens",
           description: `${spender} obtained transfer approval for 1 ERC-721 tokens by 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO",
+          alertId,
           severity: FindingSeverity.Info,
           type: FindingType.Info,
           metadata: {
@@ -1670,6 +1679,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -1680,11 +1690,13 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       await initialize();
       const spender = createAddress("0xabeded");
@@ -1717,12 +1729,8 @@ describe("ice-phishing bot", () => {
           },
         },
       ];
-      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       for (let i = 0; i < 3; i++) {
-        for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-          mockPersistenceHelper.load.mockReturnValueOnce({});
-        }
         const tempTxEvent = {
           filterFunction: jest
             .fn()
@@ -1865,14 +1873,23 @@ describe("ice-phishing bot", () => {
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.4);
 
+      const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
+
       const findings = await handleTransaction(mockTxEvent);
-      console.log("AERA22");
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
+          alertId,
           severity: FindingSeverity.High,
           type: FindingType.Exploit,
           metadata: {
@@ -1901,6 +1918,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -2092,13 +2110,23 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
       mockCalculateAlertRate.mockReturnValue(0.42);
 
+      const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
+          alertId,
           severity: FindingSeverity.High,
           type: FindingType.Exploit,
           metadata: {
@@ -2133,6 +2161,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -2218,6 +2247,16 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.421).mockReturnValueOnce(0.1421);
 
+      const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -2251,7 +2290,7 @@ describe("ice-phishing bot", () => {
         Finding.fromObject({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
+          alertId,
           severity: FindingSeverity.High,
           type: FindingType.Exploit,
           metadata: {
@@ -2286,6 +2325,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -2369,6 +2409,16 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.212421).mockReturnValueOnce(0.1212);
 
+      const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -2403,7 +2453,7 @@ describe("ice-phishing bot", () => {
         Finding.fromObject({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
+          alertId,
           severity: FindingSeverity.High,
           type: FindingType.Exploit,
           metadata: {
@@ -2444,6 +2494,7 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -2568,6 +2619,16 @@ describe("ice-phishing bot", () => {
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.11095).mockReturnValueOnce(0.11);
 
+      const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      );
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -2601,7 +2662,7 @@ describe("ice-phishing bot", () => {
         Finding.fromObject({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
-          alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW",
+          alertId,
           severity: FindingSeverity.Low,
           type: FindingType.Suspicious,
           metadata: {
@@ -2642,11 +2703,11 @@ describe("ice-phishing bot", () => {
               confidence: 1,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
 
-    //SOS SOS
     it("should return findings if there's a transfer following an EIP-2612's permit function call", async () => {
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
@@ -2901,11 +2962,15 @@ describe("ice-phishing bot", () => {
       const mockBlockEvent = { block: { timestamp: 1000 } };
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValueOnce(axiosResponse);
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
       await handleBlock(mockBlockEvent);
 
@@ -2920,10 +2985,6 @@ describe("ice-phishing bot", () => {
       };
 
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
-
-      for (const _ in MOCK_DATABASE_OBJECTS_KEYS) {
-        mockPersistenceHelper.load.mockReturnValueOnce({});
-      }
 
       mockTxEvent.filterFunction
         .mockReturnValueOnce([mockPermitFunctionCall])
@@ -2984,22 +3045,28 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
       await initialize();
 
       const mockBlockEvent = { block: { timestamp: 1000121 } };
       const axiosResponse = { data: [createAddress("0x215050")] };
       axios.get.mockResolvedValueOnce(axiosResponse);
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
       await handleBlock(mockBlockEvent);
-
-      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
       const axiosResponse3 = { data: { "www.scamDomain.com": [createAddress("0x215050")] } };
       axios.get.mockResolvedValueOnce(axiosResponse3);
@@ -3103,11 +3170,15 @@ describe("ice-phishing bot", () => {
       const mockBlockEvent = { block: { timestamp: 1000 } };
       const axiosResponse = { data: [spender] };
       axios.get.mockResolvedValueOnce(axiosResponse);
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
       await handleBlock(mockBlockEvent);
 
@@ -3183,11 +3254,15 @@ describe("ice-phishing bot", () => {
       const mockBlockEvent = { block: { timestamp: 1000 } };
       const axiosResponse = { data: [spender] };
       axios.get.mockResolvedValueOnce(axiosResponse);
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
       mockGetSuspiciousContracts.mockResolvedValueOnce(
         new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0xeeffeeff") }])
@@ -3261,21 +3336,27 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       await initialize();
 
       const suspiciousReceiver = createChecksumAddress("0xabcdabcd");
       const suspiciousContractCreator = createChecksumAddress("0xfefefe");
 
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
 
       mockGetSuspiciousContracts.mockResolvedValueOnce(
@@ -3383,19 +3464,25 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       await initialize();
       const suspiciousContract = createChecksumAddress("0xabcdabcd");
       const suspiciousContractCreator = createChecksumAddress("0xfefefe");
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
       mockGetSuspiciousContracts.mockResolvedValueOnce(
         new Set([{ address: suspiciousContract, creator: suspiciousContractCreator }])
@@ -3498,11 +3585,15 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x23232")] };
       axios.get.mockResolvedValueOnce(axiosResponse);
 
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
       mockGetSuspiciousContracts.mockResolvedValueOnce(
         new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0x01") }])
@@ -3633,14 +3724,15 @@ describe("ice-phishing bot", () => {
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
-        MOCK_DATABASE_OBJECTS_KEYS
+        MOCK_DATABASE_OBJECTS_KEY
       );
       for (const key in MOCK_DATABASE_KEYS) {
         mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
       }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
       await initialize();
 
-      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
       const victim = createAddress("0x12331");
       const mockTxEvent = {
         filterFunction: jest
@@ -3788,8 +3880,12 @@ describe("ice-phishing bot", () => {
         },
       };
 
-      await initialize();
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+
+      await initialize();
       const axiosResponse = {
         data: { message: "okkk", status: "1", result: [] },
       };
@@ -3842,13 +3938,25 @@ describe("ice-phishing bot", () => {
 
       mockCalculateAlertRate.mockReturnValueOnce("0.3");
 
+      const alertId = "ICE-PHISHING-PIG-BUTCHERING";
+      const now = new Date();
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const uniqueKey = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(
+          createAddress("0x11") + mockTxEvent1.hash + alertId + currentDate + currentMonth + currentYear
+        )
+      );
+
       const findings = await handleTransaction(mockTxEvent1);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
           name: "Possible Pig Butchering Attack",
           description: `${createAddress("0x11")} received funds through a pig butchering attack`,
-          alertId: "ICE-PHISHING-PIG-BUTCHERING",
+          alertId,
           severity: FindingSeverity.Critical,
           type: FindingType.Suspicious,
           metadata: {
@@ -3890,6 +3998,7 @@ describe("ice-phishing bot", () => {
               confidence: 0.7,
             }),
           ],
+          uniqueKey,
         }),
       ]);
     });
@@ -3904,23 +4013,26 @@ describe("ice-phishing bot", () => {
       Object.keys(mockObjects).forEach((s) => {
         mockObjects[s] = {};
       });
-      handleBlock = provideHandleBlock(
-        mockGetSuspiciousContracts,
-        mockPersistenceHelper,
-        MOCK_DATABASE_KEYS,
-        mockCounters,
-        mockObjects
-      );
     });
 
-    afterEach(async () => {
+    beforeEach(async () => {
       mockPersistenceHelper.persist.mockClear();
     });
 
     it("should do nothing if enough time has not passed", async () => {
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
-      const mockBlockEvent = { block: { timestamp: 1000 } };
+      const mockBlockEvent = { block: { timestamp: 1000, number: 123 } };
       mockGetSuspiciousContracts.mockResolvedValueOnce({});
 
       mockObjects.approvals[spender] = [{ timestamp: 1000 }];
@@ -3958,9 +4070,35 @@ describe("ice-phishing bot", () => {
     });
 
     it("should not delete the entry if it was updated recently/permission deadline has not passed", async () => {
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEY
+      );
+      mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      await initialize();
+
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
+
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
-      const mockBlockEvent = { block: { timestamp: timePeriod } };
+      const mockBlockEvent = { block: { timestamp: timePeriod, number: 127 } };
       mockGetSuspiciousContracts.mockResolvedValueOnce({});
       mockObjects.approvals[spender] = [{ timestamp: timePeriod }];
       mockObjects.approvalsERC20[spender] = [{ timestamp: timePeriod }];
@@ -3982,6 +4120,32 @@ describe("ice-phishing bot", () => {
     });
 
     it("should delete the entry if it was not updated recently/permission deadline has expired", async () => {
+      const initialize = provideInitialize(
+        mockProvider,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEY
+      );
+      mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      await initialize();
+
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
+
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { timestamp: timePeriod } };
@@ -4009,6 +4173,17 @@ describe("ice-phishing bot", () => {
     });
 
     it("should populate the suspicious contracts set correctly", async () => {
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
+
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
       const mockBlockEvent = { block: { number: 239 } };
@@ -4026,12 +4201,15 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
 
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
         mockCounters,
-        mockObjects
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
 
       const mockBlockEvent1 = {
@@ -4058,12 +4236,17 @@ describe("ice-phishing bot", () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
 
+      const date = new Date();
+      const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
-        mockCounters
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
+
       const mockBlockEvent = {
         block: {
           number: 600,

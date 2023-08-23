@@ -50,10 +50,19 @@ function getEventInformation(eventsArray) {
 
 function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const alertId = "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+  );
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-20 tokens by ${accounts.length} accounts over period of ${days} days.`,
-    alertId: "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS",
+    alertId,
     severity: FindingSeverity.Low,
     type: FindingType.Suspicious,
     metadata: {
@@ -82,15 +91,25 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
         confidence: 1,
       }),
     ],
+    uniqueKey,
   });
 }
 
 function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const alertId = "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+  );
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-20 tokens by ${accounts.length} accounts over period of ${days} days.`,
-    alertId: "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO",
+    alertId,
     severity: FindingSeverity.Info,
     type: FindingType.Info,
     metadata: {
@@ -119,15 +138,25 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
         confidence: 1,
       }),
     ],
+    uniqueKey,
   });
 }
 
 function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const alertId = "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+  );
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-721 tokens by ${accounts.length} accounts over period of ${days} days.`,
-    alertId: "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS",
+    alertId,
     severity: FindingSeverity.Low,
     type: FindingType.Suspicious,
     metadata: {
@@ -156,15 +185,25 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
         confidence: 1,
       }),
     ],
+    uniqueKey,
   });
 }
 
 function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
+  const alertId = "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+  );
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-721 tokens by ${accounts.length} accounts over period of ${days} days.`,
-    alertId: "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO",
+    alertId,
     severity: FindingSeverity.Info,
     type: FindingType.Info,
     metadata: {
@@ -193,6 +232,7 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
         confidence: 1,
       }),
     ],
+    uniqueKey,
   });
 }
 
@@ -752,6 +792,15 @@ function createTransferSuspiciousContractAlert(
 
 function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, assetIdTuples, accounts, days } = getEventInformation(transfersArray);
+  const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+  );
   let labels = [
     Label.fromObject({
       entity: spender,
@@ -801,7 +850,7 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   return Finding.fromObject({
     name: "Previously approved assets transferred",
     description: `${spender} transferred ${assets.length} assets from ${accounts.length} accounts over period of ${days} days.`,
-    alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
+    alertId,
     severity: FindingSeverity.High,
     type: FindingType.Exploit,
     metadata: {
@@ -811,11 +860,22 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
     },
     addresses: assets,
     labels,
+    uniqueKey,
   });
 }
 
 function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomalyScore) {
   const { firstTxHash, lastTxHash, assets, assetIdTuples, accounts, days } = getEventInformation(transfersArray);
+  const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+  );
+
   let labels = [
     Label.fromObject({
       entity: spender,
@@ -864,7 +924,7 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
   return Finding.fromObject({
     name: "Previously approved assets transferred",
     description: `${spender} transferred ${assets.length} assets from ${accounts.length} accounts over period of ${days} days.`,
-    alertId: "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW",
+    alertId,
     severity: FindingSeverity.Low,
     type: FindingType.Suspicious,
     metadata: {
@@ -874,10 +934,21 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
     },
     addresses: assets,
     labels,
+    uniqueKey,
   });
 }
 
 function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore) {
+  const alertId = "ICE-PHISHING-PIG-BUTCHERING";
+  const now = new Date();
+  const currentDate = now.getDate();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const uniqueKey = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(receiver + txHash + alertId + currentDate + currentMonth + currentYear)
+  );
+
   let labels = [];
   let metadata = {};
   metadata["receiver"] = receiver;
@@ -939,11 +1010,12 @@ function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore
   return Finding.fromObject({
     name: "Possible Pig Butchering Attack",
     description: `${receiver} received funds through a pig butchering attack`,
-    alertId: "ICE-PHISHING-PIG-BUTCHERING",
+    alertId,
     severity: FindingSeverity.Critical,
     type: FindingType.Suspicious,
     metadata,
     labels,
+    uniqueKey,
   });
 }
 
@@ -1580,25 +1652,6 @@ async function getERC1155Balance(token, id, account, provider, blockNumber) {
   return balance;
 }
 
-async function getTransactions(provider, blockNumber) {
-  let retries = 2;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const { transactions } = await provider.getBlockWithTransactions(blockNumber);
-      return transactions; // Exit the loop if successful
-    } catch {
-      if (i === retries) {
-        // Handle error after all retries
-        throw new Error(`All retry attempts to fetch transactions failed`);
-      } else {
-        // Handle error and retry
-        console.log(`Retry attempt ${i + 1} to fetch transactions failed`);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-    }
-  }
-}
-
 function checkObjectSizeAndCleanup(obj) {
   // Flatten the object's values into an array of entries, and sort by timestamp
   const entries = Object.values(obj).flat();
@@ -1685,7 +1738,6 @@ module.exports = {
   haveInteractedMoreThanOnce,
   getBalance,
   getERC1155Balance,
-  getTransactions,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
   populateScamSnifferMap,
