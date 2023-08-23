@@ -1,7 +1,9 @@
 {
   "name": "large-mint-borrow-volume-anomlay-detection",
+  "displayName": "Large Mint/Borrow Volume Anomaly Detection",
   "version": "0.0.1",
-  "description": "This agent detects large mint/borrow anomalies",
+  "description": "This bot detects large mint/borrow anomalies",
+  "longDescription": "This bot focuses on transactional anomalies related to minting and borrowing activities. Its primary purpose is to identify instances where there are notable irregularities in transaction volume for these actions.",
   "chainIds": [
     1,
     56,
@@ -30,7 +32,7 @@
     "@types/jest": "^27.4.1",
     "arima": "^0.2.5",
     "bignumber.js": "^9.0.2",
-    "forta-agent": "^0.1.3",
+    "forta-agent": "^0.1.36",
     "rolling-math": "^0.0.3"
   },
   "devDependencies": {

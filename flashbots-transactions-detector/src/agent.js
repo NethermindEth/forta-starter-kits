@@ -9,31 +9,43 @@ const {
 } = require("forta-agent");
 const { PersistenceHelper } = require("./persistence.helper");
 const { default: axios } = require("axios");
+const { default: calculateAlertRate } = require("bot-alert-rate");
+const { ScanCountType } = require("bot-alert-rate");
+const { ZETTABLOCK_API_KEY } = require("./keys");
 
-const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=7";
+const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=4";
 let lastBlockNumber = 0;
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
-const FLASHBOTS_TXS_KEY = "nm-flashbots-bot-txs-key";
-const TOTAL_TXS_KEY = "nm-flashbots-bot-total-txs-key";
+const FLASHBOTS_TXS_KEY = "nm-flashbots-bot-txs-key-1";
+const SWAP_FLASHBOTS_TXS_KEY = "nm-swap-flashbots-bot-txs-key-1";
 
 let totalFlashbotsTxns = 0;
-let totalTxns = 0;
+let totalSwapFlashbotsTxns = 0;
+let chainId;
+const BOT_ID = "0xbc06a40c341aa1acc139c900fd1b7e3999d71b80c13a9dd50a369d8f923757f5";
 
-function provideInitialize(persistenceHelper, flashbotsKey, totalTxnsKey) {
+function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashbotsKey) {
   return async () => {
     totalFlashbotsTxns = await persistenceHelper.load(flashbotsKey);
-    totalTxns = await persistenceHelper.load(totalTxnsKey);
+    totalSwapFlashbotsTxns = await persistenceHelper.load(swapFlashbotsKey);
+
+    ({ chainId } = await provider.getNetwork());
+    process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
   };
 }
 
-function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, flashbotsKey, totalTxnsKey) {
+function provideHandleBlock(
+  calculateAlertRate,
+  provider,
+  getTransactionReceipt,
+  persistenceHelper,
+  flashbotsKey,
+  swapFlashbotsKey
+) {
   let cachedFindings = [];
   return async (blockEvent) => {
-    const numberOfTransactions = blockEvent.block.transactions.length;
-    totalTxns += numberOfTransactions;
-
     if (cachedFindings.length >= 10) {
       cachedFindings.splice(0, 10);
     } else {
@@ -70,13 +82,54 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
 
                 // Use the tx logs to get the impacted contracts
                 const { logs } = await getTransactionReceipt(hash);
-                let addresses = logs.map((log) => log.address.toLowerCase());
+
+                let alertId = "FLASHBOTS-TRANSACTIONS";
+
+                let addresses = logs.map((log) => {
+                  // Check if the transaction is a swap
+                  // 0xd78ad95... is the swap topic for Uniswap v2 & 0xc42079f... is the swap topic for Uniswap v3
+                  if (logs.length < 10) {
+                    if (
+                      log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
+                      log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
+                    ) {
+                      alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                    }
+                  }
+
+                  return log.address.toLowerCase();
+                });
+
+                let anomalyScore;
+
+                if (alertId === "FLASHBOTS-TRANSACTIONS") {
+                  totalFlashbotsTxns += 1;
+
+                  anomalyScore = await calculateAlertRate(
+                    Number(chainId),
+                    BOT_ID,
+                    alertId,
+                    ScanCountType.TransferCount,
+                    totalFlashbotsTxns // No issue in passing 0 for non-relevant chains
+                  );
+                } else {
+                  totalSwapFlashbotsTxns += 1;
+
+                  anomalyScore = await calculateAlertRate(
+                    Number(chainId),
+                    BOT_ID,
+                    alertId,
+                    ScanCountType.TransferCount,
+                    totalSwapFlashbotsTxns // No issue in passing 0 for non-relevant chains
+                  );
+                }
+
                 addresses = [...new Set(addresses)];
 
                 return Finding.fromObject({
                   name: "Flashbots transactions",
                   description: `${from} interacted with ${to} in a flashbots transaction`,
-                  alertId: "FLASHBOTS-TRANSACTIONS",
+                  alertId: alertId,
                   severity: FindingSeverity.Low,
                   type: FindingType.Info,
                   addresses,
@@ -85,6 +138,7 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
                     to,
                     hash,
                     blockNumber,
+                    anomalyScore: anomalyScore.toString(),
                   },
                   labels: [
                     Label.fromObject({
@@ -113,20 +167,11 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
 
     findings = findings.flat().filter((f) => !!f);
 
-    findings.map((f) => {
-      totalFlashbotsTxns += 1;
-      const anomalyScore = totalFlashbotsTxns / totalTxns;
-      f.metadata.anomalyScore =
-        Math.min(1, anomalyScore).toFixed(2) === "0.00"
-          ? Math.min(1, anomalyScore).toString()
-          : Math.min(1, anomalyScore).toFixed(2);
-    });
-
     cachedFindings.push(...findings);
 
     if (blockEvent.blockNumber % 240 === 0) {
       await persistenceHelper.persist(totalFlashbotsTxns, flashbotsKey);
-      await persistenceHelper.persist(totalTxns, totalTxnsKey);
+      await persistenceHelper.persist(totalSwapFlashbotsTxns, swapFlashbotsKey);
     }
 
     return cachedFindings.slice(0, 10);
@@ -136,14 +181,20 @@ function provideHandleBlock(provider, getTransactionReceipt, persistenceHelper, 
 module.exports = {
   provideHandleBlock,
   handleBlock: provideHandleBlock(
+    calculateAlertRate,
     getEthersProvider(),
     getTransactionReceipt,
     new PersistenceHelper(DATABASE_URL),
     FLASHBOTS_TXS_KEY,
-    TOTAL_TXS_KEY
+    SWAP_FLASHBOTS_TXS_KEY
   ),
   provideInitialize,
-  initialize: provideInitialize(new PersistenceHelper(DATABASE_URL), FLASHBOTS_TXS_KEY, TOTAL_TXS_KEY),
+  initialize: provideInitialize(
+    getEthersProvider(),
+    new PersistenceHelper(DATABASE_URL),
+    FLASHBOTS_TXS_KEY,
+    SWAP_FLASHBOTS_TXS_KEY
+  ),
   resetLastBlockNumber: () => {
     lastBlockNumber = 0;
   }, // Exported for unit tests

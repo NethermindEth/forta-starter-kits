@@ -1,7 +1,9 @@
 {
   "name": "gov-sneak-proposal",
+  "displayName": "Gov Sneak Proposal",
   "version": "0.0.1",
-  "description": "This bot detects wheter there is a sneak governance proposal about to be approved or is already approved",
+  "description": "This bot detects if there is a sneak governance proposal about to be approved or is already approved",
+  "longDescription": "The bot focuses on detecting instances of sneak governance proposals that are poised for approval or have already been approved. Its core purpose is to identify for situations where such proposals, which may be characterized by hidden or unexpected content, are on the verge of obtaining approval or have already achieved it within the governance system",
   "chainIds": [
     1,
     137,
@@ -27,7 +29,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "forta-agent": "^0.1.6"
+    "forta-agent": "^0.1.36"
   },
   "devDependencies": {
     "jest": "^27.0.6",
