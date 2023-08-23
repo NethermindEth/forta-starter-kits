@@ -98,7 +98,7 @@ let scamSnifferMap = new Map();
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 const DATABASE_OBJECT_KEY = {
-  key: "nm-icephishing-bot-objects-v6-testAug23-shard",
+  key: "nm-icephishing-bot-objects-v6-shard",
 };
 
 let objects = {
