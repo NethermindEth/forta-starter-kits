@@ -1371,8 +1371,7 @@ async function getEoaType(address, provider, blockNumber) {
     } catch (err) {
       tries++;
       if (tries === maxTries) {
-        nonce = 0;
-        console.log("Error on fetching the transaction count, setting the nonce to 0"); // re-throw the error if maximum tries reached
+        throw new Error(`Error fetching the transaction count of address ${address}: ${err}`);
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
