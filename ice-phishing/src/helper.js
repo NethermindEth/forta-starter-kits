@@ -10,6 +10,7 @@ const {
   ERC_1155_INTERFACE,
   STABLECOINS,
 } = require("./utils");
+const errorCache = require("./errorCache");
 const AddressType = require("./address-type");
 
 // Computes the data needed for an alert
@@ -46,6 +47,20 @@ function getEventInformation(eventsArray) {
     accounts,
     days,
   };
+}
+
+function createErrorAlert(errorDescription, errorSource, errorStacktrace) {
+  return Finding.fromObject({
+    name: "Ice Phishing Bot Error",
+    description: errorDescription,
+    alertId: "ICE-PHISHING-BOT-ERROR",
+    severity: FindingSeverity.Info,
+    type: FindingType.Info,
+    metadata: {
+      errorSource,
+      errorStacktrace,
+    },
+  });
 }
 
 function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore) {
@@ -1361,17 +1376,18 @@ async function getLabel(address) {
 
 async function getEoaType(address, provider, blockNumber) {
   let nonce;
-  let tries = 0;
+  let tries = 100000;
   const maxTries = 3;
 
   while (tries < maxTries) {
     try {
       nonce = await provider.getTransactionCount(address, blockNumber);
       break; // exit the loop if successful
-    } catch (err) {
+    } catch (e) {
       tries++;
       if (tries === maxTries) {
-        throw new Error(`Error fetching the transaction count of address ${address}: ${err}`);
+        const stackTrace = util.inspect(e, { showHidden: false, depth: null });
+        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
@@ -1386,16 +1402,13 @@ async function getContractType(address, chainId) {
   for (let i = 0; i <= retries; i++) {
     try {
       result = await axios.get(getEtherscanContractUrl(address, chainId));
-      // Handle successful response
       break; // Exit the loop if successful
     } catch {
       if (i === retries) {
-        // Handle error after all retries
         throw new Error(
           `All retry attempts to call block explorer (URL: ${getEtherscanContractUrl(address, chainId)}) failed`
         );
       } else {
-        // Handle error and retry
         console.log(`Retry attempt ${i + 1} to call block explorer failed`);
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
@@ -1485,10 +1498,11 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
     try {
       code = await provider.getCode(address);
       break; // exit the loop if successful
-    } catch (err) {
+    } catch (e) {
       tries++;
       if (tries === maxTries) {
-        throw err; // re-throw the error if maximum tries reached
+        const stackTrace = util.inspect(e, { showHidden: false, depth: null });
+        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
@@ -1702,6 +1716,7 @@ const fetchScamDomains = (scamSnifferMap, addresses) => {
 };
 
 module.exports = {
+  createErrorAlert,
   createHighNumApprovalsAlertERC20,
   createHighNumApprovalsInfoAlertERC20,
   createHighNumApprovalsAlertERC721,

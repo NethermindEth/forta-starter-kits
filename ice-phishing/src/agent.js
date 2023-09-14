@@ -1,10 +1,13 @@
 const { ethers, getEthersProvider } = require("forta-agent");
 const LRU = require("lru-cache");
 const { default: axios } = require("axios");
+const util = require("util");
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
 const { ZETTABLOCK_API_KEY } = require("./keys");
+const errorCache = require("./errorCache");
 const {
+  createErrorAlert,
   createHighNumApprovalsAlertERC20,
   createHighNumApprovalsInfoAlertERC20,
   createHighNumApprovalsAlertERC721,
@@ -496,9 +499,15 @@ const provideHandleTransaction =
             try {
               assetCode = await provider.getCode(asset);
               break;
-            } catch (err) {
+            } catch (e) {
               tries++;
-              if (tries === 3) throw err;
+              if (tries === 3) {
+                const stackTrace = util.inspect(e, { showHidden: false, depth: null });
+                errorCache.add(
+                  createErrorAlert(e.toString(), "agent.handleTransaction (approvals-getCode)", stackTrace)
+                );
+                return findings;
+              }
               console.log(`Attempt ${tries} to get the code failed, retrying...`);
               await new Promise((resolve) => setTimeout(resolve, 1000));
             }
@@ -874,48 +883,85 @@ const provideHandleTransaction =
         );
         if (isOwnerAlreadyCounted) continue;
         if (!(await hasTransferredNonStablecoins(txFrom, chainId))) {
-          const nonce = await provider.getTransactionCount(txFrom);
+          let nonce;
+          try {
+            nonce = await provider.getTransactionCount(txFrom);
+          } catch (e) {
+            const stackTrace = util.inspect(e, { showHidden: false, depth: null });
+            errorCache.add(
+              createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount)", stackTrace)
+            );
+            return findings;
+          }
           if (nonce > 50000) continue;
           const label = await getLabel(txFrom);
           if (!label || ["xploit", "hish", "heist"].some((keyword) => label.includes(keyword))) {
-            if (ethers.BigNumber.from(value).gt(ethers.BigNumber.from(0)) && (await provider.getCode(from)) === "0x") {
-              const balanceAfter = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-              const balanceBefore = balanceAfter.add(ethers.BigNumber.from(value));
-              if (balanceAfter.lt(balanceBefore.div(100)) && (await provider.getTransactionCount(from)) < 3) {
-                const initialFunder = await getInitialERC20Funder(from, asset, chainId);
-                if (CEX_ADDRESSES.includes(initialFunder)) {
-                  // Initialize the transfers array for the receiver if it doesn't exist
-                  if (!objects.pigButcheringTransfers[to]) objects.pigButcheringTransfers[to] = [];
-
-                  console.log("Detected possible malicious pig butchering transfer");
-                  console.log(`owner: ${from}`);
-                  console.log(`spender: ${txFrom}`);
-                  console.log(`receiver: ${to}`);
-                  console.log(`asset: ${asset}`);
-
-                  // Update the transfers for the spender
-                  objects.pigButcheringTransfers[to].push({
-                    asset,
-                    initiator: txFrom,
-                    owner: from,
-                    hash,
-                    timestamp,
-                  });
-
-                  // Filter out old transfers
-                  objects.pigButcheringTransfers[to] = objects.pigButcheringTransfers[to].filter(
-                    (a) => timestamp - a.timestamp < TIME_PERIOD
-                  );
-                  if (objects.pigButcheringTransfers[to].length > pigButcheringTransferCountThreshold) {
-                    const anomalyScore = await calculateAlertRate(
-                      chainId,
-                      BOT_ID,
-                      "ICE-PHISHING-PIG-BUTCHERING",
-                      isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
-                      counters.totalTransfers
+            if (ethers.BigNumber.from(value).gt(ethers.BigNumber.from(0))) {
+              let code;
+              try {
+                code = await provider.getCode(from);
+              } catch (e) {
+                const stackTrace = util.inspect(e, { showHidden: false, depth: null });
+                errorCache.add(
+                  createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getCode)", stackTrace)
+                );
+                return findings;
+              }
+              if (code === "0x") {
+                const balanceAfter = ethers.BigNumber.from(
+                  await getBalance(asset, from, provider, txEvent.blockNumber)
+                );
+                const balanceBefore = balanceAfter.add(ethers.BigNumber.from(value));
+                if (balanceAfter.lt(balanceBefore.div(100))) {
+                  let fromNonce;
+                  try {
+                    fromNonce = await provider.getTransactionCount(from);
+                  } catch (e) {
+                    const stackTrace = util.inspect(e, { showHidden: false, depth: null });
+                    errorCache.add(
+                      createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount2)", stackTrace)
                     );
-                    findings.push(createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore));
-                    objects.pigButcheringTransfers[to] = [];
+                    return findings;
+                  }
+                  if (fromNonce < 3) {
+                    const initialFunder = await getInitialERC20Funder(from, asset, chainId);
+                    if (CEX_ADDRESSES.includes(initialFunder)) {
+                      // Initialize the transfers array for the receiver if it doesn't exist
+                      if (!objects.pigButcheringTransfers[to]) objects.pigButcheringTransfers[to] = [];
+
+                      console.log("Detected possible malicious pig butchering transfer");
+                      console.log(`owner: ${from}`);
+                      console.log(`spender: ${txFrom}`);
+                      console.log(`receiver: ${to}`);
+                      console.log(`asset: ${asset}`);
+
+                      // Update the transfers for the spender
+                      objects.pigButcheringTransfers[to].push({
+                        asset,
+                        initiator: txFrom,
+                        owner: from,
+                        hash,
+                        timestamp,
+                      });
+
+                      // Filter out old transfers
+                      objects.pigButcheringTransfers[to] = objects.pigButcheringTransfers[to].filter(
+                        (a) => timestamp - a.timestamp < TIME_PERIOD
+                      );
+                      if (objects.pigButcheringTransfers[to].length > pigButcheringTransferCountThreshold) {
+                        const anomalyScore = await calculateAlertRate(
+                          chainId,
+                          BOT_ID,
+                          "ICE-PHISHING-PIG-BUTCHERING",
+                          isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+                          counters.totalTransfers
+                        );
+                        findings.push(
+                          createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore)
+                        );
+                        objects.pigButcheringTransfers[to] = [];
+                      }
+                    }
                   }
                 }
               }
@@ -1429,7 +1475,9 @@ const provideHandleBlock =
 
       lastTimestamp = timestamp;
     }
-    return [];
+    const findings = errorCache.getAll();
+    errorCache.clear();
+    return findings;
   };
 
 module.exports = {
