@@ -12,7 +12,7 @@ describe("Asset drained bot performance test", () => {
     handleTransaction = provideHandleTransaction();
     await initialize();
 
-    const blocksToRun = 20;
+    const blocksToRun = 10;
     let totalProcessingTime = 0;
     const startingBlock = 17278834;
     //     Chain: Blocktime

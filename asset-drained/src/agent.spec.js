@@ -184,7 +184,7 @@ describe("Asset drained bot test suite", () => {
     });
 
     describe("Alert Generation", () => {
-      const mockBlockEvent = { blockNumber: 10_000 };
+      const mockBlockEvent = { blockNumber: 10_001 }; // After implementing sharding, each block on Ethereum processes transations from 2 blocks ago (9999 -> 10001)
 
       it("should not alert if there are no transfers", async () => {
         mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([]);

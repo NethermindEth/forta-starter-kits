@@ -3,7 +3,7 @@ const { MulticallProvider, MulticallContract } = require("forta-agent-tools");
 const LRU = require("lru-cache");
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
-const { ZETTABLOCK_API_KEY } = require("./keys");
+const { getSecrets } = require("./storage");
 
 const {
   hashCode,
@@ -26,6 +26,7 @@ const REMOVE_LIQUIDITY_EVENTS = [
 
 let chainId;
 let isRelevantChain;
+let apiKeys;
 let transfersCount = 0;
 let liqRemovalTransfersCount = 0;
 const BOT_ID = "0xe4a8660b5d79c0c64ac6bfd3b9871b77c98eaaa464aa555c00635e9d8b33f77f";
@@ -41,7 +42,8 @@ let burnEventsArray = [];
 const provideInitialize = (provider) => {
   return async () => {
     await ethcallProvider.init();
-    process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
+    apiKeys = await getSecrets();
+    process.env["ZETTABLOCK_API_KEY"] = apiKeys.generalApiKeys.ZETTABLOCK[1];
     chainId = (await provider.getNetwork()).chainId.toString();
 
     //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
@@ -261,10 +263,19 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
       transfers[i].symbol = s;
     });
 
+    // Filter out test tokens
+    transfers = transfers.filter((t) => t.symbol.toLowerCase() !== "test");
+
     const filteredTransfersAndBalances = await transfers.reduce(async (accPromise, transfer, i) => {
       const acc = await accPromise;
       const amountLost = balances[i][0].sub(balances[i][1]);
-      const value = await getValueInUsd(blockNumber, chainId, amountLost.toString(), transfer.asset);
+      const value = await getValueInUsd(
+        blockNumber,
+        chainId,
+        amountLost.toString(),
+        transfer.asset,
+        apiKeys.generalApiKeys.MORALIS
+      );
       let shouldInclude = false;
 
       if (value > USD_VALUE_THRESHOLD) {
