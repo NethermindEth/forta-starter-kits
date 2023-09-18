@@ -55,7 +55,7 @@
     "format": "prettier --write \"src/**/*.js\""
   },
   "dependencies": {
-    "bot-alert-rate": "^0.0.3",
+    "bot-alert-rate": "^0.0.4",
     "dotenv": "^16.0.3",
     "forta-agent": "^0.1.40",
     "forta-agent-tools": "^3.1.2",
