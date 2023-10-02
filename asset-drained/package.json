@@ -1,7 +1,7 @@
 {
   "name": "asset-drained",
   "displayName": "Asset Drained",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Detects if an asset is fully drained from a contract",
   "longDescription": "The bot identifies instances where a contract's assets have been significantly depleted, reaching a threshold of 99% or more within a single block. By closely monitoring the transfers of both ERC20 tokens and native tokens from contracts, the bot raises an alert when it detects a rapid reduction in a contract's balance",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/asset-drained",

@@ -15,6 +15,7 @@ const TOKEN_ABI = [
 const MKR_TOKEN_ABI = ["function symbol() external view returns (bytes32)"];
 
 const tokensPriceCache = new LRU({ max: 100_000 });
+const tokensPriceExpirationTime = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 const decimalsCache = new LRU({ max: 100_000 });
 const totalSupplyCache = new LRU({ max: 100_000 });
 
@@ -187,13 +188,17 @@ async function getUniswapPrice(chainId, token, key) {
 async function getValueInUsd(block, chainId, amount, token, key) {
   let response, usdPrice;
   let foundInCache = false;
+  const cacheKey = `usdPrice-${token}`;
 
-  for (let i = block - 9; i <= block; i++) {
-    const key = `usdPrice-${token}-${i}`;
-    if (tokensPriceCache.has(key)) {
-      usdPrice = tokensPriceCache.get(key);
+  if (tokensPriceCache.has(cacheKey)) {
+    const cacheEntry = tokensPriceCache.get(cacheKey);
+
+    if (cacheEntry.timestamp + tokensPriceExpirationTime > Date.now()) {
+      usdPrice = cacheEntry.value;
       foundInCache = true;
-      break;
+    } else {
+      // Cache entry has expired, remove it from the cache
+      tokensPriceCache.delete(cacheKey);
     }
   }
 
@@ -242,14 +247,22 @@ async function getValueInUsd(block, chainId, amount, token, key) {
         }
         usdPrice = await getUniswapPrice(chainId, token, key);
         if (!usdPrice) {
-          tokensPriceCache.set(`usdPrice-${token}-${block}`, 0);
+          const newCacheEntry = {
+            timestamp: Date.now(),
+            value: 0,
+          };
+          tokensPriceCache.set(cacheKey, newCacheEntry);
           console.log("Setting 0 as the price of token:", token);
           return 0;
         }
       }
     }
 
-    tokensPriceCache.set(`usdPrice-${token}-${block}`, usdPrice);
+    const newCacheEntry = {
+      timestamp: Date.now(),
+      value: usdPrice,
+    };
+    tokensPriceCache.set(cacheKey, newCacheEntry);
   }
 
   let tokenAmount;
