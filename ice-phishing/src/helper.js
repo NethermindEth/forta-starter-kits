@@ -1375,8 +1375,8 @@ async function getLabel(address) {
 }
 
 async function getEoaType(address, provider, blockNumber) {
-  let nonce;
-  let tries = 100000;
+  let nonce = 100000;
+  let tries = 0;
   const maxTries = 3;
 
   while (tries < maxTries) {
