@@ -1,6 +1,6 @@
-const { FindingType, FindingSeverity, Finding, ethers, getEthersProvider, Label, EntityType } = require("forta-agent");
+const { FindingType, FindingSeverity, Finding, ethers, Label, EntityType } = require("forta-agent");
 const {
-  handleTransaction,
+  provideHandleTransaction,
   provideInitialize,
   provideHandleBlock,
   getContractAssets,
@@ -28,7 +28,6 @@ jest.mock("forta-agent", () => {
   const original = jest.requireActual("forta-agent");
   return {
     ...original,
-    getEthersProvider: jest.fn(),
     ethers: {
       ...original.ethers,
       Contract: jest.fn().mockImplementation(() => ({
@@ -38,9 +37,6 @@ jest.mock("forta-agent", () => {
     },
   };
 });
-
-const mockGetBalance = jest.fn();
-getEthersProvider.mockImplementation(() => ({ getBalance: mockGetBalance, _isSigner: true }));
 
 function resetState() {
   const contractAssets = getContractAssets();
@@ -59,6 +55,7 @@ const totalTransferTransactions = 3300000;
 describe("large balance decrease bot", () => {
   const mockProvider = {
     getNetwork: jest.fn(),
+    getBalance: jest.fn(),
   };
   const mockPersistenceHelper = {
     persist: jest.fn(),
@@ -67,6 +64,8 @@ describe("large balance decrease bot", () => {
 
   let initialize;
   let handleBlock;
+  let handleTransaction;
+
   describe("handleTransaction", () => {
     const mockTxEvent = {
       blockNumber: 1000,
@@ -80,9 +79,8 @@ describe("large balance decrease bot", () => {
       resetState();
       mockTxEvent.filterLog.mockReset();
       mockBalanceOf.mockReset();
-      mockGetBalance.mockReset();
 
-      mockProvider.getNetwork.mockReturnValueOnce({ chainId: 1 });
+      mockProvider.getNetwork.mockResolvedValueOnce({ chainId: 1 });
 
       initialize = provideInitialize(
         mockProvider,
@@ -98,11 +96,12 @@ describe("large balance decrease bot", () => {
         .mockReturnValueOnce(totalTransferTransactions);
 
       await initialize();
+      handleTransaction = provideHandleTransaction(mockProvider);
     });
 
     it("should return empty findings if there are no Transfer events", async () => {
       mockTxEvent.filterLog.mockReturnValueOnce([]);
-      mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
+      mockProvider.getBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -113,7 +112,7 @@ describe("large balance decrease bot", () => {
     it("should return empty findings if there are no Transfer to or from the contract address", async () => {
       const event = { args: { from: "0xfrom", to: "0xto" } };
       mockTxEvent.filterLog.mockReturnValueOnce([event]);
-      mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
+      mockProvider.getBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -131,7 +130,7 @@ describe("large balance decrease bot", () => {
         },
       };
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(100));
-      mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
+      mockProvider.getBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
       mockTxEvent.filterLog.mockReturnValueOnce([event]);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -151,7 +150,7 @@ describe("large balance decrease bot", () => {
         },
       };
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(100));
-      mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
+      mockProvider.getBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
       mockTxEvent.filterLog.mockReturnValueOnce([event]);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -171,7 +170,7 @@ describe("large balance decrease bot", () => {
         },
       };
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(100));
-      mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
+      mockProvider.getBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
       mockTxEvent.filterLog.mockReturnValueOnce([event]);
 
       const mockAnomalyScore = (allRemovedTransfers + 1) / (totalTransferTransactions + 1);
@@ -231,7 +230,7 @@ describe("large balance decrease bot", () => {
     });
 
     it("should return findings if the native balance is drained", async () => {
-      mockGetBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
+      mockProvider.getBalance.mockResolvedValueOnce(ethers.BigNumber.from(100));
       mockTxEvent.traces.push({
         action: {
           callType: "call",
