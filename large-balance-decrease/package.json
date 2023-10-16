@@ -1,7 +1,7 @@
 {
   "name": "large-balance-decrease-bot",
   "displayName": "Large Balance Decrease Bot",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Detects if the balance of a protocol decreases significantly",
   "longDescription": "The bot is centered around monitoring the financial stability of protocols. Its primary role involves identifying instances where the balance of a specific bridge experiences a substantial decrease. By actively tracking these significant declines in balance, the bot alerts to potential deviations that may warrant further investigation or action.",
   "chainIds": [
@@ -13,6 +13,16 @@
     42161,
     43114
   ],
+  "chainSettings": {
+    "1": {
+      "shards": 2,
+      "target": 1
+    },
+    "56": {
+      "shards": 2,
+      "target": 1
+    }
+  },
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/large-balance-decrease",
   "scripts": {
     "start": "npm run start:dev",
