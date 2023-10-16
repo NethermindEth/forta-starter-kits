@@ -3,11 +3,13 @@ const { getContractsByChainId, getInitialFundedByTornadoCash, eventABI, addressL
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
 const { ZETTABLOCK_API_KEY } = require("./keys");
+const { LRUCache } = require("lru-cache");
 
 let chainId;
 let isRelevantChain;
 const ethersProvider = getEthersProvider();
 const BOT_ID = "0x617c356a4ad4b755035ef8024a87d36d895ee3cb0864e7ce9b3cf694dd80c82a";
+const cache = new LRUCache({ max: 100_000 });
 
 let totalContractInteractions = 0;
 
@@ -44,7 +46,17 @@ function provideHandleTranscation(ethersProvider, calculateAlertRate) {
     if (!txEvent.to) {
       return findings;
     }
-    const contractCode = await ethersProvider.getCode(txEvent.to);
+
+    const cacheKey = `contractCode-${chainId}-${txEvent.to}`;
+
+    let contractCode;
+    if (cache.has(cacheKey)) {
+      contractCode = cache.get(cacheKey);
+    } else {
+      contractCode = await ethersProvider.getCode(txEvent.to);
+      cache.set(cacheKey, contractCode);
+    }
+
     if (contractCode !== "0x") {
       if (isRelevantChain) {
         totalContractInteractions += 1;
