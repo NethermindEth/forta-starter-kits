@@ -2,6 +2,7 @@ const { Finding, FindingSeverity, FindingType, ethers, Label, EntityType, getEth
 const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
 const { PersistenceHelper } = require("./persistence.helper");
+const { LRUCache } = require("lru-cache");
 
 let chainId;
 let chain;
@@ -11,6 +12,7 @@ const ETH_CHAIN_ID = 1;
 const PROFIT_THRESHOLD = 500_000;
 const PERCENTAGE_THRESHOLD = 2;
 const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
+const cache = new LRUCache({ max: 100_000 });
 
 const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
@@ -104,7 +106,16 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
                 flashloanIndex === numOfFlashloans - 1
               ) {
                 // Only proceed with recipients that are EOAs
-                const toCode = await provider.getCode(to);
+                const cacheKey = `getCode-${chainId}-${to}`;
+
+                let toCode;
+                if (cache.has(cacheKey)) {
+                  toCode = cache.get(cacheKey);
+                } else {
+                  toCode = await provider.getCode(to);
+                  cache.set(cacheKey, toCode);
+                }
+
                 if (toCode !== "0x") {
                   continue;
                 }
