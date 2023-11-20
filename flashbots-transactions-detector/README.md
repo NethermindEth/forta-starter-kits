@@ -11,7 +11,82 @@ This bot detects flashbots transactions.
 ## Alerts
 
 - FLASHBOTS-TRANSACTIONS
+
   - Fired when the Flashbots API flags a transaction as a flashbots transaction
+  - Severity is always set to "low"
+  - Type is always set to "info"
+  - Metadata:
+    - from - the address that initiated the tx
+    - to - the address that was interacted with
+    - hash - the transaction hash
+    - blockNumber - the block number of the tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `FLASHBOTS-TRANSACTIONS` out of the total number of transactions processed by this bot.
+  - Addresses contain the list of contracts that were impacted
+  - Labels:
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The Flashbots' transaction initiator EOA.
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.6`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The Flashbots' transaction hash
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
+
+- FLASHBOTS-TRANSACTIONS-NO-REWARD
+
+  - Fired when the Flashbots API flags a transaction as a flashbots transaction where the miner reward is zero
+  - Severity is always set to "low"
+  - Type is always set to "info"
+  - Metadata:
+    - from - the address that initiated the tx
+    - to - the address that was interacted with
+    - hash - the transaction hash
+    - blockNumber - the block number of the tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `FLASHBOTS-TRANSACTIONS` out of the total number of transactions processed by this bot.
+  - Addresses contain the list of contracts that were impacted
+  - Labels:
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The Flashbots' transaction initiator EOA.
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.6`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The Flashbots' transaction hash
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
+
+- FLASHBOTS-SWAP-TRANSACTIONS
+
+  - Fired when the Flashbots API flags a swap as a flashbots transaction
+  - Severity is always set to "low"
+  - Type is always set to "info"
+  - Metadata:
+    - from - the address that initiated the tx
+    - to - the address that was interacted with
+    - hash - the transaction hash
+    - blockNumber - the block number of the tx
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `FLASHBOTS-TRANSACTIONS` out of the total number of transactions processed by this bot.
+  - Addresses contain the list of contracts that were impacted
+  - Labels:
+    - Label 1:
+      - `entityType`: The type of the entity, always set to "Address"
+      - `entity`: The Flashbots' transaction initiator EOA.
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.6`.
+    - Label 2:
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `entity`: The Flashbots' transaction hash
+      - `label`: The type of the label, always set to "Suspicious"
+      - `confidence`: The confidence level of the transaction being suspicious (0-1). Always set to `0.7`.
+
+- FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD
+  - Fired when the Flashbots API flags a swap as a flashbots transaction where the miner reward is zero
   - Severity is always set to "low"
   - Type is always set to "info"
   - Metadata:
