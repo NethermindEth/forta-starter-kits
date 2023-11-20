@@ -102,15 +102,13 @@ function provideHandleBlock(
                   if (logs.length < 10) {
                     if (
                       log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
-                      (log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67") &&
-                        reward === "0")
-                    ) {
-                      alertId = "FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD";
-                    } else if (
-                      log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
                       log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
                     ) {
-                      alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                      if (reward === "0") {
+                        alertId = "FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD";
+                      } else {
+                        alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                      }
                     }
                   }
 
