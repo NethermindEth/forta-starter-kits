@@ -13,7 +13,7 @@ const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
 const { ZETTABLOCK_API_KEY } = require("./keys");
 
-const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=4";
+const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?block_number=18612697";
 let lastBlockNumber = 0;
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
@@ -78,18 +78,35 @@ function provideHandleBlock(
                 return code !== "0x";
               })
               .map(async (transaction) => {
-                const { eoa_address: from, to_address: to, transaction_hash: hash } = transaction;
+                const {
+                  eoa_address: from,
+                  to_address: to,
+                  transaction_hash: hash,
+                  total_miner_reward: reward,
+                } = transaction;
 
                 // Use the tx logs to get the impacted contracts
                 const { logs } = await getTransactionReceipt(hash);
 
-                let alertId = "FLASHBOTS-TRANSACTIONS";
+                let alertId = "";
+
+                if (reward == "0") {
+                  alertId = "FLASHBOTS-TRANSACTIONS-NO-REWARD";
+                } else {
+                  alertId = "FLASHBOTS-TRANSACTIONS";
+                }
 
                 let addresses = logs.map((log) => {
                   // Check if the transaction is a swap
                   // 0xd78ad95... is the swap topic for Uniswap v2 & 0xc42079f... is the swap topic for Uniswap v3
                   if (logs.length < 10) {
                     if (
+                      log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
+                      (log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67") &&
+                        reward === "0")
+                    ) {
+                      alertId = "FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD";
+                    } else if (
                       log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
                       log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
                     ) {
