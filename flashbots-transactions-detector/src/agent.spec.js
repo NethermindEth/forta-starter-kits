@@ -328,7 +328,7 @@ describe("flashbots transactions detection bot", () => {
       Finding.fromObject({
         name: "Flashbots transactions",
         description: `${from2} interacted with ${to2} in a flashbots transaction`,
-        alertId: "FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD",
+        alertId: "FLASHBOTS-SWAP-TRANSACTIONS",
         severity: FindingSeverity.Low,
         type: FindingType.Info,
         addresses: [to2],
@@ -357,7 +357,7 @@ describe("flashbots transactions detection bot", () => {
       Finding.fromObject({
         name: "Flashbots transactions",
         description: `${from3} interacted with ${to3} in a flashbots transaction`,
-        alertId: "FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD",
+        alertId: "FLASHBOTS-SWAP-TRANSACTIONS",
         severity: FindingSeverity.Low,
         type: FindingType.Info,
         addresses: [to3],
