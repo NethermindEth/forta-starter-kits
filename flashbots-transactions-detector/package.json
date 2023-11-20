@@ -1,7 +1,7 @@
 {
   "name": "flashbots-transactions-detector",
   "displayName": "Flashbots Transactions Detector",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "This bot detects flashbots transactions",
   "longDescription": "The bot identifies transactions executed Flashbots. Its core purpose is to autonomously recognize and flag transactions that are conducted using the Flashbots mechanism.",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/flashbots-transactions-detector",
@@ -34,13 +34,13 @@
     "axios": "^0.27.2",
     "bot-alert-rate": "^0.0.4",
     "dotenv": "^16.0.3",
-    "forta-agent": "^0.1.36",
+    "forta-agent": "^0.1.45",
     "node-fetch": "^2.6.7"
   },
   "devDependencies": {
     "forta-agent-tools": "^3.1.2",
     "jest": "^27.0.6",
-    "nodemon": "^2.0.8",
+    "nodemon": "^3.0.1",
     "prettier": "^2.7.1"
   }
 }

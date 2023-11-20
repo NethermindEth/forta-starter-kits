@@ -78,12 +78,23 @@ function provideHandleBlock(
                 return code !== "0x";
               })
               .map(async (transaction) => {
-                const { eoa_address: from, to_address: to, transaction_hash: hash } = transaction;
+                const {
+                  eoa_address: from,
+                  to_address: to,
+                  transaction_hash: hash,
+                  total_miner_reward: reward,
+                } = transaction;
 
                 // Use the tx logs to get the impacted contracts
                 const { logs } = await getTransactionReceipt(hash);
 
-                let alertId = "FLASHBOTS-TRANSACTIONS";
+                let alertId = "";
+
+                if (reward == "0") {
+                  alertId = "FLASHBOTS-TRANSACTIONS-NO-REWARD";
+                } else {
+                  alertId = "FLASHBOTS-TRANSACTIONS";
+                }
 
                 let addresses = logs.map((log) => {
                   // Check if the transaction is a swap
@@ -93,7 +104,11 @@ function provideHandleBlock(
                       log.topics.includes("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822") ||
                       log.topics.includes("0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67")
                     ) {
-                      alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                      if (reward === "0") {
+                        alertId = "FLASHBOTS-SWAP-TRANSACTIONS-NO-REWARD";
+                      } else {
+                        alertId = "FLASHBOTS-SWAP-TRANSACTIONS";
+                      }
                     }
                   }
 
