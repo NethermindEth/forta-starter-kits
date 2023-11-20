@@ -13,7 +13,7 @@ const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
 const { ZETTABLOCK_API_KEY } = require("./keys");
 
-const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?block_number=18612697";
+const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=4";
 let lastBlockNumber = 0;
 
 const DATABASE_URL = "https://research.forta.network/database/bot/";
