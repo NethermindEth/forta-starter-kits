@@ -33,6 +33,7 @@ const {
   createTransferSuspiciousContractAlert,
   createSweepTokenAlert,
   createOpenseaAlert,
+  createZeroNonceAllowanceAlert,
   getAddressType,
   getContractCreator,
   hasTransferredNonStablecoins,
@@ -46,6 +47,7 @@ const {
   checkObjectSizeAndCleanup,
   populateScamSnifferMap,
   fetchScamDomains,
+  getTransactionCount,
 } = require("./helper");
 const {
   approveCountThreshold,
@@ -331,6 +333,20 @@ const provideHandleTransaction =
         chainId,
         false
       );
+
+      if (spenderType === AddressType.EoaWithLowNonce) {
+        const nonce = await getTransactionCount(spender, provider, blockNumber);
+        if (nonce == 0) {
+          const anomalyScore = await calculateAlertRate(
+            chainId,
+            BOT_ID,
+            "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
+            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+            counters.totalPermits
+          );
+          findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+        }
+      }
 
       if (
         (spenderType === AddressType.LowNumTxsUnverifiedContract ||
@@ -660,6 +676,19 @@ const provideHandleTransaction =
           );
           findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
         } else {
+          if (spenderType === AddressType.EoaWithLowNonce) {
+            const nonce = await getTransactionCount(spender, provider, blockNumber);
+            if (nonce == 0) {
+              const anomalyScore = await calculateAlertRate(
+                chainId,
+                BOT_ID,
+                "ICE-PHISHING-ZERO-NONCE-APPROVAL",
+                isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+                counters.totalApprovals
+              );
+              findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+            }
+          }
           const suspiciousContractFound = Array.from(suspiciousContracts).find(
             (contract) => contract.address === spender || contract.creator === spender
           );
@@ -885,7 +914,7 @@ const provideHandleTransaction =
         if (!(await hasTransferredNonStablecoins(txFrom, chainId))) {
           let nonce;
           try {
-            nonce = await provider.getTransactionCount(txFrom);
+            nonce = await getTransactionCount(txFrom, provider, blockNumber);
           } catch (e) {
             const stackTrace = util.inspect(e, { showHidden: false, depth: null });
             errorCache.add(
@@ -915,7 +944,7 @@ const provideHandleTransaction =
                 if (balanceAfter.lt(balanceBefore.div(100))) {
                   let fromNonce;
                   try {
-                    fromNonce = await provider.getTransactionCount(from);
+                    fromNonce = await getTransactionCount(from, provider, blockNumber);
                   } catch (e) {
                     const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                     errorCache.add(

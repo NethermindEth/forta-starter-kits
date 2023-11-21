@@ -1132,6 +1132,42 @@ function createSweepTokenAlert(victim, attacker, asset, value, anomalyScore, txH
   });
 }
 
+function createZeroNonceAllowanceAlert(victim, attacker, asset, anomalyScore, txHash) {
+  return Finding.fromObject({
+    name: "Approval/Permission has been given to a 0 nonce address",
+    description: `${attacker} received allowance from ${victim} to spend (${asset}) tokens`,
+    alertId: "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
+    severity: FindingSeverity.High,
+    type: FindingType.Suspicious,
+    metadata: {
+      attacker,
+      victim,
+      anomalyScore: anomalyScore.toString(),
+    },
+    addresses: [asset],
+    labels: [
+      Label.fromObject({
+        entity: attacker,
+        entityType: EntityType.Address,
+        label: "Attacker",
+        confidence: 0.7,
+      }),
+      Label.fromObject({
+        entity: victim,
+        entityType: EntityType.Address,
+        label: "Victim",
+        confidence: 0.7,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Attack",
+        confidence: 0.7,
+      }),
+    ],
+  });
+}
+
 function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Opensea proxy implementation changed to attacker's contract",
@@ -1374,14 +1410,22 @@ async function getLabel(address) {
   return "";
 }
 
-async function getEoaType(address, provider, blockNumber) {
+const cachedNonces = new LRU({ max: 5 });
+
+async function getTransactionCount(address, provider, blockNumber) {
   let nonce = 100000;
   let tries = 0;
   const maxTries = 3;
+  const cacheKey = `${address}-${blockNumber}`;
+
+  if (cachedNonces.has(cacheKey)) {
+    return cachedNonces.get(cacheKey);
+  }
 
   while (tries < maxTries) {
     try {
       nonce = await provider.getTransactionCount(address, blockNumber);
+      cachedNonces.set(cacheKey, nonce);
       break; // exit the loop if successful
     } catch (e) {
       tries++;
@@ -1392,6 +1436,11 @@ async function getEoaType(address, provider, blockNumber) {
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
   }
+  return nonce;
+}
+
+async function getEoaType(address, provider, blockNumber) {
+  const nonce = await getTransactionCount(address, provider, blockNumber);
   return nonce > nonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
 }
 
@@ -1742,6 +1791,7 @@ module.exports = {
   createTransferSuspiciousContractAlert,
   createSweepTokenAlert,
   createOpenseaAlert,
+  createZeroNonceAllowanceAlert,
   getAddressType,
   getEoaType,
   getContractCreator,
@@ -1756,4 +1806,5 @@ module.exports = {
   checkObjectSizeAndCleanup,
   populateScamSnifferMap,
   fetchScamDomains,
+  getTransactionCount,
 };
