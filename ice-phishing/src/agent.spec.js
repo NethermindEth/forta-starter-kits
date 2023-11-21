@@ -43,6 +43,7 @@ const mockObjects = {
 };
 
 const spender = createAddress("0x01");
+const spenderNewEOA = createAddress("0x332211");
 const owner1 = createAddress("0x02");
 const owner2 = createAddress("0x03");
 const owner3 = createAddress("0x04");
@@ -205,6 +206,15 @@ const mockApprovalERC20Events = [
     args: {
       owner: owner3,
       spender,
+      value: ethers.BigNumber.from(5),
+    },
+  },
+  {
+    address: asset,
+    name: "Approval",
+    args: {
+      owner: createAddress("0x2211"),
+      spender: spenderNewEOA, // New EOA
       value: ethers.BigNumber.from(5),
     },
   },
@@ -2108,7 +2118,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
-      mockCalculateAlertRate.mockReturnValue(0.42);
+      mockCalculateAlertRate.mockReturnValueOnce(0.42);
 
       const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
       const now = new Date();
@@ -2194,9 +2204,6 @@ describe("ice-phishing bot", () => {
         };
         // First call includes 1155 sig "2eb2c2d6"
         mockProvider.getCode.mockReturnValueOnce("0x992eb2c2d699").mockReturnValue("0x");
-        if (i === 2) {
-          mockCalculateAlertRate.mockReturnValue(0.142);
-        }
         await handleTransaction(tempTxEvent);
       }
 
@@ -2585,7 +2592,7 @@ describe("ice-phishing bot", () => {
             data: "0x0",
           },
         };
-
+        if (i == 1) mockCalculateAlertRate.mockResolvedValueOnce(0.0012);
         await handleTransaction(tempTxEvent);
       }
       const mockTxEvent = {
@@ -2733,7 +2740,7 @@ describe("ice-phishing bot", () => {
         from: spender,
       };
       mockProvider.getCode.mockReturnValue("0x");
-
+      mockCalculateAlertRate.mockResolvedValueOnce(0.19292);
       await handleTransaction(tempTxEvent);
 
       mockTxEvent.filterFunction
@@ -2813,7 +2820,7 @@ describe("ice-phishing bot", () => {
         from: spender,
       };
       mockProvider.getCode.mockReturnValue("0x");
-
+      mockCalculateAlertRate.mockResolvedValueOnce(0.877);
       await handleTransaction(tempTxEvent);
 
       mockTxEvent.filterFunction
@@ -2899,7 +2906,7 @@ describe("ice-phishing bot", () => {
         from: spender,
       };
       mockProvider.getCode.mockReturnValue("0x");
-
+      mockCalculateAlertRate.mockResolvedValueOnce(0.1877);
       await handleTransaction(tempTxEvent);
 
       mockTxEvent.filterFunction
@@ -3413,7 +3420,7 @@ describe("ice-phishing bot", () => {
         data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
       };
       axios.get.mockResolvedValue(axiosResponse2);
-      mockCalculateAlertRate.mockReturnValue(0.5);
+      mockCalculateAlertRate.mockReturnValueOnce(0.5);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -3618,7 +3625,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
       mockProvider.getCode.mockReturnValue("0x");
-      mockCalculateAlertRate.mockReturnValue(0.6);
+      mockCalculateAlertRate.mockReturnValueOnce(0.6);
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -3874,6 +3881,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash33",
         timestamp: 1001,
+        blockNumber: 213124,
         from: attacker,
         transaction: {
           data: "0x23b872dd",
@@ -3930,6 +3938,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash334",
         timestamp: 1101,
+        blockNumber: 213125,
         from: attacker,
         transaction: {
           data: "0x23b872dd",
@@ -3999,6 +4008,75 @@ describe("ice-phishing bot", () => {
             }),
           ],
           uniqueKey,
+        }),
+      ]);
+    });
+
+    it("should return findings when an approval is granted to a 0-nonce EOA", async () => {
+      const victim = createAddress("0x2211");
+
+      const mockTxEvent = {
+        filterFunction: jest
+          .fn()
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([]),
+        filterLog: jest
+          .fn()
+          .mockReturnValueOnce([mockApprovalERC20Events[3]]) // ERC20 approvals
+          .mockReturnValueOnce([]) // ERC721 approvals
+          .mockReturnValueOnce([]) // ApprovalForAll
+          .mockReturnValueOnce([]) // ERC20 transfers
+          .mockReturnValueOnce([]) // ERC721 transfers
+          .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]), // Upgrades
+        hash: `hash123`,
+        timestamp: 4000,
+        from: victim,
+      };
+      mockProvider.getCode.mockReturnValue("0x");
+      mockProvider.getTransactionCount.mockReturnValueOnce(1230).mockResolvedValueOnce(0);
+
+      const alertId = "ICE-PHISHING-ZERO-NONCE-ALLOWANCE";
+      mockCalculateAlertRate.mockReturnValueOnce("0.08910234");
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Approval/Permission has been given to a 0 nonce address",
+          description: `${spenderNewEOA} received allowance from ${victim} to spend (${asset}) tokens`,
+          alertId: alertId,
+          severity: FindingSeverity.High,
+          type: FindingType.Suspicious,
+          metadata: {
+            attacker: spenderNewEOA,
+            victim,
+            anomalyScore: "0.08910234",
+          },
+          addresses: [asset],
+          labels: [
+            Label.fromObject({
+              entity: spenderNewEOA,
+              entityType: EntityType.Address,
+              label: "Attacker",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entity: victim,
+              entityType: EntityType.Address,
+              label: "Victim",
+              confidence: 0.7,
+            }),
+            Label.fromObject({
+              entity: "hash123",
+              entityType: EntityType.Transaction,
+              label: "Attack",
+              confidence: 0.7,
+            }),
+          ],
         }),
       ]);
     });
