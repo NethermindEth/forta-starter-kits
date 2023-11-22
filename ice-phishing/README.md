@@ -657,6 +657,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `confidence`: The confidence level of the transaction being an attack, always set to "0.8"
 
 - ICE-PHISHING-PIG-BUTCHERING
+
   - Fired when an account received funds through a pig butchering scam attack.
   - Severity is always set to "critical"
   - Type is always set to "suspicious"
@@ -667,26 +668,52 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
     - `anomalyScore` - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ICE-PHISHING-PIG-BUTCHERING` out of the total number of transfers detected by this bot.
   - Labels:
-  - Label 1:
-    - `entity`: The transaction hash of the transfer that exceeds the threshold
-    - `entityType`: The type of the entity, always set to "Transaction"
-    - `label`: The type of the label, always set to "Attack"
-    - `confidence`: The confidence level of the transaction being an attack, always set to "0.7"
-  - Label 2:
-    - `entity`: The receiver's address
-    - `entityType`: The type of the entity, always set to "Address"
-    - `label`: The type of the label, always set to "Attacker"
-    - `confidence`: The confidence level of the address being an attacker, always set to "0.7"
-  - Label 3-X:
-    - `entity`: The initiator's address
-    - `entityType`: The type of the entity, always set to "Address"
-    - `label`: The type of the label, always set to "Victim"
-    - `confidence`: The confidence level of the address being a victim, always set to "0.7"
-  - Label X+1 - Y:
-    - `entity`: The victim's address
-    - `entityType`: The type of the entity, always set to "Address"
-    - `label`: The type of the label, always set to "Victim"
-    - `confidence`: The confidence level of the address being a victim, always set to "0.7"
+    - Label 1:
+      - `entity`: The transaction hash of the transfer that exceeds the threshold
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Attack"
+      - `confidence`: The confidence level of the transaction being an attack, always set to "0.7"
+    - Label 2:
+      - `entity`: The receiver's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.7"
+    - Label 3-X:
+      - `entity`: The initiator's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim, always set to "0.7"
+    - Label X+1 - Y:
+      - `entity`: The victim's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim, always set to "0.7"
+
+- ICE-PHISHING-ZERO-NONCE-ALLOWANCE
+  - Fired when an approval/permission is granted to 0-nonce address.
+  - Severity is always set to "high"
+  - Type is always set to "suspicious"
+  - Metadata:
+    - `attacker` - the account that got the approval/permission
+    - `victim` - the account that granted the approval
+    - `anomalyScore` - score of how anomalous the alert is (0-1)
+      - Score calculated by finding amount of `ICE-PHISHING-ZERO-NONCE-ALLOWANCE` out of the total number of approvals/permissions detected by this bot.
+  - Labels:
+    - Label 1:
+      - `entity`: The spender's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.7"
+    - Label 2:
+      - `entity`: The victim's address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim, always set to "0.7"
+    - Label 1:
+      - `entity`: The transaction hash of the allowance
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Attack"
+      - `confidence`: The confidence level of the transaction being an attack, always set to "0.7"
 
 > `^` Anomaly Score differs based on chain.
 > `^^` indicates this property could have more than one instance appear in the alert's `metadata`, and thus each will be properly enumerated.
