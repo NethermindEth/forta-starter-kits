@@ -686,7 +686,7 @@ const provideHandleTransaction =
             !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
           ) {
             if ((await getContractCreationHash(spender, chainId)) === hash) {
-              const attackers = [spender, txFrom, ...transferEvents.map((event) => event.args.to)];
+              const attackers = [spender, txFrom, txEvent.to, ...transferEvents.map((event) => event.args.to)];
               const anomalyScore = await calculateAlertRate(
                 chainId,
                 BOT_ID,
