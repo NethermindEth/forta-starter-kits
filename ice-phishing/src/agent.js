@@ -34,6 +34,7 @@ const {
   createSweepTokenAlert,
   createOpenseaAlert,
   createZeroNonceAllowanceAlert,
+  createZeroNonceAllowanceTransferAlert,
   getAddressType,
   getContractCreator,
   hasTransferredNonStablecoins,
@@ -48,6 +49,8 @@ const {
   populateScamSnifferMap,
   fetchScamDomains,
   getTransactionCount,
+  getContractCreationHash,
+  hasZeroTransactions,
 } = require("./helper");
 const {
   approveCountThreshold,
@@ -337,14 +340,16 @@ const provideHandleTransaction =
       if (spenderType === AddressType.EoaWithLowNonce) {
         const nonce = await getTransactionCount(spender, provider, blockNumber);
         if (nonce == 0) {
-          const anomalyScore = await calculateAlertRate(
-            chainId,
-            BOT_ID,
-            "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
-            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
-            counters.totalPermits
-          );
-          findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+          if (await hasZeroTransactions(spender, chainId)) {
+            const anomalyScore = await calculateAlertRate(
+              chainId,
+              BOT_ID,
+              "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
+              isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+              counters.totalPermits
+            );
+            findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+          }
         }
       }
 
@@ -675,18 +680,37 @@ const provideHandleTransaction =
             counters.totalApprovals
           );
           findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
+        } else if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
+          if (
+            transferEvents.length &&
+            !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
+          ) {
+            if ((await getContractCreationHash(spender, chainId)) === hash) {
+              const attackers = [spender, txFrom, ...transferEvents.map((event) => event.args.to)];
+              const anomalyScore = await calculateAlertRate(
+                chainId,
+                BOT_ID,
+                "ICE-PHISHING-ZERO-NONCE-APPROVAL-TRANSFER",
+                isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+                counters.totalApprovals
+              );
+              findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, hash));
+            }
+          }
         } else {
           if (spenderType === AddressType.EoaWithLowNonce) {
             const nonce = await getTransactionCount(spender, provider, blockNumber);
             if (nonce == 0) {
-              const anomalyScore = await calculateAlertRate(
-                chainId,
-                BOT_ID,
-                "ICE-PHISHING-ZERO-NONCE-APPROVAL",
-                isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
-                counters.totalApprovals
-              );
-              findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+              if (await hasZeroTransactions(spender, chainId)) {
+                const anomalyScore = await calculateAlertRate(
+                  chainId,
+                  BOT_ID,
+                  "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
+                  isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+                  counters.totalApprovals
+                );
+                findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+              }
             }
           }
           const suspiciousContractFound = Array.from(suspiciousContracts).find(
