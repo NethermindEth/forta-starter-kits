@@ -1168,6 +1168,54 @@ function createZeroNonceAllowanceAlert(victim, attacker, asset, anomalyScore, tx
   });
 }
 
+function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomalyScore, txHash) {
+  let labels = [];
+
+  const metadata = {
+    anomalyScore: anomalyScore.toString(),
+  };
+  metadata["victim"] = victim;
+
+  attackers.forEach((attacker, index) => {
+    const attackerName = `attacker${index + 1}`;
+    metadata[attackerName] = attacker;
+
+    const attackerLabel = Label.fromObject({
+      entity: attacker,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.9,
+      remove: false,
+    });
+    labels.push(attackerLabel);
+  });
+
+  return Finding.fromObject({
+    name: "Approval/Permission has been given to a 0 nonce address during a transfer",
+    description: `${attackers[0]} received allowance from ${victim} to spend (${asset}) tokens`,
+    alertId: "ICE-PHISHING-ZERO-NONCE-ALLOWANCE-TRANSFER",
+    severity: FindingSeverity.Critical,
+    type: FindingType.Suspicious,
+    metadata,
+    addresses: [asset],
+    labels: [
+      ...labels,
+      Label.fromObject({
+        entity: victim,
+        entityType: EntityType.Address,
+        label: "Victim",
+        confidence: 0.9,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Attack",
+        confidence: 0.9,
+      }),
+    ],
+  });
+}
+
 function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Opensea proxy implementation changed to attacker's contract",
@@ -1246,7 +1294,7 @@ function getEtherscanContractUrl(address, chainId) {
 function getEtherscanAddressUrl(address, chainId, offset, order) {
   const { urlAccount } = etherscanApis[Number(chainId)];
   const key = getBlockExplorerKey(Number(chainId));
-  return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
+  return `${urlAccount}&address=${address}&startblock=0&endblock=999999999&page=1&offset=${
     offset + 1
   }&sort=${order}&apikey=${key}`;
 }
@@ -1332,6 +1380,45 @@ async function getContractCreator(address, chainId) {
     return null;
   } else {
     return contractCreator;
+  }
+}
+
+async function getContractCreationHash(address, chainId) {
+  const { urlContractCreation } = etherscanApis[Number(chainId)];
+  const key = getBlockExplorerKey(Number(chainId));
+  const url = `${urlContractCreation}&contractaddresses=${address}&apikey=${key}`;
+
+  let retries = 2;
+  let result;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      result = await axios.get(url);
+      // Handle successful response
+      break; // Exit the loop if successful
+    } catch {
+      if (i === retries) {
+        // Handle error after all retries
+        throw new Error(`All retry attempts to call block explorer (URL: ${url}) failed`);
+      } else {
+        // Handle error and retry
+        console.log(`Retry attempt ${i + 1} to call block explorer failed`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+
+  if (result.data.message.startsWith("NOTOK") || result.data.message.startsWith("No data found")) {
+    console.log(`block explorer error occured; skipping check for ${address}`);
+    return null;
+  }
+  const contractCreationHash = result.data.result[0].txHash;
+
+  // E.g. contract 0x85149247691df622eaf1a8bd0cafd40bc45154a9 on Optimism returns "GENESIS" as the creator/hash
+  if (!contractCreationHash.startsWith("0x")) {
+    console.log("Contract creation is not a valid hash:", contractCreationHash);
+    return null;
+  } else {
+    return contractCreationHash;
   }
 }
 
@@ -1617,6 +1704,34 @@ async function haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId) {
   return false;
 }
 
+async function hasZeroTransactions(spender, chainId) {
+  const maxRetries = 3;
+  let result;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      result = await axios.get(getEtherscanAddressUrl(spender, chainId, 10, "desc"));
+      if (result.data.message.startsWith("NOTOK") || result.data.message.startsWith("Query Timeout")) {
+        console.log(`block explorer error occured (attempt ${attempt}); retrying check for ${spender}`);
+        if (attempt === maxRetries) {
+          console.log(`block explorer error occured (final attempt); skipping check for ${spender}`);
+          return false;
+        }
+      } else {
+        break;
+      }
+    } catch (err) {
+      console.log(err);
+      console.log(`An error occurred during the fetch (attempt ${attempt}):`);
+      if (attempt === maxRetries) {
+        console.log(`Error during fetch (final attempt); skipping check for ${spender}`);
+        return false;
+      }
+    }
+  }
+  if (result.data.message === "No transactions found") return true;
+}
+
 async function getSuspiciousContracts(chainId, blockNumber, init) {
   let contracts = [];
   let startingCursor;
@@ -1792,6 +1907,7 @@ module.exports = {
   createSweepTokenAlert,
   createOpenseaAlert,
   createZeroNonceAllowanceAlert,
+  createZeroNonceAllowanceTransferAlert,
   getAddressType,
   getEoaType,
   getContractCreator,
@@ -1807,4 +1923,6 @@ module.exports = {
   populateScamSnifferMap,
   fetchScamDomains,
   getTransactionCount,
+  getContractCreationHash,
+  hasZeroTransactions,
 };
