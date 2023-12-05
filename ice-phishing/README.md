@@ -721,7 +721,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
   - Severity is always set to "critical"
   - Type is always set to "suspicious"
   - Metadata:
-    - `attacker(1-N)` - 1. the account that got the approval/permission, 2. the transaction initiator, 3-N. the addresses that received the funds
+    - `attacker(1-N)` - 1. the account that got the approval/permission, 2. the transaction initiator, 3. the contract called, 4-N. the addresses that received the funds
     - `victim` - the account that granted the approval and lost funds
     - `anomalyScore` - score of how anomalous the alert is (0-1)
       - Score calculated by finding amount of `ICE-PHISHING-ZERO-NONCE-ALLOWANCE-TRANSFER` out of the total number of approvals/permissions detected by this bot.
@@ -736,7 +736,12 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
       - `entityType`: The type of the entity, always set to "Address"
       - `label`: The type of the label, always set to "Attacker"
       - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
-    - Label 3 - N-2:
+    - Label 3:
+      - `entity`: The contract called
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the address being an attacker, always set to "0.9"
+    - Label 4 - N-2:
       - `entity`: The receiver's address
       - `entityType`: The type of the entity, always set to "Address"
       - `label`: The type of the label, always set to "Attacker"

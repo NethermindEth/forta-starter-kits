@@ -1192,7 +1192,7 @@ function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomaly
 
   return Finding.fromObject({
     name: "Approval/Permission has been given to a 0 nonce address during a transfer",
-    description: `${attackers[0]} received allowance from ${victim} to spend (${asset}) tokens`,
+    description: `${attackers[0]} received allowance from ${victim} and spent (${asset}) tokens`,
     alertId: "ICE-PHISHING-ZERO-NONCE-ALLOWANCE-TRANSFER",
     severity: FindingSeverity.Critical,
     type: FindingType.Suspicious,

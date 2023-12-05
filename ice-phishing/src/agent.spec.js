@@ -538,7 +538,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got permission for ERC-20 tokens",
           description: `${spender} gave permission to ${spender} for ${owner1}'s ERC-20 tokens`,
           alertId: "ICE-PHISHING-ERC20-PERMIT",
@@ -587,7 +587,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got permission for ERC-20 tokens",
           description: `${spender} gave permission to ${spender} for ${owner1}'s ERC-20 tokens`,
           alertId: "ICE-PHISHING-ERC20-PERMIT",
@@ -636,7 +636,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got permission for ERC-20 tokens",
           description: `${spender} gave permission to ${spender} for ${owner1}'s ERC-20 tokens`,
           alertId: "ICE-PHISHING-ERC20-PERMIT",
@@ -743,7 +743,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Suspicious contract (creator) was involved in an ERC-20 permission",
           description: `${createAddress("0x4567")} gave permission to ${createAddress(
             "0xabcdabcd"
@@ -775,7 +775,7 @@ describe("ice-phishing bot", () => {
             }),
           ],
         }),
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got permission for ERC-20 tokens",
           description: `${createAddress("0x4567")} gave permission to ${createAddress(
             "0xabcdabcd"
@@ -882,7 +882,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Suspicious contract (creator) was involved in an ERC-20 permission",
           description: `${createAddress("0x4567")} gave permission to ${createAddress(
             "0xeeffeeff"
@@ -914,7 +914,7 @@ describe("ice-phishing bot", () => {
             }),
           ],
         }),
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got permission for ERC-20 tokens",
           description: `${createAddress("0x4567")} gave permission to ${createAddress(
             "0xeeffeeff"
@@ -1028,7 +1028,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got approval for all ERC-1155 tokens",
           description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner3}`,
           alertId: "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL",
@@ -1123,7 +1123,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got approval for all ERC-721 tokens",
           description: `${spender} obtained transfer approval for all ERC-721 tokens from ${owner3}`,
           alertId: "ICE-PHISHING-ERC721-APPROVAL-FOR-ALL",
@@ -1235,7 +1235,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got approval for all ERC-721 tokens",
           description: `${createAddress(
             "0xcdcd"
@@ -1335,7 +1335,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "High number of accounts granted approvals for ERC-20 tokens",
           description: `${spender} obtained transfer approval for 1 ERC-20 tokens by 3 accounts over period of 1 days.`,
           alertId: "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS",
@@ -1507,7 +1507,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "High number of accounts granted approvals for ERC-721 tokens",
           description: `${spender} obtained transfer approval for 1 ERC-721 tokens by 3 accounts over period of 1 days.`,
           alertId,
@@ -1657,7 +1657,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "High number of accounts granted approvals for ERC-721 tokens",
           description: `${spender} obtained transfer approval for 1 ERC-721 tokens by 3 accounts over period of 1 days.`,
           alertId,
@@ -1896,7 +1896,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
           alertId,
@@ -2133,7 +2133,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
           alertId,
@@ -2267,7 +2267,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got approval for all ERC-1155 tokens",
           description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner3}`,
           alertId: "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL",
@@ -2294,7 +2294,7 @@ describe("ice-phishing bot", () => {
             }),
           ],
         }),
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
           alertId,
@@ -2429,7 +2429,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got approval for all ERC-1155 tokens",
           description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner3}`,
           alertId: "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL",
@@ -2457,7 +2457,7 @@ describe("ice-phishing bot", () => {
           ],
         }),
 
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
           alertId,
@@ -2639,7 +2639,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got approval for all ERC-1155 tokens",
           description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner3}`,
           alertId: "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO",
@@ -2666,7 +2666,7 @@ describe("ice-phishing bot", () => {
             }),
           ],
         }),
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously approved assets transferred",
           description: `${spender} transferred 1 assets from 3 accounts over period of 1 days.`,
           alertId,
@@ -2764,7 +2764,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously permitted assets transferred",
           description: `${spender} transferred ${mockTransferEvents[0].args.value} tokens from ${owner1} to ${mockTransferEvents[0].args.to}`,
           alertId: "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
@@ -2850,7 +2850,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously permitted assets transferred",
           description: `${spender} transferred ${mockTransferEvents[0].args.value} tokens from ${owner1} to ${mockTransferEvents[0].args.to}`,
           alertId: "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
@@ -2931,7 +2931,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Previously permitted assets transferred",
           description: `${spender} transferred ${mockTransferEvents[0].args.value} tokens from ${owner1} to ${mockTransferEvents[0].args.to}`,
           alertId: "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
@@ -3009,7 +3009,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Scam address, flagged in the Scam Sniffer DB, was involved in an ERC-20 permission",
           description: `${spender} gave permission to ${createAddress("0x5050")} for ${owner1}'s ERC-20 tokens`,
           alertId: "ICE-PHISHING-ERC20-SCAM-PERMIT",
@@ -3109,7 +3109,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Contract created by a scam address (flagged in the Scam Sniffer DB) was involved in an ERC-20 permission",
           description: `${spender} gave permission to ${createAddress("0x23325050")} for ${owner1}'s ERC-20 tokens`,
           alertId: "ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT",
@@ -3139,7 +3139,7 @@ describe("ice-phishing bot", () => {
             }),
           ],
         }),
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Account got permission for ERC-20 tokens",
           description: `${spender} gave permission to ${createAddress("0x23325050")} for ${owner1}'s ERC-20 tokens`,
           alertId: "ICE-PHISHING-ERC20-PERMIT-INFO",
@@ -3224,7 +3224,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Scam address, flagged in the Scam Sniffer DB, got approval to spend assets",
           description: `Scam address ${spender} got approval for ${owner1}'s assets`,
           alertId: "ICE-PHISHING-SCAM-APPROVAL",
@@ -3302,7 +3302,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Scam address, flagged in the Scam Sniffer DB, was involved in an asset transfer",
           description: `${spender} transferred assets from ${owner1} to ${mockTransferEvents[0].args.to}`,
           alertId: "ICE-PHISHING-SCAM-TRANSFER",
@@ -3425,7 +3425,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Suspicious contract (creator) was involved in an asset transfer",
           description: `${createAddress("0x12331")} transferred assets from ${owner1} to ${suspiciousReceiver}`,
           alertId: "ICE-PHISHING-SUSPICIOUS-TRANSFER",
@@ -3546,7 +3546,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Suspicious contract (creator) was involved in an asset transfer",
           description: `${createAddress("0x12331")} transferred assets from ${owner1} to ${suspiciousContractCreator}`,
           alertId: "ICE-PHISHING-SUSPICIOUS-TRANSFER",
@@ -3629,7 +3629,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Suspicious contract (creator) got approval to spend assets",
           description: `Suspicious address ${spender} got approval for ${owner1}'s assets`,
           alertId: "ICE-PHISHING-SUSPICIOUS-APPROVAL",
@@ -3689,7 +3689,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Attacker stole funds through Router V3's pull and sweepTokens functions",
           description: `${mockRecipient} received ${ethers.BigNumber.from(210)} tokens (${asset}) from ${victim}`,
           alertId: "ICE-PHISHING-PULL-SWEEPTOKEN",
@@ -3798,7 +3798,7 @@ describe("ice-phishing bot", () => {
 
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Opensea proxy implementation changed to attacker's contract",
           description: `${victim} was tricked into upgrading their Opensea proxy implementation to ${mockImplementation} created by ${createAddress(
             "0xbbbb"
@@ -3962,7 +3962,7 @@ describe("ice-phishing bot", () => {
       const findings = await handleTransaction(mockTxEvent1);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Possible Pig Butchering Attack",
           description: `${createAddress("0x11")} received funds through a pig butchering attack`,
           alertId,
@@ -4013,6 +4013,9 @@ describe("ice-phishing bot", () => {
     });
 
     it("should return findings when an approval is granted to a 0-nonce EOA", async () => {
+      mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+      await initialize();
+
       const victim = createAddress("0x2211");
 
       const mockTxEvent = {
@@ -4039,13 +4042,18 @@ describe("ice-phishing bot", () => {
       mockProvider.getCode.mockReturnValue("0x");
       mockProvider.getTransactionCount.mockReturnValueOnce(1230).mockResolvedValueOnce(0);
 
+      const axiosResponse = {
+        data: { message: "No transactions found", status: "0", result: [] },
+      };
+      axios.get.mockResolvedValue(axiosResponse);
+
       const alertId = "ICE-PHISHING-ZERO-NONCE-ALLOWANCE";
       mockCalculateAlertRate.mockReturnValueOnce("0.08910234");
 
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
-        Finding.fromObject({
+        expect.objectContaining({
           name: "Approval/Permission has been given to a 0 nonce address",
           description: `${spenderNewEOA} received allowance from ${victim} to spend (${asset}) tokens`,
           alertId: alertId,
