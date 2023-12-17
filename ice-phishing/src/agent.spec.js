@@ -141,12 +141,14 @@ const mockPermit2FunctionCall = {
   args: {
     owner: owner1,
     permitSingle: {
-      details: {
-        token: asset,
-        value: ethers.BigNumber.from(210),
-        expiration: 9359543534435,
-        nonce: 1,
-      },
+      details: [
+        {
+          token: asset,
+          value: ethers.BigNumber.from(210),
+          expiration: 9359543534435,
+          nonce: 1,
+        },
+      ],
       spender,
       deadline: 9359543534435,
     },
