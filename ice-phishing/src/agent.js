@@ -353,6 +353,29 @@ const provideHandleTransaction =
         }
       }
 
+      if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
+        if ((await getContractCreationHash(spender, chainId)) === hash) {
+          let attackers = [
+            spender,
+            txFrom,
+            txEvent.to,
+            ...transferEvents
+              .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
+              .map((event) => event.args.to),
+          ];
+          // Remove duplicates
+          attackers = Array.from(new Set(attackers));
+          const anomalyScore = await calculateAlertRate(
+            chainId,
+            BOT_ID,
+            "ICE-PHISHING-ZERO-NONCE-APPROVAL-TRANSFER",
+            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
+            counters.totalPermits
+          );
+          findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, hash));
+        }
+      }
+
       if (
         (spenderType === AddressType.LowNumTxsUnverifiedContract ||
           spenderType === AddressType.EoaWithLowNonce ||
@@ -686,7 +709,16 @@ const provideHandleTransaction =
             !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
           ) {
             if ((await getContractCreationHash(spender, chainId)) === hash) {
-              const attackers = [spender, txFrom, txEvent.to, ...transferEvents.map((event) => event.args.to)];
+              let attackers = [
+                spender,
+                txFrom,
+                txEvent.to,
+                ...transferEvents
+                  .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
+                  .map((event) => event.args.to),
+              ];
+              // Remove duplicates
+              attackers = Array.from(new Set(attackers));
               const anomalyScore = await calculateAlertRate(
                 chainId,
                 BOT_ID,
