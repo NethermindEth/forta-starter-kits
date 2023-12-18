@@ -305,7 +305,7 @@ const daiPermitFunctionABI =
   "function permit(address owner, address spender, uint256 nonce, uint256 deadline, bool allowed, uint8 v, bytes32 r, bytes32 s) external";
 
 const uniswapPermitFunctionABI =
-  "function permit(address owner, tuple ((address token,uint160 value ,uint48 expiration ,uint48 nonce)[] details, address spender, uint256 deadline) permitSingle, bytes signature)";
+  "function permit(address owner, tuple ((address token, uint160 value, uint48 expiration, uint48 nonce)[] details, address spender, uint256 deadline) permitSingle, bytes signature)";
 
 const pullFunctionABI = "function pull(address token, uint256 value) external";
 const sweepTokenFunctionABI = "function sweepToken(address token, uint256 amountMinimum, address recipient) external";
