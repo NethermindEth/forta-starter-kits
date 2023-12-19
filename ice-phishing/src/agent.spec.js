@@ -140,7 +140,7 @@ const mockPermit2FunctionCall = {
   address: createAddress("0x06"),
   args: {
     owner: owner1,
-    permitSingle: {
+    permitBatch: {
       details: [
         {
           token: asset,

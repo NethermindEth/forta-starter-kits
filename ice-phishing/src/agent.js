@@ -306,11 +306,11 @@ const provideHandleTransaction =
         deadline = Number(deadline.toString());
       }
 
-      if (func.args.permitSingle) {
-        spender = func.args.permitSingle.spender;
-        deadline = Number(func.args.permitSingle.deadline.toString());
-        value = func.args.permitSingle.details[0].value.toString();
-        asset = func.args.permitSingle.details[0].token.toLowerCase();
+      if (func.args.permitBatch) {
+        spender = func.args.permitBatch.spender;
+        deadline = Number(func.args.permitBatch.deadline.toString());
+        value = func.args.permitBatch.details[0].value.toString();
+        asset = func.args.permitBatch.details[0].token.toLowerCase();
       }
 
       if (txFrom === owner || IGNORED_ADDRESSES.includes(spender)) {
