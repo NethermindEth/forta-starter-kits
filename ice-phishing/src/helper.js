@@ -1,6 +1,7 @@
 const { Finding, FindingSeverity, FindingType, ethers, getAlerts, Label, EntityType } = require("forta-agent");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
+const util = require("util");
 const { nonceThreshold, contractTxsThreshold, verifiedContractTxsThreshold } = require("../bot-config.json");
 const { etherscanApis } = require("./config");
 const { keys } = require("./keys");
