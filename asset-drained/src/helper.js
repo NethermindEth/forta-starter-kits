@@ -226,7 +226,7 @@ async function getValueInUsd(block, chainId, amount, token, key) {
       for (let i = 0; i < retryCount; i++) {
         try {
           response = await (await fetch(getTokenPriceUrl(chain, token))).json();
-          if (!response && response["coins"][`${chain}:${token}`]) {
+          if (response && response["coins"][`${chain}:${token}`]) {
             usdPrice = response["coins"][`${chain}:${token}`]["price"];
             break;
           } else {
