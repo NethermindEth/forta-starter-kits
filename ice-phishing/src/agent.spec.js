@@ -463,6 +463,7 @@ describe("ice-phishing bot", () => {
     getNetwork: jest.fn(),
   };
   const mockGetSuspiciousContracts = jest.fn();
+  const mockGetNumberOfUniqueTxInitiators = jest.fn();
   let handleBlock;
 
   describe("provideHandleTransaction", () => {
@@ -486,6 +487,7 @@ describe("ice-phishing bot", () => {
       mockProvider.getTransactionCount.mockReset();
       mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
       mockProvider.getBlockWithTransactions.mockReturnValue({ transactions: [{ hash: "hash15" }, { hash: "hash25" }] });
+      mockGetNumberOfUniqueTxInitiators.mockResolvedValue(50);
       mockBalanceOf.mockReset();
       axios.get.mockReset();
       mockPersistenceHelper.load.mockReset();
@@ -500,7 +502,8 @@ describe("ice-phishing bot", () => {
         MOCK_DATABASE_OBJECTS_KEY,
         mockPersistenceHelper,
         mockCalculateAlertRate,
-        0
+        0,
+        mockGetNumberOfUniqueTxInitiators
       );
     });
 
