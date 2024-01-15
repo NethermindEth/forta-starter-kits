@@ -161,6 +161,8 @@ describe("FlashloanDetector library", () => {
       mockTxEvent.filterLog.mockReturnValueOnce([mockMakerEvent]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV2FunctionCall]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV3FunctionCall]);
+      // Checking for a `swap` in UniswapV3 Pool
+      mockTxEvent.filterFunction.mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockBalancerEvent]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockDodoFlashLoanEvent]);
       const flashloans = await getFlashloans(mockTxEvent);
