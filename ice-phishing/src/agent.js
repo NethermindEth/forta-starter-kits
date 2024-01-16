@@ -50,6 +50,7 @@ const {
   fetchScamDomains,
   getTransactionCount,
   getContractCreationHash,
+  getNumberOfUniqueTxInitiators,
   hasZeroTransactions,
 } = require("./helper");
 const {
@@ -171,7 +172,16 @@ const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, 
 };
 
 const provideHandleTransaction =
-  (provider, counters, databaseObjectsKey, persistenceHelper, calculateAlertRate, lastBlock) => async (txEvent) => {
+  (
+    provider,
+    counters,
+    databaseObjectsKey,
+    persistenceHelper,
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  ) =>
+  async (txEvent) => {
     const findings = [];
     const { hash, timestamp, blockNumber, from: f } = txEvent;
 
@@ -432,9 +442,19 @@ const provideHandleTransaction =
         spenderType === AddressType.LowNumTxsVerifiedContract ||
         spenderType === AddressType.EoaWithHighNonce
       ) {
-        const suspiciousContractFound = Array.from(suspiciousContracts).find(
-          (contract) => contract.address === spender || contract.creator === spender
-        );
+        let suspiciousContractFound = false;
+        let suspiciousContract = {};
+
+        for (const contract of suspiciousContracts) {
+          if (contract.address === spender || contract.creator === spender) {
+            const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
+            if (uniqueTxInitiatorsCount <= 100) {
+              suspiciousContractFound = true;
+              suspiciousContract = contract;
+              break; // Break the loop as we found a suspicious contract
+            }
+          }
+        }
 
         if (suspiciousContractFound) {
           const anomalyScore = await calculateAlertRate(
@@ -445,15 +465,7 @@ const provideHandleTransaction =
             counters.totalPermits
           );
           findings.push(
-            createPermitSuspiciousContractAlert(
-              txFrom,
-              spender,
-              owner,
-              asset,
-              suspiciousContractFound,
-              anomalyScore,
-              hash
-            )
+            createPermitSuspiciousContractAlert(txFrom, spender, owner, asset, suspiciousContract, anomalyScore, hash)
           );
         }
 
@@ -754,9 +766,18 @@ const provideHandleTransaction =
               }
             }
           }
-          const suspiciousContractFound = Array.from(suspiciousContracts).find(
-            (contract) => contract.address === spender || contract.creator === spender
-          );
+          let suspiciousContractFound = false;
+          let suspiciousContract = {};
+          for (const contract of suspiciousContracts) {
+            if (contract.address === spender || contract.creator === spender) {
+              const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
+              if (uniqueTxInitiatorsCount <= 100) {
+                suspiciousContractFound = true;
+                suspiciousContract = contract;
+                break; // Break the loop as we found a suspicious contract
+              }
+            }
+          }
           if (suspiciousContractFound) {
             const anomalyScore = await calculateAlertRate(
               chainId,
@@ -770,8 +791,8 @@ const provideHandleTransaction =
                 spender,
                 owner,
                 asset,
-                suspiciousContractFound.address,
-                suspiciousContractFound.creator,
+                suspiciousContract.address,
+                suspiciousContract.creator,
                 anomalyScore,
                 hash
               )
@@ -1092,9 +1113,18 @@ const provideHandleTransaction =
         );
       }
 
-      const suspiciousContractFound = Array.from(suspiciousContracts).find(
-        (contract) => contract.address === to || contract.creator === to
-      );
+      let suspiciousContractFound = false;
+      let suspiciousContract = {};
+      for (const contract of suspiciousContracts) {
+        if (contract.address === to || contract.creator === to) {
+          const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
+          if (uniqueTxInitiatorsCount <= 100) {
+            suspiciousContractFound = true;
+            suspiciousContract = contract;
+            break; // Break the loop as we found a suspicious contract
+          }
+        }
+      }
       if (suspiciousContractFound && !UNISWAP_ROUTER_ADDRESSES.includes(txEvent.to)) {
         const anomalyScore = await calculateAlertRate(
           chainId,
@@ -1104,16 +1134,7 @@ const provideHandleTransaction =
           counters.totalTransfers
         );
         findings.push(
-          createTransferSuspiciousContractAlert(
-            txFrom,
-            from,
-            to,
-            asset,
-            id,
-            suspiciousContractFound,
-            anomalyScore,
-            hash
-          )
+          createTransferSuspiciousContractAlert(txFrom, from, to, asset, id, suspiciousContract, anomalyScore, hash)
         );
       }
 
@@ -1590,7 +1611,8 @@ module.exports = {
     DATABASE_OBJECT_KEY,
     new PersistenceHelper(DATABASE_URL),
     calculateAlertRate,
-    lastBlock
+    lastBlock,
+    getNumberOfUniqueTxInitiators
   ),
   provideHandleBlock,
   handleBlock: provideHandleBlock(

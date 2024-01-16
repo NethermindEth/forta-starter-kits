@@ -1,6 +1,7 @@
 const { Finding, FindingSeverity, FindingType, ethers, getAlerts, Label, EntityType } = require("forta-agent");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
+const util = require("util");
 const { nonceThreshold, contractTxsThreshold, verifiedContractTxsThreshold } = require("../bot-config.json");
 const { etherscanApis } = require("./config");
 const { keys } = require("./keys");
@@ -1732,6 +1733,35 @@ async function hasZeroTransactions(spender, chainId) {
   if (result.data.message === "No transactions found") return true;
 }
 
+async function getNumberOfUniqueTxInitiators(contract, chainId) {
+  const maxRetries = 3;
+  let result;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      result = await axios.get(getEtherscanAddressUrl(contract, chainId, 9999));
+      if (result.data.message.startsWith("NOTOK") || result.data.message.startsWith("Query Timeout")) {
+        console.log(`block explorer error occured (attempt ${attempt}); retrying check for ${contract}`);
+        if (attempt === maxRetries) {
+          console.log(`block explorer error occured (final attempt); skipping check for ${contract}`);
+          return false;
+        }
+      } else {
+        break;
+      }
+    } catch (err) {
+      console.log(err);
+      console.log(`An error occurred during the fetch (attempt ${attempt}):`);
+      if (attempt === maxRetries) {
+        console.log(`Error during fetch (final attempt); skipping check for ${contract}`);
+        return false;
+      }
+    }
+  }
+  let uniqueTxInitiators = new Set(result.data.result.map((tx) => tx.from));
+  return uniqueTxInitiators.size;
+}
+
 async function getSuspiciousContracts(chainId, blockNumber, init) {
   let contracts = [];
   let startingCursor;
@@ -1925,4 +1955,5 @@ module.exports = {
   getTransactionCount,
   getContractCreationHash,
   hasZeroTransactions,
+  getNumberOfUniqueTxInitiators,
 };
