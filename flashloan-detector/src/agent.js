@@ -99,13 +99,38 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
                 const nativeProfit = helper.calculateNativeProfit(traces, initiator);
                 totalNativeProfit = totalNativeProfit.add(nativeProfit);
                 break traceLoop;
-              } else if (to.toLowerCase() === initiator && flashloanIndex === numOfFlashloans - 1) {
+              } else if (
+                to.toLowerCase() === initiator &&
+                // Only start looping through transfers of unknown source (src)
+                // during the last flashloan to prevent "double counting"
+                flashloanIndex === numOfFlashloans - 1
+              ) {
+                // Only proceed with sources that are contracts
+                const cacheKey = `getCode-${chainId}-${from}`;
+
+                let fromCode;
+                if (cache.has(cacheKey)) {
+                  fromCode = cache.get(cacheKey);
+                } else {
+                  fromCode = await provider.getCode(from);
+                  cache.set(cacheKey, fromCode);
+                }
+
+                if (fromCode === "0x") {
+                  continue;
+                }
+
                 const nativeProfit = helper.calculateNativeProfit(traces, initiator);
+
+                if (nativeProfit === helper.zero) {
+                  continue;
+                }
+
                 totalNativeProfit = totalNativeProfit.add(nativeProfit);
                 break traceLoop;
               } else if (
                 (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
-                // Only start looping through Transfers of unknown destination (dst)
+                // Only start looping through transfers of unknown destination (dst)
                 // during the last flashloan to prevent "double counting"
                 flashloanIndex === numOfFlashloans - 1
               ) {
