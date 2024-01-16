@@ -27,20 +27,22 @@ module.exports = {
         const contract = new ethers.Contract(flashloanAddress, ABI, getEthersProvider());
         const asset = await contract[tokenFnCall]();
 
-        await Promise.all(assetSwaps.map(async (swap) => {
-          const { recipient: swapReceiver, zeroForOne } = swap.args;
-          const { address: swapAddress } = swap;
+        if (assetSwaps.length > 0) {
+          await Promise.all(assetSwaps.map(async (swap) => {
+            const { recipient: swapReceiver, zeroForOne } = swap.args;
+            const { address: swapAddress } = swap;
 
-          // Check if there was a `swap` in the same
-          // UniswapV3 Pool in the same txn
-          if (swapAddress != flashloanAddress) return;
+            // Check if there was a `swap` in the same
+            // UniswapV3 Pool in the same txn
+            if (swapAddress != flashloanAddress) return;
 
-          // Check if the `swap` was swapping OUT of the
-          // flashloaned token into the pool's other token
-          if ((tokenIndex === 0 && zeroForOne === true) || (tokenIndex === 1 && zeroForOne === false)) {
-            swapRecipient = swapReceiver;
-          };
-        }));
+            // Check if the `swap` was swapping OUT of the
+            // flashloaned token into the pool's other token
+            if ((tokenIndex === 0 && zeroForOne === true) || (tokenIndex === 1 && zeroForOne === false)) {
+              swapRecipient = swapReceiver;
+            };
+          }));
+        }
 
         return {
           asset: asset.toLowerCase(),
