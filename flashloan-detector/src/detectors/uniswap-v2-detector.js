@@ -7,6 +7,7 @@ const ABI = [
   "function token1() public view returns (address token)",
 ];
 
+// Also covers PancakeSwap on BSC, as it is a UniswapV2 fork.
 module.exports = {
   getUniswapV2Flashloan: async (txEvent) => {
     const swaps = txEvent.filterFunction(functionSignature);
