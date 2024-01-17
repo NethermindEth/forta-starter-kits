@@ -446,6 +446,7 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
       mockHelper.calculateNativeUsdProfit.mockResolvedValueOnce(lowNativeUsdProfit);
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -483,6 +484,76 @@ describe("flashloan detector agent", () => {
       expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
       expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
     });
+
+    it("returns a finding if there is a flashloan with low native profit with a different contract transferring to the initiator", async () => {
+      const diffContract = "0xsrc";
+      const mockNativeTransferDiffRecipientTrace = {
+        action: {
+          from: diffContract,
+          to: initiator,
+          value: 100,
+          callType: "call",
+          input: "0x0",
+        },
+      };
+
+      const mockTxEvent = {
+        hash: "mockHash",
+        from: initiator,
+        to: contractCalled,
+        traces: [mockNativeTransferDiffRecipientTrace],
+        filterLog: jest.fn(),
+        transaction: { gasPrice: 0 },
+      };
+
+      // Adding one to both for the current flashloan
+      const mockLowProfitAnomalyScore = (mockDetectedFlashloans + 1) / (mockTotalFlashloans + 1);
+
+      mockGetFlashloans.mockResolvedValueOnce([flashloan]);
+      mockProvider.getCode.mockReturnValueOnce("0xc0d3");
+      mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
+      mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
+      mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.calculateNativeUsdProfit.mockResolvedValueOnce(lowNativeUsdProfit);
+      
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([
+        Finding.fromObject({
+          name: "Flashloan detected",
+          description: `${initiator} launched flash loan attack`,
+          alertId: "FLASHLOAN-ATTACK",
+          severity: FindingSeverity.Low,
+          type: FindingType.Exploit,
+          metadata: {
+            profit: lowNativeUsdProfit.toFixed(2),
+            tokens: [],
+            anomalyScore:
+              mockLowProfitAnomalyScore.toFixed(2) === "0.00"
+                ? mockLowProfitAnomalyScore.toString()
+                : mockLowProfitAnomalyScore.toFixed(2),
+          },
+          labels: [
+            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
+            Label.fromObject({
+              entityType: EntityType.Transaction,
+              entity: mockTxEvent.hash,
+              label: "Exploit",
+              confidence: 0.6,
+            }),
+          ],
+        }),
+      ]);
+
+      expect(mockProvider.getCode).toHaveBeenCalledWith(diffContract);
+      expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith(
+        [mockNativeTransferDiffRecipientTrace],
+        initiator
+      );
+      expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
+      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
+    });
+
   });
 
   describe("Block handler test suite", () => {
