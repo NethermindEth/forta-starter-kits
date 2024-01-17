@@ -43,6 +43,7 @@ function provideInitialize(
 const transferEventSigs = [
   "event Transfer(address indexed src, address indexed dst, uint wad)",
   "event Withdrawal(address indexed src, uint256 wad)",
+  "event Deposit(address indexed dst, uint256 wad)",
 ];
 
 const transferFunctionSigs = [
