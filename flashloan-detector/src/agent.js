@@ -241,11 +241,11 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
     const tokensArray = Object.keys(totalTokenProfits);
 
     if (tokensArray.length !== 0) {
-      tokensUsdProfit = await helper.calculateTokensUsdProfit(totalTokenProfits, chain);
+      tokensUsdProfit = await helper.calculateTokensUsdProfit(totalTokenProfits, chain, txEvent.blockNumber);
     }
 
     if (!totalNativeProfit.isZero()) {
-      nativeUsdProfit = await helper.calculateNativeUsdProfit(totalNativeProfit, nativeToken);
+      nativeUsdProfit = await helper.calculateNativeUsdProfit(totalNativeProfit, nativeToken, txEvent.blockNumber);
     }
 
     const totalProfit = tokensUsdProfit + nativeUsdProfit;

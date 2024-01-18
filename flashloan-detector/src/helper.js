@@ -1,6 +1,7 @@
 /* eslint-disable no-plusplus */
 const { ethers, getEthersProvider, getTransactionReceipt } = require("forta-agent");
 const { MulticallContract, MulticallProvider } = require("forta-agent-tools/lib/utils");
+const { LRUCache } = require("lru-cache");
 const axios = require("axios").default;
 
 const zero = ethers.constants.Zero;
@@ -10,7 +11,19 @@ const ethcallProvider = new MulticallProvider(getEthersProvider());
 
 const tokenDecimals = {};
 
-async function getTokenPrice(chain, asset) {
+const tokensPriceCache = new LRUCache({ max: 100_000 });
+
+
+async function getTokenPrice(chain, asset, blockNumber) {
+
+  for (let j = blockNumber - 4; j <= blockNumber; j++) {
+    const key = `usdPrice-${asset}-${j}`;
+    if (tokensPriceCache.has(key)) {
+      usdPrice = tokensPriceCache.get(key);
+      return usdPrice;
+    }
+  }
+
   const url = `https://api.coingecko.com/api/v3/simple/token_price/${chain}?contract_addresses=${asset}&vs_currencies=usd`;
 
   const retryCount = 3;
@@ -22,6 +35,7 @@ async function getTokenPrice(chain, asset) {
     } catch (error) {}
 
     if (response && response.data[asset]) {
+      tokensPriceCache.set(`usdPrice-${asset}-${blockNumber}`, response.data[asset].usd);
       return response.data[asset].usd;
     } else {
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -29,7 +43,16 @@ async function getTokenPrice(chain, asset) {
   }
 }
 
-async function getNativeTokenPrice(chain) {
+async function getNativeTokenPrice(chain, blockNumber) {
+
+  for (let j = blockNumber - 4; j <= blockNumber; j++) {
+    const key = `usdPrice-${chain}-${j}`;
+    if (tokensPriceCache.has(key)) {
+      usdPrice = tokensPriceCache.get(key);
+      return usdPrice;
+    }
+  }
+
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${chain}&vs_currencies=usd`;
 
   const retryCount = 3;
@@ -41,6 +64,7 @@ async function getNativeTokenPrice(chain) {
     } catch (error) {}
 
     if (response && response.data[chain]) {
+      tokensPriceCache.set(`usdPrice-${chain}-${blockNumber}`, response.data[chain].usd);
       return response.data[chain].usd;
     } else {
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -160,7 +184,7 @@ module.exports = {
 
     return nativeProfit;
   },
-  async calculateTokensUsdProfit(tokenProfits, chain) {
+  async calculateTokensUsdProfit(tokenProfits, chain, blockNumber) {
     // Remove all zero profits
     const nonZeroProfits = Object.entries(tokenProfits)
       .filter(([, profit]) => !profit.isZero())
@@ -189,7 +213,9 @@ module.exports = {
     // Calculate the usd profit based on the amount and the price
     const usdTokenProfits = await Promise.all(
       Object.entries(nonZeroProfits).map(async ([address, profit]) => {
-        const usdPrice = await getTokenPrice(chain, address);
+
+        const usdPrice = await getTokenPrice(chain, address, blockNumber);
+
         if (!usdPrice) return 0;
 
         const tokenAmount = ethers.utils.formatUnits(profit, tokenDecimals[address]);
@@ -201,8 +227,8 @@ module.exports = {
 
     return totalTokensProfit;
   },
-  async calculateNativeUsdProfit(amount, token) {
-    const usdPrice = await getNativeTokenPrice(token);
+  async calculateNativeUsdProfit(amount, token, blockNumber) {
+    const usdPrice = await getNativeTokenPrice(token, blockNumber);
 
     if (!usdPrice) return 0;
 
