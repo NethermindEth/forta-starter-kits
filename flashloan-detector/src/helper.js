@@ -7,6 +7,18 @@ const axios = require("axios").default;
 const zero = ethers.constants.Zero;
 const ABI = ["function decimals() external view returns (uint8)"];
 
+// sDAI on Ethereum mainnet, 0x83F20F44975D03b1b09e64809B757c47f942BEeA,
+// does not emit a `Transfer` event when `burn`ing tokens.
+// This txn, 0xfeedbf51b4e2338e38171f6e19501327294ab1907ab44cfd2d7e7336c975ace7,
+// incorrectly attributed profit in sDAI due to it. Checking for `Withdraw` to 
+// address that issue.
+const peculiarTokens = [
+  "0x83f20f44975d03b1b09e64809b757c47f942beea", // sDAI on Ethereum mainnet
+];
+const peculiarEvents = [
+  "Withdraw" // sDAI on Ethereum mainnet
+];
+
 const ethcallProvider = new MulticallProvider(getEthersProvider());
 
 const tokenDecimals = {};
@@ -131,23 +143,40 @@ module.exports = {
     const profits = {};
 
     events.forEach((event) => {
-      const { src: s, dst: d, wad } = event.args;
       const { address } = event;
-
-      // Convert the source and destination addresses to lower case
-      const src = s?.toLowerCase();
-      const dst = d?.toLowerCase();
 
       // Set the profit to 0 if it's undefined
       if (!profits[address]) {
         profits[address] = zero;
       }
 
-      if (src === account) {
-        profits[address] = profits[address].sub(wad);
-      }
-      if (dst === account) {
-        profits[address] = profits[address].add(wad);
+      // Check for general peculiar tokens before checking for specific tokens
+      // since both `peculiarTokens` and `perculiarEvents` can grow.
+      if(peculiarTokens.includes(address) && peculiarEvents.includes(event.name)) {
+        // See note above `peculiarToken` declaration on sDAI on ETH mainnet
+        if(address === peculiarTokens[0] && event.name === peculiarEvents[0]) {
+          const { owner, shares } = event.args;
+  
+          const src = owner?.toLowerCase();
+  
+          if (src === account) {
+            profits[address] = profits[address].sub(shares);
+          }
+  
+        }
+      } else if(!peculiarEvents.includes(event.name)) {
+        const { src: s, dst: d, wad } = event.args;
+
+        // Convert the source and destination addresses to lower case
+        const src = s?.toLowerCase();
+        const dst = d?.toLowerCase();
+
+        if (src === account) {
+          profits[address] = profits[address].sub(wad);
+        }
+        if (dst === account) {
+          profits[address] = profits[address].add(wad);
+        }
       }
     });
 

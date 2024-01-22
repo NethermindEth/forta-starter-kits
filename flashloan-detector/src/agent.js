@@ -44,6 +44,8 @@ const transferEventSigs = [
   "event Transfer(address indexed src, address indexed dst, uint wad)",
   "event Withdrawal(address indexed src, uint256 wad)",
   "event Deposit(address indexed dst, uint256 wad)",
+  // see note above `peculiarTokens` declaration in `helper.js`.
+  "event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)"
 ];
 
 const transferFunctionSigs = [
