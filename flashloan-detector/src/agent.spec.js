@@ -6,6 +6,7 @@ const initiator = "0xfrom";
 const contractCalled = "0xtxnto";
 const chain = "ethereum";
 const nativeToken = "ethereum";
+const blockNumber = 12345;
 
 const amount = ethers.utils.parseEther("100");
 const tokenProfit = ethers.utils.parseEther("10");
@@ -108,6 +109,7 @@ describe("flashloan detector agent", () => {
       const mockTxEvent = {
         from: initiator,
         to: contractCalled,
+        blockNumber: blockNumber,
         traces: [mockNativeTransferTrace],
         filterLog: jest.fn(),
         transaction: { gasPrice: 0 },
@@ -122,6 +124,7 @@ describe("flashloan detector agent", () => {
     it("returns a finding if there is a flashloan with high native profit", async () => {
       const mockTxEvent = {
         hash: "mockHash",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [mockNativeTransferTrace],
@@ -168,12 +171,13 @@ describe("flashloan detector agent", () => {
 
       expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
       expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([mockNativeTransferTrace], initiator);
-      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
+      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain, mockTxEvent.blockNumber);
     });
 
     it("returns a finding if there is a flashloan with high token profit", async () => {
       const mockTxEvent = {
         hash: "mockHash",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [mockErc20TransferTrace],
@@ -225,13 +229,15 @@ describe("flashloan detector agent", () => {
         {
           [asset]: tokenProfit,
         },
-        chain
+        chain,
+        mockTxEvent.blockNumber
       );
     });
 
     it("returns a finding when there is a flashloan with low token profit but no traces", async () => {
       const mockTxEvent = {
         hash: "mockHash",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [],
@@ -244,7 +250,6 @@ describe("flashloan detector agent", () => {
 
       mockGetFlashloans.mockResolvedValueOnce([flashloan]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
-      mockProvider.getCode.mockReturnValueOnce("0x");
       mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
       mockHelper.calculateNativeProfit.mockReturnValueOnce(0);
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
@@ -285,13 +290,15 @@ describe("flashloan detector agent", () => {
         {
           [asset]: tokenProfit,
         },
-        chain
+        chain,
+        mockTxEvent.blockNumber
       );
     });
 
     it("returns a finding if there is a flashloan with high token profit and high percentage", async () => {
       const mockTxEvent = {
         hash: "mockHash",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [mockErc20TransferTrace],
@@ -343,7 +350,8 @@ describe("flashloan detector agent", () => {
         {
           [asset]: tokenProfit,
         },
-        chain
+        chain,
+        mockTxEvent.blockNumber
       );
     });
 
@@ -359,6 +367,7 @@ describe("flashloan detector agent", () => {
 
       const mockTxEvent = {
         hash: "mockHash",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [mockErc20TransferTrace],
@@ -412,7 +421,8 @@ describe("flashloan detector agent", () => {
         {
           [asset]: tokenProfit,
         },
-        chain
+        chain,
+        mockTxEvent.blockNumber
       );
     });
 
@@ -430,6 +440,7 @@ describe("flashloan detector agent", () => {
 
       const mockTxEvent = {
         hash: "mockHash",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [mockNativeTransferDiffRecipientTrace],
@@ -482,7 +493,7 @@ describe("flashloan detector agent", () => {
         diffEndRecipient
       );
       expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
-      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
+      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain, mockTxEvent.blockNumber);
     });
 
     it("returns a finding if there is a flashloan with low native profit with a different contract transferring to the initiator", async () => {
@@ -498,7 +509,8 @@ describe("flashloan detector agent", () => {
       };
 
       const mockTxEvent = {
-        hash: "mockHash",
+        hash: "mockHash123",
+        blockNumber: blockNumber,
         from: initiator,
         to: contractCalled,
         traces: [mockNativeTransferDiffRecipientTrace],
@@ -551,7 +563,7 @@ describe("flashloan detector agent", () => {
         initiator
       );
       expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
-      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain);
+      expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain, mockTxEvent.blockNumber);
     });
 
   });
