@@ -31,28 +31,48 @@ async function getTokenPrice(chain, asset, blockNumber) {
   for (let j = blockNumber - 4; j <= blockNumber; j++) {
     const key = `usdPrice-${asset}-${j}`;
     if (tokensPriceCache.has(key)) {
-      usdPrice = tokensPriceCache.get(key);
+      const usdPrice = tokensPriceCache.get(key);
       return usdPrice;
     }
   }
 
-  const url = `https://api.coingecko.com/api/v3/simple/token_price/${chain}?contract_addresses=${asset}&vs_currencies=usd`;
+  const coinGeckoUrl = `https://api.coingecko.com/api/v3/simple/token_price/${chain}?contract_addresses=${asset}&vs_currencies=usd`;
 
   const retryCount = 3;
   for (let i = 0; i < retryCount; i++) {
     let response;
 
     try {
-      response = await axios.get(url);
-    } catch (error) {}
+      response = await axios.get(coinGeckoUrl);
 
-    if (response && response.data[asset]) {
-      tokensPriceCache.set(`usdPrice-${asset}-${blockNumber}`, response.data[asset].usd);
-      return response.data[asset].usd;
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (response && response.data[asset]) {
+        tokensPriceCache.set(`usdPrice-${asset}-${blockNumber}`, response.data[asset].usd);
+        return response.data[asset].usd;
+      } else {
+        throw new Error("Error: Couldn't fetch USD price from CoinGecko");
+      }
+    } catch {
+      const defiLlamaChain = getDefiLlamaTokenChain(chain);
+      const defiLlamaUrl = `https://coins.llama.fi/prices/current/${defiLlamaChain}:${asset}`;
+
+      try {
+        response = await (await fetch(defiLlamaUrl)).json();
+        const price = response.coins[`${defiLlamaChain}:${asset}`].price;
+
+        if (price === null) {
+          throw new Error("Error: Couldn't fetch USD price from DeFi Llama");
+        } else {
+          tokensPriceCache.set(`usdPrice-${asset}-${blockNumber}`, price);
+          return price;
+        }
+      } catch {}
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
+
+  tokensPriceCache.set(`usdPrice-${asset}-${blockNumber}`, 0);
+  return 0;
 }
 
 async function getNativeTokenPrice(chain, blockNumber) {
@@ -65,23 +85,43 @@ async function getNativeTokenPrice(chain, blockNumber) {
     }
   }
 
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${chain}&vs_currencies=usd`;
+  const coinGeckoUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${chain}&vs_currencies=usd`;
 
   const retryCount = 3;
   for (let i = 0; i < retryCount; i++) {
     let response;
 
     try {
-      response = await axios.get(url);
-    } catch (error) {}
+      response = await axios.get(coinGeckoUrl);
 
-    if (response && response.data[chain]) {
-      tokensPriceCache.set(`usdPrice-${chain}-${blockNumber}`, response.data[chain].usd);
-      return response.data[chain].usd;
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (response && response.data[chain]) {
+        tokensPriceCache.set(`usdPrice-${chain}-${blockNumber}`, response.data[chain].usd);
+        return response.data[chain].usd;
+      } else {
+        throw new Error("Error: Couldn't fetch USD price from CoinGecko");
+      }
+    } catch {
+      const defiLlamaChain = getDefiLlamaNativeChain(chain);
+      const defiLlamaUrl = `https://coins.llama.fi/prices/current/coingecko:${defiLlamaChain}`;
+
+      try {
+        response = await (await fetch(defiLlamaUrl)).json();
+        const price = response.coins[`coingecko:${chain}`].price;
+
+        if (price === null) {
+          throw new Error("Error: Couldn't fetch USD price from DeFi Llama");
+        } else {
+          tokensPriceCache.set(`usdPrice-${chain}-${blockNumber}`, price);
+          return price;
+        }
+      } catch {}
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
+
+  tokensPriceCache.set(`usdPrice-${chain}-${blockNumber}`, 0);
+  return 0;
 }
 
 function getChainByChainId(chainId) {
@@ -100,6 +140,54 @@ function getChainByChainId(chainId) {
       return "arbitrum-one";
     case 43114:
       return "avalanche";
+    default:
+      return null;
+  }
+}
+
+function getDefiLlamaTokenChain(chain) {
+  switch (chain) {
+    case "ethereum":
+      return "ethereum";
+    case "optimistic-ethereum":
+      return "optimism";
+    case "binance-smart-chain":
+      return "bsc";
+    case "polygon-pos":
+      return "polygon";
+    case "fantom":
+      return "fantom";
+    case "arbitrum-one":
+      return "arbitrum";
+    case "avalanche":
+      return "avax";
+    default:
+      return null;
+  }
+}
+
+// Returns the API ID for the requested chains
+// native coin, as that is what CoinGecko uses
+//
+// Note: Returns "Ethereum" for Optimism & Arbitrum
+// because that is the native coin of those chains
+// (i.e. used to pay for gas)
+function getDefiLlamaNativeChain(chain) {
+  switch (chain) {
+    case "ethereum":
+      return "ethereum";
+    case "optimistic-ethereum":
+      return "ethereum";
+    case "binance-smart-chain":
+      return "binancecoin";
+    case "polygon-pos":
+      return "matic-network";
+    case "fantom":
+      return "fantom";
+    case "arbitrum-one":
+      return "ethereum";
+    case "avalanche":
+      return "avalanche-2";
     default:
       return null;
   }
