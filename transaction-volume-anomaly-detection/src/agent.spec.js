@@ -5,6 +5,7 @@ const {
   provideHandleBlock,
   resetIsFirstBlock,
   resetIsTrained,
+  initialize,
 } = require("./agent");
 const ARIMA = require("arima");
 const ARIMA_SETTINGS = {
@@ -57,6 +58,7 @@ describe("Transaction Volume Anomaly Detection", () => {
   let handleTransaction;
   let handleBlock;
   beforeEach(() => {
+    initialize();
     mockBlockEvent.block.timestamp = 1;
     mockTxEventWithTraces.traces[0].error = false;
     mockGetTxReceipt.mockReset();
