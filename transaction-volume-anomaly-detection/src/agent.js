@@ -13,6 +13,7 @@ const {
   getMinBucketBlockSizeByChainId,
 } = require("./agent.config");
 
+const { persistenceHelper } = require("./persistence.helper");
 let { bucketBlockSize } = require("./agent.config");
 
 const ARIMA_SETTINGS = {
@@ -28,7 +29,7 @@ const ARIMA_SETTINGS = {
 let blockTime = 0;
 const ARIMA = require("arima");
 const provider = getEthersProvider();
-const contractTracker = {};
+let contractTracker = {};
 let timestampThreshold = 0; // The timestamp time in seconds based on the bucket block size and blockTime
 
 let contractsForChain = [];
@@ -39,9 +40,10 @@ let isRunningJob = false;
 let localFindings = [];
 
 //Initialize the TSA for each contract in the list
-const initialize = async () => {
+const initialize = async (PersistenceHelper) => {
   const { chainId } = await provider.getNetwork();
   contractsForChain = getContractsByChainId(chainId);
+
   blockTime = getBlocktimeByChainId(chainId);
   const minBlockSize = getMinBucketBlockSizeByChainId(chainId);
   if (bucketBlockSize < minBlockSize) {
@@ -59,33 +61,37 @@ const initialize = async () => {
     );
   }
   ARIMA_SETTINGS.s = seasonality;
-  for (let contract of contractsForChain) {
-    contractTracker[contract] = {
-      successfulTx: {
-        TSA: new ARIMA(ARIMA_SETTINGS),
-        txTracker: [],
-        txCount: 0,
-        currentBlockCount: 0,
-      },
-      failedTx: {
-        TSA: new ARIMA(ARIMA_SETTINGS),
-        txTracker: [],
-        txCount: 0,
-        currentBlockCount: 0,
-      },
-      successfulInternalTx: {
-        TSA: new ARIMA(ARIMA_SETTINGS),
-        txTracker: [],
-        txCount: 0,
-        currentBlockCount: 0,
-      },
-      failedInternalTx: {
-        TSA: new ARIMA(ARIMA_SETTINGS),
-        txTracker: [],
-        txCount: 0,
-        currentBlockCount: 0,
-      },
-    };
+  contractTracker =  await PersistenceHelper.load("nm-transaction-volume");
+  //case when there's nothing to load
+  if(contractTracker== []){
+    for (let contract of contractsForChain) {
+      contractTracker[contract] = {
+        successfulTx: {
+          TSA: new ARIMA(ARIMA_SETTINGS),
+          txTracker: [],
+          txCount: 0,
+          currentBlockCount: 0,
+        },
+        failedTx: {
+          TSA: new ARIMA(ARIMA_SETTINGS),
+          txTracker: [],
+          txCount: 0,
+          currentBlockCount: 0,
+        },
+        successfulInternalTx: {
+          TSA: new ARIMA(ARIMA_SETTINGS),
+          txTracker: [],
+          txCount: 0,
+          currentBlockCount: 0,
+        },
+        failedInternalTx: {
+          TSA: new ARIMA(ARIMA_SETTINGS),
+          txTracker: [],
+          txCount: 0,
+          currentBlockCount: 0,
+        },
+      };
+    }
   }
 };
 
@@ -129,6 +135,10 @@ const provideHandleTransaction = (
 const provideHandleBlock = (contractTracker, contractsForChain) => {
   return async function handleBlock(blockEvent) {
     let findings = [];
+
+    if(blockEvent.blockNumber%240==0){
+      await PersistenceHelper.persist(contractTracker,nm-transaction-volume)
+    }
 
     //We skip the first block since it will have no information that we should train the TSA on
     if (!isFirstBlock) {

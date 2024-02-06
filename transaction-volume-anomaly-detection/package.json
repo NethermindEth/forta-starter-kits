@@ -13,6 +13,7 @@
     250,
     43114
   ],
+  "type": "module",
   "scripts": {
     "start": "npm run start:dev",
     "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec \"forta-agent run\"",
@@ -31,10 +32,14 @@
   "dependencies": {
     "@types/jest": "^27.4.1",
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.36"
+    "dotenv": "^16.4.1",
+    "forta-agent": "^0.1.36",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "jest": "^27.0.6",
     "nodemon": "^2.0.8"
   }
+
+
 }
