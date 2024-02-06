@@ -1,5 +1,5 @@
 const { Finding, FindingSeverity, FindingType } = require("forta-agent");
-
+const { persistenceHelper } = require("./persistence.helper");
 const {
   provideHandleTransaction,
   provideHandleBlock,
@@ -25,6 +25,7 @@ jest.mock("./agent.config.js", () => {
     bucketBlockSize: 0,
   };
 });
+
 
 describe("Transaction Volume Anomaly Detection", () => {
   const mockTxEvent = {
@@ -52,13 +53,18 @@ describe("Transaction Volume Anomaly Detection", () => {
     blockNumber: 70,
   };
 
+  const mockPersistenceHelper = {
+    persist: jest.fn(),
+    load: jest.fn(),
+  };
+
   const mockGetTxReceipt = jest.fn();
   let mockTracker;
   let mockContracts = ["0x123"];
   let handleTransaction;
   let handleBlock;
   beforeEach(() => {
-    initialize();
+    initialize(mockPersistenceHelper);
     mockBlockEvent.block.timestamp = 1;
     mockTxEventWithTraces.traces[0].error = false;
     mockGetTxReceipt.mockReset();
