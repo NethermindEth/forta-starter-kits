@@ -52,6 +52,7 @@ const {
   getContractCreationHash,
   getNumberOfUniqueTxInitiators,
   hasZeroTransactions,
+  isFailSafe,
 } = require("./helper");
 const {
   approveCountThreshold,
@@ -751,7 +752,7 @@ const provideHandleTransaction =
             }
           }
         } else {
-          if (spenderType === AddressType.EoaWithLowNonce) {
+          if (spenderType === AddressType.EoaWithLowNonce && !isFailSafe(spender, owner, chainId)) {
             const nonce = await getTransactionCount(spender, provider, blockNumber);
             if (nonce == 0) {
               if (await hasZeroTransactions(spender, chainId)) {
