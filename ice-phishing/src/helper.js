@@ -1916,14 +1916,15 @@ const failSafeCreationCode =
 
 const failSafeInitializeSelector = "0x485cc955";
 const failSafeBeaconProxy = {
-  1: "0x9bba00532d2359c00bdb33e4a8116d0f03b6d30a",
-  56: "0x47eeb3ef6d62bc6d0b08b60271681fe658b10c3e",
-  137: "0xeb9e5ff948603c663cd8699f093cd5a1cd2d34be",
+  1: ["0x9bba00532d2359c00bdb33e4a8116d0f03b6d30a", "0x2fb612a52af434089fc7550af6e72cfe638a00e3"],
+  56: ["0x47eeb3ef6d62bc6d0b08b60271681fe658b10c3e", "0x90f5d1e711444366c3ce192b7222e8830c4a2f7e"],
+  137: ["0xeb9e5ff948603c663cd8699f093cd5a1cd2d34be", "0x1da83e889c271ed37af1d590e47fd46f953071a6"],
 };
+
 const failSafeBeacon = {
-  1: "0x8aa6afdaccdbf546f8e8b373b0b8ebb79d252801",
-  56: "0xa34b9e8929740ec149414294cbbdac6c76d67920",
-  137: "0x35a35bb76d1619c14fb99386cb6f9c1ffc86ad4f",
+  1: ["0x8aa6afdaccdbf546f8e8b373b0b8ebb79d252801", "0x451ca9dc32db95c07380320ac2b055d143ef1f52"],
+  56: ["0xa34b9e8929740ec149414294cbbdac6c76d67920", "0x1c75de11275aee74ab4d85a61f85867b3746fd16"],
+  137: ["0x35a35bb76d1619c14fb99386cb6f9c1ffc86ad4f", "0x3fe0f063903eb4360088ce1a97ab111142ecc87a"],
 };
 
 const getBytecode = (beaconProxy, protectedAddr) => {
@@ -1938,36 +1939,41 @@ const getBytecode1 = (beacon, stream) => {
 const isFailSafe = (spender, protectedAddr, chainId) => {
   if (![1, 56, 137].includes(chainId)) return false;
 
-  const packedParams = ethers.utils.solidityPack(
-    ["bytes1", "address", "uint256", "bytes32"],
-    [
-      "0xff",
-      protectedAddr,
-      1, // version
-      ethers.utils.solidityKeccak256(["bytes"], [getBytecode(failSafeBeaconProxy[chainId], protectedAddr)]),
-    ]
-  );
-  const salt = ethers.utils.solidityKeccak256(["bytes"], [packedParams]);
+  const proxies = failSafeBeaconProxy[chainId];
+  const beacons = failSafeBeacon[chainId];
 
-  const encodedParams = ethers.utils.defaultAbiCoder.encode(
-    ["address", "address"],
-    [failSafeBeaconProxy[chainId], protectedAddr]
-  );
-  const stream = failSafeInitializeSelector + encodedParams.slice(2);
+  for (let i = 0; i < proxies.length; i++) {
+    const proxy = proxies[i];
+    const beacon = beacons[i]; // Assuming the same index for beacons
 
-  const packedParams2 = ethers.utils.solidityPack(
-    ["bytes1", "address", "bytes32", "bytes32"],
-    [
-      "0xff",
-      failSafeBeaconProxy[chainId],
-      salt,
-      ethers.utils.solidityKeccak256(["bytes"], [getBytecode1(failSafeBeacon[chainId], stream)]),
-    ]
-  );
-  const hash = ethers.utils.solidityKeccak256(["bytes"], [packedParams2]);
+    const packedParams = ethers.utils.solidityPack(
+      ["bytes1", "address", "uint256", "bytes32"],
+      [
+        "0xff",
+        protectedAddr,
+        1, // version
+        ethers.utils.solidityKeccak256(["bytes"], [getBytecode(proxy, protectedAddr)]),
+      ]
+    );
+    const salt = ethers.utils.solidityKeccak256(["bytes"], [packedParams]);
 
-  const address = ethers.utils.getAddress(ethers.utils.hexDataSlice(hash, 12)); // Slice the last 20 bytes and get the address
-  return spender.toLowerCase() === address.toLowerCase();
+    const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "address"], [proxy, protectedAddr]);
+    const stream = failSafeInitializeSelector + encodedParams.slice(2);
+
+    const packedParams2 = ethers.utils.solidityPack(
+      ["bytes1", "address", "bytes32", "bytes32"],
+      ["0xff", proxy, salt, ethers.utils.solidityKeccak256(["bytes"], [getBytecode1(beacon, stream)])]
+    );
+    const hash = ethers.utils.solidityKeccak256(["bytes"], [packedParams2]);
+
+    const address = ethers.utils.getAddress(ethers.utils.hexDataSlice(hash, 12)); // Slice the last 20 bytes and get the address
+
+    if (spender.toLowerCase() === address.toLowerCase()) {
+      return true; // Return true if at least one pair matches
+    }
+  }
+
+  return false; // Return false if none of the pairs match
 };
 
 module.exports = {
