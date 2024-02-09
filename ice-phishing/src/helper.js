@@ -1779,7 +1779,9 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     });
 
     fortaResponse.alerts.forEach((alert) => {
-      contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+      if (!alert.description.includes("fail")) {
+        contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+      }
     });
 
     startingCursor = fortaResponse.pageInfo.endCursor;
@@ -1797,7 +1799,9 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
       });
 
       fortaResponse.alerts.forEach((alert) => {
-        contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+        if (!alert.description.includes("fail")) {
+          contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+        }
       });
 
       startingCursor = fortaResponse.pageInfo.endCursor;
@@ -1823,7 +1827,9 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     });
 
     fortaResponse.alerts.forEach((alert) => {
-      contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+      if (!alert.description.includes("fail")) {
+        contracts.push({ address: alert.description.slice(-42), creator: alert.description.slice(0, 42) });
+      }
     });
     contracts = contracts.map((contract) => {
       return {
