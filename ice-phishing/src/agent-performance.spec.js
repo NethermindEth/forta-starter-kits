@@ -10,7 +10,7 @@ const {
   DATABASE_KEYS,
   DATABASE_OBJECT_KEY,
 } = require("./agent");
-const { getSuspiciousContracts } = require("./helper");
+const { getSuspiciousContracts, getFailSafeWallets } = require("./helper");
 const { PersistenceHelper } = require("./persistence.helper");
 
 const approveCountThreshold = 0;
@@ -52,6 +52,7 @@ describe("Ice Phishing bot performance test", () => {
     );
     let handleBlock = provideHandleBlock(
       getSuspiciousContracts,
+      getFailSafeWallets,
       new PersistenceHelper(DATABASE_URL),
       DATABASE_KEYS,
       DATABASE_OBJECT_KEY,
