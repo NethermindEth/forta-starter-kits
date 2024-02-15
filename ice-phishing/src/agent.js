@@ -43,6 +43,7 @@ const {
   getBalance,
   getERC1155Balance,
   getSuspiciousContracts,
+  getFailSafeWallets,
   haveInteractedMoreThanOnce,
   isOpenseaProxy,
   checkObjectSizeAndCleanup,
@@ -324,7 +325,7 @@ const provideHandleTransaction =
         asset = func.args.permitBatch.details[0].token.toLowerCase();
       }
 
-      if (txFrom === owner || IGNORED_ADDRESSES.includes(spender)) {
+      if (txFrom === owner || IGNORED_ADDRESSES.includes(spender) || failsafeWallets.has(spender.toLowerCase())) {
         continue;
       }
 
@@ -544,6 +545,7 @@ const provideHandleTransaction =
       if (value?.eq(0)) continue;
       if (spender === ADDRESS_ZERO) continue;
       if (IGNORED_ADDRESSES.includes(spender)) continue;
+      if (failsafeWallets.has(spender.toLowerCase())) continue;
 
       // When transfering ERC20 tokens an Approval event is emitted with lower value
       // We should ignore these Approval events because they are duplicates
@@ -1327,10 +1329,19 @@ const provideHandleTransaction =
 let lastTimestamp = 1692024016;
 let init = false;
 let suspiciousContracts = new Set();
+let failsafeWallets = new Set();
 let lastExecutedMinute = 0;
 
 const provideHandleBlock =
-  (getSuspiciousContracts, persistenceHelper, databaseKeys, databaseObjectsKey, counters, lastExecutedMinute) =>
+  (
+    getSuspiciousContracts,
+    getFailSafeWallets,
+    persistenceHelper,
+    databaseKeys,
+    databaseObjectsKey,
+    counters,
+    lastExecutedMinute
+  ) =>
   async (blockEvent) => {
     const { timestamp, number } = blockEvent.block;
 
@@ -1386,6 +1397,7 @@ const provideHandleBlock =
 
     if (!init) {
       suspiciousContracts = await getSuspiciousContracts(chainId, number, init);
+      failsafeWallets = await getFailSafeWallets();
 
       const scamSnifferResponse = await axios.get(
         "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json"
@@ -1413,6 +1425,8 @@ const provideHandleBlock =
       for (const key in counters) {
         await persistenceHelper.persist(counters[key], databaseKeys[key]);
       }
+    } else if (number % 4800 === 0) {
+      failsafeWallets = await getFailSafeWallets();
     }
 
     // Clean the data every timePeriodDays
@@ -1618,6 +1632,7 @@ module.exports = {
   provideHandleBlock,
   handleBlock: provideHandleBlock(
     getSuspiciousContracts,
+    getFailSafeWallets,
     new PersistenceHelper(DATABASE_URL),
     DATABASE_KEYS,
     DATABASE_OBJECT_KEY,
@@ -1627,6 +1642,7 @@ module.exports = {
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
   getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
+  getFailSafeWallets: () => failsafeWallets, // Exported for unit tests
   counters,
   objects,
   resetLastTimestamp: () => {

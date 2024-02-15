@@ -11,6 +11,7 @@ const {
   resetInit,
   resetLastBlock,
   getSuspiciousContracts,
+  getFailSafeWallets,
   initialize,
 } = require("./agent");
 const { STABLECOINS, CEX_ADDRESSES } = require("./utils");
@@ -463,6 +464,7 @@ describe("ice-phishing bot", () => {
     getNetwork: jest.fn(),
   };
   const mockGetSuspiciousContracts = jest.fn();
+  const mockGetFailSafeWallets = jest.fn();
   const mockGetNumberOfUniqueTxInitiators = jest.fn();
   let handleBlock;
 
@@ -505,6 +507,7 @@ describe("ice-phishing bot", () => {
         0,
         mockGetNumberOfUniqueTxInitiators
       );
+      mockGetFailSafeWallets.mockResolvedValueOnce(new Set());
     });
 
     it("should return empty findings if there are no Approval & Transfer events and no permit functions", async () => {
@@ -694,6 +697,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -835,6 +839,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -2978,6 +2983,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -3072,6 +3078,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -3186,6 +3193,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -3270,6 +3278,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -3364,6 +3373,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -3490,6 +3500,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -3601,6 +3612,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -4115,6 +4127,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -4180,6 +4193,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -4230,6 +4244,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -4268,6 +4283,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -4276,7 +4292,7 @@ describe("ice-phishing bot", () => {
       );
 
       const axiosResponse = { data: [createAddress("0x5050")] };
-      axios.get.mockResolvedValue(axiosResponse);
+      axios.get.mockResolvedValueOnce(axiosResponse);
       const mockBlockEvent = { block: { number: 239 } };
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
       await handleBlock(mockBlockEvent);
@@ -4288,6 +4304,32 @@ describe("ice-phishing bot", () => {
       expect(getSuspiciousContracts().size).toStrictEqual(2);
     });
 
+    it("should populate the failsafe wallets set correctly", async () => {
+      const date = new Date();
+      const minutes = date.getMinutes();
+      const mockGetFailSafeWallets = jest.fn().mockResolvedValueOnce(new Set([createAddress("0x5345a")]));
+
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
+
+      const mockBlockEvent = { block: { number: 9600 } };
+
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
+
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x1234234324")]));
+
+      await handleBlock(mockBlockEvent);
+      expect(getFailSafeWallets().size).toStrictEqual(1);
+    });
+
     it("should persist the value in a block evenly divisible by 240", async () => {
       const axiosResponse = { data: [createAddress("0x5050")] };
       axios.get.mockResolvedValue(axiosResponse);
@@ -4296,6 +4338,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,
@@ -4331,6 +4374,7 @@ describe("ice-phishing bot", () => {
       const minutes = date.getMinutes();
       handleBlock = provideHandleBlock(
         mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         MOCK_DATABASE_OBJECTS_KEY,

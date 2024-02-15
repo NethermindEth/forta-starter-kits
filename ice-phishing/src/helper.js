@@ -1762,6 +1762,23 @@ async function getNumberOfUniqueTxInitiators(contract, chainId) {
   return uniqueTxInitiators.size;
 }
 
+async function getFailSafeWallets() {
+  const failsafeWallets = await axios.get(
+    "https://raw.githubusercontent.com/forta-network/starter-kits/main/scam-detector-py/failsafe_wallets.csv"
+  );
+
+  const lines = failsafeWallets.data.split("\n");
+  const addressSet = new Set();
+
+  // Iterate over each line to extract the address and add it to the Set
+  lines.forEach((line) => {
+    const address = line.split(",")[0];
+    addressSet.add(address.toLowerCase());
+  });
+
+  return addressSet;
+}
+
 async function getSuspiciousContracts(chainId, blockNumber, init) {
   let contracts = [];
   let startingCursor;
@@ -2018,6 +2035,7 @@ module.exports = {
   getInitialERC20Funder,
   getLabel,
   getSuspiciousContracts,
+  getFailSafeWallets,
   haveInteractedMoreThanOnce,
   getBalance,
   getERC1155Balance,
