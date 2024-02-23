@@ -1,7 +1,7 @@
 {
   "name": "tornado-cash-funded-account-interaction",
   "displayName": "Tornado Cash Funded Account Interaction",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "This bot detects when an account that was funded by Tornado Cash interacts with any contract",
   "longDescription": "The bot operates as a tracker with a core function of identifying interactions between accounts funded by Tornado Cash and external contracts. Its primary role is to detect instances where accounts that have received funding from Tornado Cash with contracts beyond the Tornado Cash ecosystem.",
   "repository": "https://github.com/NethermindEth/forta-starter-kits/tree/main/forta-tornado-cash-starter-kit",
@@ -54,12 +54,12 @@
     "@types/jest": "^27.4.1",
     "bot-alert-rate": "^0.0.4",
     "dotenv": "^16.0.3",
-    "forta-agent": "^0.1.36",
+    "forta-agent": "^0.1.48",
     "lru-cache": "^10.0.1",
     "node-fetch": "^2.6.7"
   },
   "devDependencies": {
-    "jest": "^27.0.6",
+    "jest": "^29.7.0",
     "nodemon": "^2.0.8",
     "prettier": "^2.7.1"
   }
