@@ -9,7 +9,7 @@ let chainId;
 let isRelevantChain;
 const ethersProvider = getEthersProvider();
 const BOT_ID = "0x617c356a4ad4b755035ef8024a87d36d895ee3cb0864e7ce9b3cf694dd80c82a";
-const cache = new LRUCache({ max: 100_000 });
+const cache = new LRUCache({ max: 10_000 });
 
 let totalContractInteractions = 0;
 
