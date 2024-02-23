@@ -4,8 +4,29 @@ const { default: axios } = require("axios");
 const util = require("util");
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
-const { ZETTABLOCK_API_KEY } = require("./keys");
+const { getSecrets } = require("./storage");
 const errorCache = require("./errorCache");
+const {
+  getAddressType,
+  getContractCreator,
+  hasTransferredNonStablecoins,
+  getLabel,
+  getInitialERC20Funder,
+  getBalance,
+  getERC1155Balance,
+  getSuspiciousContracts,
+  getFailSafeWallets,
+  haveInteractedMoreThanOnce,
+  isOpenseaProxy,
+  checkObjectSizeAndCleanup,
+  populateScamSnifferMap,
+  fetchScamDomains,
+  getTransactionCount,
+  getContractCreationHash,
+  getNumberOfUniqueTxInitiators,
+  hasZeroTransactions,
+  isFailSafe,
+} = require("./helper");
 const {
   createErrorAlert,
   createHighNumApprovalsAlertERC20,
@@ -35,26 +56,7 @@ const {
   createOpenseaAlert,
   createZeroNonceAllowanceAlert,
   createZeroNonceAllowanceTransferAlert,
-  getAddressType,
-  getContractCreator,
-  hasTransferredNonStablecoins,
-  getLabel,
-  getInitialERC20Funder,
-  getBalance,
-  getERC1155Balance,
-  getSuspiciousContracts,
-  getFailSafeWallets,
-  haveInteractedMoreThanOnce,
-  isOpenseaProxy,
-  checkObjectSizeAndCleanup,
-  populateScamSnifferMap,
-  fetchScamDomains,
-  getTransactionCount,
-  getContractCreationHash,
-  getNumberOfUniqueTxInitiators,
-  hasZeroTransactions,
-  isFailSafe,
-} = require("./helper");
+} = require("./findings");
 const {
   approveCountThreshold,
   approveForAllCountThreshold,
@@ -98,6 +100,7 @@ const cachedERC1155Tokens = new LRU({ max: 100_000 });
 
 let chainId;
 let isRelevantChain;
+let apiKeys;
 const BOT_ID = "0x8badbf2ad65abc3df5b1d9cc388e419d9255ef999fb69aac6bf395646cf01c14";
 let lastBlock = 0;
 let scamSnifferDB = {
@@ -155,7 +158,8 @@ const counters = {
 const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, databaseObjectsKey) => {
   return async () => {
     ({ chainId } = await provider.getNetwork());
-    process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
+    apiKeys = await getSecrets();
+    process.env["ZETTABLOCK_API_KEY"] = apiKeys.generalApiKeys.ZETTABLOCK[1];
 
     //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
     isRelevantChain = [10, 250, 43114].includes(Number(chainId));
@@ -1657,4 +1661,5 @@ module.exports = {
   DATABASE_URL,
   DATABASE_KEYS,
   DATABASE_OBJECT_KEY,
+  getApiKeys: () => apiKeys,
 };
