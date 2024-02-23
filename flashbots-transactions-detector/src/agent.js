@@ -11,7 +11,7 @@ const { PersistenceHelper } = require("./persistence.helper");
 const { default: axios } = require("axios");
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
-const { ZETTABLOCK_API_KEY } = require("./keys");
+const { getSecrets } = require("./storage");
 
 const flashbotsUrl = "https://blocks.flashbots.net/v1/blocks?limit=4";
 let lastBlockNumber = 0;
@@ -24,6 +24,7 @@ const SWAP_FLASHBOTS_TXS_KEY = "nm-swap-flashbots-bot-txs-key-1";
 let totalFlashbotsTxns = 0;
 let totalSwapFlashbotsTxns = 0;
 let chainId;
+let apiKeys;
 const BOT_ID = "0xbc06a40c341aa1acc139c900fd1b7e3999d71b80c13a9dd50a369d8f923757f5";
 
 function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashbotsKey) {
@@ -32,7 +33,8 @@ function provideInitialize(provider, persistenceHelper, flashbotsKey, swapFlashb
     totalSwapFlashbotsTxns = await persistenceHelper.load(swapFlashbotsKey);
 
     ({ chainId } = await provider.getNetwork());
-    process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
+    apiKeys = await getSecrets();
+    process.env["ZETTABLOCK_API_KEY"] = apiKeys.generalApiKeys.ZETTABLOCK[0];
   };
 }
 
