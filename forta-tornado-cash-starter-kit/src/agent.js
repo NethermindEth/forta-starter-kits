@@ -2,10 +2,11 @@ const { Finding, FindingSeverity, FindingType, Label, EntityType, getEthersProvi
 const { getContractsByChainId, getInitialFundedByTornadoCash, eventABI, addressLimit } = require("./helper");
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const { ScanCountType } = require("bot-alert-rate");
-const { ZETTABLOCK_API_KEY } = require("./keys");
+const { getSecrets } = require("./storage");
 const { LRUCache } = require("lru-cache");
 
 let chainId;
+let apiKeys;
 let isRelevantChain;
 const ethersProvider = getEthersProvider();
 const BOT_ID = "0x617c356a4ad4b755035ef8024a87d36d895ee3cb0864e7ce9b3cf694dd80c82a";
@@ -21,7 +22,8 @@ let fundedByTornadoCash = new Set(["0x58f970044273705ab3b0e87828e71123a7f95c9d"]
 //Load all properties by chainId
 const provideInitialize = (ethersProvider) => async () => {
   chainId = (await ethersProvider.getNetwork()).chainId;
-  process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
+  apiKeys = await getSecrets();
+  process.env["ZETTABLOCK_API_KEY"] = apiKeys.generalApiKeys.ZETTABLOCK[0];
 
   //  Optimism is not yet supported by bot-alert-rate package
   isRelevantChain = Number(chainId) === 10;
@@ -40,7 +42,6 @@ function provideHandleTranscation(ethersProvider, calculateAlertRate) {
         tempFundedByTornadoCashArray.shift();
         fundedByTornadoCash = new Set(tempFundedByTornadoCashArray);
       }
-
       fundedByTornadoCash.add(to.toLowerCase());
     });
     if (!txEvent.to) {
