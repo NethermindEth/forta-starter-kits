@@ -585,7 +585,7 @@ const provideHandleTransaction =
 
       // Filter out approval revokes
       if (isApprovalForAll && !approved) continue;
-      if (value?.eq(0)) continue;
+      if (value !== undefined && BigInt(value) === BigInt(0)) continue;
       if (spender === ADDRESS_ZERO) continue;
       if (IGNORED_ADDRESSES.includes(spender)) continue;
       if (failsafeWallets.has(spender.toLowerCase())) continue;
@@ -1057,7 +1057,7 @@ const provideHandleTransaction =
           if (nonce > 50000) continue;
           const label = await getLabel(txFrom);
           if (!label || ["xploit", "hish", "heist"].some((keyword) => label.includes(keyword))) {
-            if (ethers.BigNumber.from(value).gt(ethers.BigNumber.from(0))) {
+            if (value !== undefined && BigInt(value) > BigInt(0)) {
               let code;
               try {
                 code = await provider.getCode(from);
@@ -1069,10 +1069,9 @@ const provideHandleTransaction =
                 return findings;
               }
               if (code === "0x") {
-                const balanceAfter = ethers.BigNumber.from(
-                  await getBalance(asset, from, provider, txEvent.blockNumber)
-                );
-                const balanceBefore = balanceAfter.add(ethers.BigNumber.from(value));
+                const balanceAfter = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
+                const balanceBefore = balanceAfter + BigInt(value);
+
                 if (balanceAfter.lt(balanceBefore.div(100))) {
                   let fromNonce;
                   try {
@@ -1195,7 +1194,10 @@ const provideHandleTransaction =
         await Promise.all(
           spenderPermissions.map(async (permission) => {
             if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-              if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
+              if (
+                !permission.value ||
+                (permission.value !== undefined && value !== undefined && BigInt(permission.value) >= BigInt(value))
+              ) {
                 const anomalyScore = await calculateAlertRate(
                   Number(chainId),
                   BOT_ID,
@@ -1214,7 +1216,10 @@ const provideHandleTransaction =
         await Promise.all(
           spenderPermissionsInfoSeverity.map(async (permission) => {
             if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-              if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
+              if (
+                !permission.value ||
+                (permission.value !== undefined && value !== undefined && BigInt(permission.value) >= BigInt(value))
+              ) {
                 const anomalyScore = await calculateAlertRate(
                   Number(chainId),
                   BOT_ID,
@@ -1239,7 +1244,12 @@ const provideHandleTransaction =
           tokenId || tokenIds
             ? spenderApprovals
                 .filter((a) => a.owner === from)
-                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+                .some(
+                  (a) =>
+                    a.isApprovalForAll ||
+                    BigInt(a.tokenId) === BigInt(tokenId) ||
+                    (tokenIds && tokenIds.map(BigInt).includes(BigInt(a.tokenId)))
+                )
             : spenderApprovals.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
         if (!hasMonitoredApproval) continue;
 
@@ -1268,22 +1278,24 @@ const provideHandleTransaction =
         if (objects.transfers[txFrom].length > transferCountThreshold) {
           if (value || (values && values.length > 0)) {
             if (tokenIds) {
-              tokenIds.forEach(async (tokenId) => {
-                const balance = ethers.BigNumber.from(
-                  await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              for (const tokenId of tokenIds) {
+                // Changed to a synchronous loop to use await inside
+                const balanceBigInt = BigInt(
+                  await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
                 );
-                if (!balance.eq(0)) return;
-              });
+                if (balanceBigInt !== BigInt(0)) return; // Early return for non-zero balance
+              }
             } else if (tokenId) {
-              const balance = ethers.BigNumber.from(
-                await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              const balanceBigInt = BigInt(
+                await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
               );
-              if (!balance.eq(0)) continue;
+              if (balanceBigInt !== BigInt(0)) continue; // Skip to next iteration for non-zero balance
             } else {
-              const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-              if (!balance.eq(0)) continue;
+              const balanceBigInt = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
+              if (balanceBigInt !== BigInt(0)) continue; // Skip to next iteration for non-zero balance
             }
           }
+
           const anomalyScore = await calculateAlertRate(
             Number(chainId),
             BOT_ID,
@@ -1303,7 +1315,12 @@ const provideHandleTransaction =
           tokenId || tokenIds
             ? spenderApprovalsInfoSeverity
                 .filter((a) => a.owner === from)
-                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+                .some(
+                  (a) =>
+                    a.isApprovalForAll ||
+                    BigInt(a.tokenId) === BigInt(tokenId) ||
+                    (tokenIds && tokenIds.map(BigInt).includes(BigInt(a.tokenId)))
+                )
             : spenderApprovalsInfoSeverity.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
 
         if (!hasMonitoredApproval) continue;
@@ -1335,23 +1352,31 @@ const provideHandleTransaction =
 
         if (objects.transfersLowSeverity[txFrom].length > transferCountThreshold) {
           if (value || (values && values.length > 0)) {
+            let shouldContinue = false;
+
             if (tokenIds) {
-              tokenIds.forEach(async (tokenId) => {
-                const balance = ethers.BigNumber.from(
-                  await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              for (const tokenId of tokenIds) {
+                const balance = BigInt(
+                  await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
                 );
-                if (!balance.eq(0)) return;
-              });
+                if (balance !== BigInt(0)) {
+                  shouldContinue = true;
+                  break; // Exit the loop early if a non-zero balance is found
+                }
+              }
             } else if (tokenId) {
-              const balance = ethers.BigNumber.from(
-                await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              const balance = BigInt(
+                await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
               );
-              if (!balance.eq(0)) continue;
+              if (balance !== BigInt(0)) shouldContinue = true;
             } else {
-              const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-              if (!balance.eq(0)) continue;
+              const balance = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
+              if (balance !== BigInt(0)) shouldContinue = true;
             }
+
+            if (shouldContinue) continue;
           }
+
           const anomalyScore = await calculateAlertRate(
             Number(chainId),
             BOT_ID,
