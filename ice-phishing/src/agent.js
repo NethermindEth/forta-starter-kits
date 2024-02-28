@@ -315,7 +315,7 @@ const provideHandleTransaction =
           if (isOpensea) {
             const attacker = await getContractCreator(implementation, chainId);
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-OPENSEA-PROXY-UPGRADE",
               ScanCountType.CustomScanCount,
@@ -336,7 +336,7 @@ const provideHandleTransaction =
         const { token: sweepToken, amountMinimum, recipient } = sweepTokenFunctions[i].args;
         if (token === sweepToken && value.toString() === amountMinimum.toString() && recipient !== txFrom) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-PULL-SWEEPTOKEN",
             ScanCountType.CustomScanCount,
@@ -397,7 +397,7 @@ const provideHandleTransaction =
         if (nonce == 0) {
           if (await hasZeroTransactions(spender, chainId)) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -427,7 +427,7 @@ const provideHandleTransaction =
             // Remove duplicates
             attackers = Array.from(new Set(attackers));
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ZERO-NONCE-APPROVAL-TRANSFER",
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -456,7 +456,7 @@ const provideHandleTransaction =
         });
         if (spenderType !== AddressType.ScamAddress && msgSenderType !== AddressType.ScamAddress) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-ERC20-PERMIT",
             ScanCountType.CustomScanCount,
@@ -473,7 +473,7 @@ const provideHandleTransaction =
             _scamAddresses.push(txFrom);
           }
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-ERC20-SCAM-PERMIT",
             ScanCountType.CustomScanCount,
@@ -503,7 +503,7 @@ const provideHandleTransaction =
 
         if (suspiciousContractFound) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
             ScanCountType.CustomScanCount,
@@ -534,7 +534,7 @@ const provideHandleTransaction =
             const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
             if (scamDomains.length > 0) {
               const anomalyScore = await calculateAlertRate(
-                chainId,
+                Number(chainId),
                 BOT_ID,
                 "ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT",
                 ScanCountType.CustomScanCount,
@@ -565,7 +565,7 @@ const provideHandleTransaction =
           value: value ? value : 0,
         });
         const anomalyScore = await calculateAlertRate(
-          chainId,
+          Number(chainId),
           BOT_ID,
           "ICE-PHISHING-ERC20-PERMIT-INFO",
           ScanCountType.CustomScanCount,
@@ -761,7 +761,7 @@ const provideHandleTransaction =
         if (spenderType === AddressType.ScamAddress) {
           const scamDomains = fetchScamDomains(scamSnifferMap, [spender]);
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-SCAM-APPROVAL",
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -787,7 +787,7 @@ const provideHandleTransaction =
               // Remove duplicates
               attackers = Array.from(new Set(attackers));
               const anomalyScore = await calculateAlertRate(
-                chainId,
+                Number(chainId),
                 BOT_ID,
                 "ICE-PHISHING-ZERO-NONCE-APPROVAL-TRANSFER",
                 isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -802,7 +802,7 @@ const provideHandleTransaction =
             if (nonce == 0) {
               if (await hasZeroTransactions(spender, chainId)) {
                 const anomalyScore = await calculateAlertRate(
-                  chainId,
+                  Number(chainId),
                   BOT_ID,
                   "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -826,7 +826,7 @@ const provideHandleTransaction =
           }
           if (suspiciousContractFound) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-SUSPICIOUS-APPROVAL",
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -853,7 +853,7 @@ const provideHandleTransaction =
             if (spenderContractCreator && scamAddresses.includes(ethers.getAddress(spenderContractCreator))) {
               const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
               const anomalyScore = await calculateAlertRate(
-                chainId,
+                Number(chainId),
                 BOT_ID,
                 "ICE-PHISHING-SCAM-CREATOR-APPROVAL",
                 isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -907,7 +907,7 @@ const provideHandleTransaction =
           }
           if (spenderType === AddressType.LowNumTxsVerifiedContract || !haveInteractedAgain) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO",
               ScanCountType.CustomScanCount,
@@ -924,7 +924,7 @@ const provideHandleTransaction =
           objects.approvalsERC721InfoSeverity[spender].length > approveCountThreshold
         ) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO",
             ScanCountType.CustomScanCount,
@@ -941,7 +941,7 @@ const provideHandleTransaction =
             objects.approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO",
               ScanCountType.CustomScanCount,
@@ -953,7 +953,7 @@ const provideHandleTransaction =
             objects.approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO",
               ScanCountType.CustomScanCount,
@@ -974,7 +974,7 @@ const provideHandleTransaction =
           }
           if (spenderType === AddressType.LowNumTxsUnverifiedContract || !haveInteractedAgain) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS",
               ScanCountType.CustomScanCount,
@@ -986,7 +986,7 @@ const provideHandleTransaction =
 
         if (objects.approvalsERC721[spender] && objects.approvalsERC721[spender].length > approveCountThreshold) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS",
             ScanCountType.CustomScanCount,
@@ -1001,7 +1001,7 @@ const provideHandleTransaction =
             objects.approvalsForAll721[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC721-APPROVAL-FOR-ALL",
               ScanCountType.CustomScanCount,
@@ -1013,7 +1013,7 @@ const provideHandleTransaction =
             objects.approvalsForAll1155[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL",
               ScanCountType.CustomScanCount,
@@ -1111,7 +1111,7 @@ const provideHandleTransaction =
                       );
                       if (objects.pigButcheringTransfers[to].length > pigButcheringTransferCountThreshold) {
                         const anomalyScore = await calculateAlertRate(
-                          chainId,
+                          Number(chainId),
                           BOT_ID,
                           "ICE-PHISHING-PIG-BUTCHERING",
                           isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
@@ -1148,7 +1148,7 @@ const provideHandleTransaction =
       if (_scamAddresses.length > 0) {
         const scamDomains = fetchScamDomains(scamSnifferMap, [txFrom, to]);
         const anomalyScore = await calculateAlertRate(
-          chainId,
+          Number(chainId),
           BOT_ID,
           "ICE-PHISHING-SCAM-TRANSFER",
           isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
@@ -1173,7 +1173,7 @@ const provideHandleTransaction =
       }
       if (suspiciousContractFound && !UNISWAP_ROUTER_ADDRESSES.includes(txEvent.to)) {
         const anomalyScore = await calculateAlertRate(
-          chainId,
+          Number(chainId),
           BOT_ID,
           "ICE-PHISHING-SUSPICIOUS-TRANSFER",
           isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
@@ -1197,7 +1197,7 @@ const provideHandleTransaction =
             if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
               if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
                 const anomalyScore = await calculateAlertRate(
-                  chainId,
+                  Number(chainId),
                   BOT_ID,
                   "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
@@ -1216,7 +1216,7 @@ const provideHandleTransaction =
             if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
               if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
                 const anomalyScore = await calculateAlertRate(
-                  chainId,
+                  Number(chainId),
                   BOT_ID,
                   "ICE-PHISHING-PERMITTED-ERC20-TRANSFER-MEDIUM",
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
@@ -1285,7 +1285,7 @@ const provideHandleTransaction =
             }
           }
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
@@ -1353,7 +1353,7 @@ const provideHandleTransaction =
             }
           }
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW",
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
