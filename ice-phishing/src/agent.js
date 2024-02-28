@@ -240,7 +240,7 @@ const provideHandleTransaction =
       lastBlock = blockNumber;
     }
 
-    const txFrom = ethers.utils.getAddress(f);
+    const txFrom = ethers.getAddress(f);
 
     const permitFunctions = [
       ...txEvent.filterFunction(permitFunctionABI),
@@ -811,7 +811,7 @@ const provideHandleTransaction =
             spenderType === AddressType.LowNumTxsUnverifiedContract
           ) {
             const spenderContractCreator = await getContractCreator(spender, chainId);
-            if (spenderContractCreator && scamAddresses.includes(ethers.utils.getAddress(spenderContractCreator))) {
+            if (spenderContractCreator && scamAddresses.includes(ethers.getAddress(spenderContractCreator))) {
               const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
               const anomalyScore = await calculateAlertRate(
                 chainId,
@@ -1408,7 +1408,7 @@ const provideHandleBlock =
       );
       scamAddresses = scamSnifferResponse.data;
       // Convert to checksum addresses
-      scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
+      scamAddresses = scamAddresses.map((address) => ethers.getAddress(address));
 
       init = true;
     } else if (number % 240 === 0) {
@@ -1424,7 +1424,7 @@ const provideHandleBlock =
       );
       scamAddresses = scamSnifferResponse.data;
       // Convert to checksum addresses
-      scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
+      scamAddresses = scamAddresses.map((address) => ethers.getAddress(address));
 
       for (const key in counters) {
         await persistenceHelper.persist(counters[key], databaseKeys[key]);
