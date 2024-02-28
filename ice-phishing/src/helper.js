@@ -1,4 +1,5 @@
-const { getAlerts, ethers } = require("forta-agent");
+const { getAlerts } = require("forta-agent");
+const { ethers } = require("forta-bot");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
 const util = require("util");
@@ -586,8 +587,8 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     }
     contracts = contracts.map((contract) => {
       return {
-        address: ethers.utils.getAddress(contract.address),
-        creator: ethers.utils.getAddress(contract.creator),
+        address: ethers.getAddress(contract.address),
+        creator: ethers.getAddress(contract.creator),
       };
     });
 
@@ -611,8 +612,8 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     });
     contracts = contracts.map((contract) => {
       return {
-        address: ethers.utils.getAddress(contract.address),
-        creator: ethers.utils.getAddress(contract.creator),
+        address: ethers.getAddress(contract.address),
+        creator: ethers.getAddress(contract.creator),
       };
     });
     return new Set(contracts);
@@ -712,12 +713,12 @@ const failSafeBeacon = {
 };
 
 const getBytecode = (beaconProxy, protectedAddr) => {
-  const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "address"], [beaconProxy, protectedAddr]);
+  const encodedParams = ethers.defaultAbiCoder.encode(["address", "address"], [beaconProxy, protectedAddr]);
   return failSafeCreationCode + encodedParams.slice(2); // Remove '0x' from the encodedParams
 };
 
 const getBytecode1 = (beacon, stream) => {
-  const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [beacon, stream]);
+  const encodedParams = ethers.defaultAbiCoder.encode(["address", "bytes"], [beacon, stream]);
   return failSafeCreationCode + encodedParams.slice(2); // Remove '0x' from the encodedParams
 };
 const isFailSafe = (spender, protectedAddr, chainId) => {
@@ -730,27 +731,27 @@ const isFailSafe = (spender, protectedAddr, chainId) => {
     const proxy = proxies[i];
     const beacon = beacons[i]; // Assuming the same index for beacons
 
-    const packedParams = ethers.utils.solidityPack(
+    const packedParams = ethers.solidityPacked(
       ["bytes1", "address", "uint256", "bytes32"],
       [
         "0xff",
         protectedAddr,
         1, // version
-        ethers.utils.solidityKeccak256(["bytes"], [getBytecode(proxy, protectedAddr)]),
+        ethers.solidityPackedKeccak256(["bytes"], [getBytecode(proxy, protectedAddr)]),
       ]
     );
-    const salt = ethers.utils.solidityKeccak256(["bytes"], [packedParams]);
+    const salt = ethers.solidityPackedKeccak256(["bytes"], [packedParams]);
 
-    const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "address"], [proxy, protectedAddr]);
+    const encodedParams = ethers.defaultAbiCoder.encode(["address", "address"], [proxy, protectedAddr]);
     const stream = failSafeInitializeSelector + encodedParams.slice(2);
 
-    const packedParams2 = ethers.utils.solidityPack(
+    const packedParams2 = ethers.solidityPacked(
       ["bytes1", "address", "bytes32", "bytes32"],
-      ["0xff", proxy, salt, ethers.utils.solidityKeccak256(["bytes"], [getBytecode1(beacon, stream)])]
+      ["0xff", proxy, salt, ethers.solidityPackedKeccak256(["bytes"], [getBytecode1(beacon, stream)])]
     );
-    const hash = ethers.utils.solidityKeccak256(["bytes"], [packedParams2]);
+    const hash = ethers.solidityPackedKeccak256(["bytes"], [packedParams2]);
 
-    const address = ethers.utils.getAddress(ethers.utils.hexDataSlice(hash, 12)); // Slice the last 20 bytes and get the address
+    const address = ethers.getAddress(ethers.dataSlice(hash, 12)); // Slice the last 20 bytes and get the address
 
     if (spender.toLowerCase() === address.toLowerCase()) {
       return true; // Return true if at least one pair matches

@@ -1,4 +1,5 @@
-const { Finding, FindingSeverity, FindingType, ethers, Label, EntityType } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, Label, EntityType } = require("forta-agent");
+const { ethers } = require("forta-bot");
 
 // Computes the data needed for an alert
 function getEventInformation(eventsArray) {
@@ -58,9 +59,7 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
-  );
+  const uniqueKey = ethers.keccak256(ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear));
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-20 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -105,9 +104,7 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
-  );
+  const uniqueKey = ethers.keccak256(ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear));
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-20 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-20 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -152,9 +149,7 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
-  );
+  const uniqueKey = ethers.keccak256(ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear));
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-721 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -199,9 +194,7 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
-  );
+  const uniqueKey = ethers.keccak256(ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear));
   return Finding.fromObject({
     name: "High number of accounts granted approvals for ERC-721 tokens",
     description: `${spender} obtained transfer approval for ${assets.length} ERC-721 tokens by ${accounts.length} accounts over period of ${days} days.`,
@@ -800,9 +793,7 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
-  );
+  const uniqueKey = ethers.keccak256(ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear));
   let labels = [
     Label.fromObject({
       entity: spender,
@@ -874,9 +865,7 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
-  );
+  const uniqueKey = ethers.keccak256(ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear));
 
   let labels = [
     Label.fromObject({
@@ -947,8 +936,8 @@ function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(receiver + txHash + alertId + currentDate + currentMonth + currentYear)
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(receiver + txHash + alertId + currentDate + currentMonth + currentYear)
   );
 
   let labels = [];
