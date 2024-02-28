@@ -155,14 +155,22 @@ const counters = {
   totalERC1155ApprovalsForAll: 0,
 };
 
-const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, databaseObjectsKey) => {
+const provideInitialize = (persistenceHelper, databaseKeys, counters, databaseObjectsKey) => {
   return async () => {
-    ({ chainId } = await provider.getNetwork());
+    const chainIdValue = getChainId();
+
+    if (chainIdValue !== undefined) {
+      chainId = chainIdValue.toString();
+      console.log("chain id is:", chainId);
+    } else {
+      console.log("chain id is undefined");
+      throw new Error("Chain ID is undefined");
+    }
     apiKeys = await getSecrets();
     process.env["ZETTABLOCK_API_KEY"] = apiKeys.generalApiKeys.ZETTABLOCK[1];
 
-    //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
-    isRelevantChain = [10, 250, 43114].includes(Number(chainId));
+    // Optimism, Fantom, Base & Avalanche not yet supported by bot-alert-rate package
+    isRelevantChain = [10, 250, 8453, 43114].includes(Number(chainId));
 
     Object.keys(databaseKeys).forEach((key) => {
       databaseKeys[key] = `${databaseKeys[key]}-${chainId}`;
@@ -1614,27 +1622,30 @@ const provideHandleBlock =
     return findings;
   };
 
-module.exports = {
-  initialize: provideInitialize(
-    getEthersProvider(),
-    new PersistenceHelper(DATABASE_URL),
-    DATABASE_KEYS,
-    counters,
-    DATABASE_OBJECT_KEY
-  ),
-  provideInitialize,
-  provideHandleTransaction,
-  handleTransaction: provideHandleTransaction(
-    getEthersProvider(),
+async function main() {
+  // const baseProvider = await getProvider({
+  //   rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+  //   rpcKeyId: "85f8e757-1120-49eb-936a-7ee0aee57659",
+  //   localRpcUrl: "8453",
+  // });
+
+  const ethProvider = await getProvider({
+    rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "ebbd1b21-4e72-4d80-b4f9-f605fee5eb68",
+    localRpcUrl: "1",
+  });
+
+  const handleTransactionEth = provideHandleTransaction(
+    ethProvider,
     counters,
     DATABASE_OBJECT_KEY,
     new PersistenceHelper(DATABASE_URL),
     calculateAlertRate,
     lastBlock,
     getNumberOfUniqueTxInitiators
-  ),
-  provideHandleBlock,
-  handleBlock: provideHandleBlock(
+  );
+
+  const handleBlock = provideHandleBlock(
     getSuspiciousContracts,
     getFailSafeWallets,
     new PersistenceHelper(DATABASE_URL),
@@ -1642,7 +1653,63 @@ module.exports = {
     DATABASE_OBJECT_KEY,
     counters,
     lastExecutedMinute
-  ),
+  );
+
+  const initialize = provideInitialize(
+    new PersistenceHelper(DATABASE_URL),
+    DATABASE_KEYS,
+    counters,
+    DATABASE_OBJECT_KEY
+  );
+
+  await initialize();
+
+  // scanBase({
+  //   rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+  //   rpcKeyId: "d4855ef3-58ef-453e-928e-13c6d14d3caa",
+  //   localRpcUrl: "8453",
+  //   handleTransaction,
+  //   handleBlock,
+  // });
+
+  scanEthereum({
+    rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "9febef20-c5b1-401c-bf8c-c06aa93262fa",
+    localRpcUrl: "1",
+    handleTransaction: handleTransactionEth,
+    handleBlock,
+  });
+
+  runHealthCheck();
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  initialize: provideInitialize(new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters, DATABASE_OBJECT_KEY),
+  provideInitialize,
+  // provideHandleTransaction,
+  // handleTransaction: provideHandleTransaction(
+  //   getEthersProvider(),
+  //   counters,
+  //   DATABASE_OBJECT_KEY,
+  //   new PersistenceHelper(DATABASE_URL),
+  //   calculateAlertRate,
+  //   lastBlock,
+  //   getNumberOfUniqueTxInitiators
+  // ),
+  // provideHandleBlock,
+  // handleBlock: provideHandleBlock(
+  //   getSuspiciousContracts,
+  //   getFailSafeWallets,
+  //   new PersistenceHelper(DATABASE_URL),
+  //   DATABASE_KEYS,
+  //   DATABASE_OBJECT_KEY,
+  //   counters,
+  //   lastExecutedMinute
+  // ),
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
   getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
