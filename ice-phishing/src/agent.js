@@ -1,4 +1,18 @@
-const { ethers, getEthersProvider } = require("forta-agent");
+const {
+  getChainId,
+  Finding,
+  HandleTransaction,
+  TransactionEvent,
+  HandleBlock,
+  BlockEvent,
+  Initialize,
+  scanBase,
+  scanEthereum,
+  runHealthCheck,
+  ethers,
+  getProvider,
+} = require("forta-bot");
+
 const LRU = require("lru-cache");
 const { default: axios } = require("axios");
 const util = require("util");
