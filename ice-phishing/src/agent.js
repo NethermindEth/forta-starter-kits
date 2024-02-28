@@ -224,40 +224,57 @@ const provideHandleTransaction =
         }
       }
 
-      const objectsSize = Buffer.from(JSON.stringify(objects)).length;
+      // Convert BigInt to string
+      const replacer = (key, value) => (typeof value === "bigint" ? value.toString() : value);
+
+      const objectsSize = Buffer.from(JSON.stringify(objects, replacer)).length;
+
       console.log("Objects Size:", objectsSize);
 
       if (objectsSize > MAX_OBJECT_SIZE) {
         Object.values(objects).forEach((obj) => checkObjectSizeAndCleanup(obj));
-        console.log("Objects Size After Cleanup:", Buffer.from(JSON.stringify(objects)).length);
+        console.log("Objects Size After Cleanup:", Buffer.from(JSON.stringify(objects, replacer)).length);
         await persistenceHelper.persist(databaseObjectsKey.key, objects);
         console.log("Objects Persisted After Cleanup");
       }
 
-      console.log("Approvals Size:", Buffer.from(JSON.stringify(objects.approvals)).length);
-      console.log("Approvals ERC20 Size:", Buffer.from(JSON.stringify(objects.approvalsERC20)).length);
-      console.log("Approvals ERC721 Size:", Buffer.from(JSON.stringify(objects.approvalsERC721)).length);
-      console.log("Transfers Size:", Buffer.from(JSON.stringify(objects.transfers)).length);
-      console.log("Approvals Info Size:", Buffer.from(JSON.stringify(objects.approvalsInfoSeverity)).length);
-      console.log("Approvals ERC20 Info Size:", Buffer.from(JSON.stringify(objects.approvalsERC20InfoSeverity)).length);
+      console.log("Approvals Size:", Buffer.from(JSON.stringify(objects.approvals, replacer)).length);
+      console.log("Approvals ERC20 Size:", Buffer.from(JSON.stringify(objects.approvalsERC20, replacer)).length);
+      console.log("Approvals ERC721 Size:", Buffer.from(JSON.stringify(objects.approvalsERC721, replacer)).length);
+      console.log("Transfers Size:", Buffer.from(JSON.stringify(objects.transfers, replacer)).length);
+
+      console.log("Approvals Info Size:", Buffer.from(JSON.stringify(objects.approvalsInfoSeverity, replacer)).length);
+      console.log(
+        "Approvals ERC20 Info Size:",
+        Buffer.from(JSON.stringify(objects.approvalsERC20InfoSeverity, replacer)).length
+      );
       console.log(
         "Approvals ERC721 Info Size:",
-        Buffer.from(JSON.stringify(objects.approvalsERC721InfoSeverity)).length
+        Buffer.from(JSON.stringify(objects.approvalsERC721InfoSeverity, replacer)).length
       );
-      console.log("Transfers Low Size:", Buffer.from(JSON.stringify(objects.transfersLowSeverity)).length);
-      console.log("Approvals For All ERC721 size:", Buffer.from(JSON.stringify(objects.approvalsForAll721)).length);
-      console.log("Approvals For All ERC1155 size:", Buffer.from(JSON.stringify(objects.approvalsForAll1155)).length);
+      console.log("Transfers Low Size:", Buffer.from(JSON.stringify(objects.transfersLowSeverity, replacer)).length);
+      console.log(
+        "Approvals For All ERC721 size:",
+        Buffer.from(JSON.stringify(objects.approvalsForAll721, replacer)).length
+      );
+      console.log(
+        "Approvals For All ERC1155 size:",
+        Buffer.from(JSON.stringify(objects.approvalsForAll1155, replacer)).length
+      );
       console.log(
         "Approvals For All ERC721 Info size:",
-        Buffer.from(JSON.stringify(objects.approvalsForAll721InfoSeverity)).length
+        Buffer.from(JSON.stringify(objects.approvalsForAll721InfoSeverity, replacer)).length
       );
       console.log(
         "Approvals For All ERC1155 Info size:",
-        Buffer.from(JSON.stringify(objects.approvalsForAll1155InfoSeverity)).length
+        Buffer.from(JSON.stringify(objects.approvalsForAll1155InfoSeverity, replacer)).length
       );
-      console.log("Permits Size:", Buffer.from(JSON.stringify(objects.permissions)).length);
-      console.log("Permits Info Size:", Buffer.from(JSON.stringify(objects.permissionsInfoSeverity)).length);
-      console.log("Pig Butchering Transfers Size:", Buffer.from(JSON.stringify(objects.pigButcheringTransfers)).length);
+      console.log("Permits Size:", Buffer.from(JSON.stringify(objects.permissions, replacer)).length);
+      console.log("Permits Info Size:", Buffer.from(JSON.stringify(objects.permissionsInfoSeverity, replacer)).length);
+      console.log(
+        "Pig Butchering Transfers Size:",
+        Buffer.from(JSON.stringify(objects.pigButcheringTransfers, replacer)).length
+      );
 
       lastBlock = blockNumber;
     }
@@ -1402,8 +1419,10 @@ const provideHandleBlock =
 
             // Merge the two arrays
             const mergedSubArray = [...subArray];
+            const replacer = (key, value) => (typeof value === "bigint" ? value.toString() : value);
+
             for (const obj of persistedSubArray) {
-              if (!mergedSubArray.some((o) => JSON.stringify(o) === JSON.stringify(obj))) {
+              if (!mergedSubArray.some((o) => JSON.stringify(o, replacer) === JSON.stringify(obj, replacer))) {
                 mergedSubArray.push(obj);
               }
             }
