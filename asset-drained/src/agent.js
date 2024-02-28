@@ -12,6 +12,7 @@ const {
   getValueInUsd,
   TOKEN_ABI,
   getTotalSupply,
+  getContractCreator,
   USD_VALUE_THRESHOLD,
 } = require("./helper");
 const AddressType = require("./address-type");
@@ -345,6 +346,11 @@ const provideHandleBlock = (calculateAlertRate, getValueInUsd, getTotalSupply) =
           );
         } else {
           if (isRelevantChain) transfersCount++;
+
+          const contractCreator = await getContractCreator(t.address, chainId);
+          // In cases other than liquidity removal, filter out contract creator withdrawals
+          if (initiators.includes(contractCreator)) return;
+
           alertId = "ASSET-DRAINED";
 
           anomalyScore = await calculateAlertRate(
@@ -409,5 +415,6 @@ module.exports = {
   provideHandleTransaction,
   handleBlock: provideHandleBlock(calculateAlertRate, getValueInUsd, getTotalSupply),
   provideHandleBlock,
-  getTransfersObj: () => transfersObj, // Exported for unit tests
+  getTransfersObj: () => transfersObj, // Exported for unit tests,
+  getApiKeys: () => apiKeys,
 };
