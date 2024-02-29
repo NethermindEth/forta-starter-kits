@@ -1,4 +1,4 @@
-const { Finding, FindingSeverity, FindingType, Label, EntityType } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType, Label, EntityType } = require("forta-bot");
 const { ethers } = require("forta-bot");
 
 // Computes the data needed for an alert
