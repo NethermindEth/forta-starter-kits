@@ -1,5 +1,4 @@
-const { getAlerts } = require("forta-agent");
-const { ethers } = require("forta-bot");
+const { ethers, getAlerts } = require("forta-bot");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
 const util = require("util");
