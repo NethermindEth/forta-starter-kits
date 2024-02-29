@@ -1072,7 +1072,7 @@ const provideHandleTransaction =
                 const balanceAfter = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
                 const balanceBefore = balanceAfter + BigInt(value);
 
-                if (balanceAfter.lt(balanceBefore.div(100))) {
+                if (balanceAfter < balanceBefore / BigInt(100)) {
                   let fromNonce;
                   try {
                     fromNonce = await getTransactionCount(from, provider, blockNumber);
