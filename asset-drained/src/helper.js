@@ -14,10 +14,46 @@ const TOKEN_ABI = [
 
 const MKR_TOKEN_ABI = ["function symbol() external view returns (bytes32)"];
 
+const etherscanApis = {
+  1: {
+    urlContractCreation: "https://api.etherscan.io/api?module=contract&action=getcontractcreation",
+  },
+  10: {
+    urlContractCreation: "https://api-optimistic.etherscan.io/api?module=contract&action=getcontractcreation",
+  },
+  56: {
+    urlContractCreation: "https://api.bscscan.com/api?module=contract&action=getcontractcreation",
+  },
+  137: {
+    urlContractCreation: "https://api.polygonscan.com/api?module=contract&action=getcontractcreation",
+  },
+  250: {
+    urlContractCreation: "https://api.ftmscan.com/api?module=contract&action=getcontractcreation",
+  },
+  42161: {
+    urlContractCreation: "https://api.arbiscan.io/api?module=contract&action=getcontractcreation",
+  },
+  43114: {
+    urlContractCreation: "https://api.snowtrace.io/api?module=contract&action=getcontractcreation",
+  },
+};
+
 const tokensPriceCache = new LRU({ max: 100_000 });
 const tokensPriceExpirationTime = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 const decimalsCache = new LRU({ max: 100_000 });
 const totalSupplyCache = new LRU({ max: 100_000 });
+
+let getApiKeys;
+const MAX_RETRIES = 3;
+
+// Helps to avoid circular dependency issue
+function init() {
+  if (!getApiKeys) {
+    // Require and set getApiKeys if it hasn't been set
+    const agent = require("./agent");
+    getApiKeys = agent.getApiKeys;
+  }
+}
 
 function hashCode(address, asset) {
   const str = address + asset;
@@ -315,12 +351,69 @@ async function getTotalSupply(block, tokenAddress) {
   return totalSupply;
 }
 
+function getBlockExplorerKey(chainId) {
+  init();
+  const apiKeys = getApiKeys();
+  const getKey = (keys) => (keys.length > 0 ? keys[Math.floor(Math.random() * keys.length)] : "YourApiKeyToken");
+
+  switch (chainId) {
+    case 10:
+      return getKey(apiKeys.apiKeys.assetDrained.optimisticEtherscanApiKeys);
+    case 56:
+      return getKey(apiKeys.apiKeys.assetDrained.bscscanApiKeys);
+    case 137:
+      return getKey(apiKeys.apiKeys.assetDrained.polygonscanApiKeys);
+    case 250:
+      return getKey(apiKeys.apiKeys.assetDrained.fantomscanApiKeys);
+    case 42161:
+      return getKey(apiKeys.apiKeys.assetDrained.arbiscanApiKeys);
+    case 43114:
+      return getKey(apiKeys.apiKeys.assetDrained.snowtraceApiKeys);
+    default:
+      return getKey(apiKeys.apiKeys.assetDrained.etherscanApiKeys);
+  }
+}
+
+async function getContractCreator(address, chainId) {
+  const { urlContractCreation } = etherscanApis[chainId];
+  const key = getBlockExplorerKey(chainId);
+  const url = `${urlContractCreation}&contractaddresses=${address}&apikey=${key}`;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await (await fetch(url)).json();
+
+      if (
+        result.message.startsWith("NOTOK") ||
+        result.message.startsWith("No data") ||
+        result.message.startsWith("Query Timeout")
+      ) {
+        console.log(`Block explorer error occurred (attempt ${attempt}); retrying check for ${address}`);
+        if (attempt === MAX_RETRIES) {
+          console.log(`Block explorer error occurred (final attempt); skipping check for ${address}`);
+          return null;
+        }
+      } else return result.result[0].contractCreator;
+    } catch (error) {
+      console.error(`An error occurred during the fetch (attempt ${attempt}):`, error);
+      if (attempt === MAX_RETRIES) {
+        console.error(`Error during fetch (final attempt); skipping check for ${address}`);
+        return null;
+      }
+    }
+  }
+
+  console.error(`Failed to fetch contract creator for ${address} after ${MAX_RETRIES} retries`);
+  return null;
+}
+
 module.exports = {
   hashCode,
   getAddressType,
   getAssetSymbol,
   getValueInUsd,
   getTotalSupply,
+  getContractCreator,
   TOKEN_ABI,
   USD_VALUE_THRESHOLD,
   TOTAL_SUPPLY_PERCENTAGE_THRESHOLD,

@@ -217,6 +217,19 @@ describe("Asset drained bot test suite", () => {
         mockCalculateRate.mockResolvedValueOnce(0.00000034234);
         mockGetValueInUsd.mockResolvedValueOnce(32000);
 
+        global.fetch = jest.fn();
+        global.fetch.mockResolvedValue({
+          json: jest.fn().mockResolvedValue({
+            status: "1",
+            message: "OK",
+            result: [
+              {
+                contractCreator: createAddress("0x1234"), // Random contract creator
+              },
+            ],
+          }),
+        });
+
         await handleTransaction(mockTxEvent);
         const findings = await handleBlock(mockBlockEvent);
         expect(mockEthcallProviderTryAll).toHaveBeenCalledTimes(2);
@@ -532,6 +545,49 @@ describe("Asset drained bot test suite", () => {
             addresses: [address2, address3],
           }),
         ]);
+      });
+
+      it("should not alert when the drainer is the contract creator in cases other than liquidity removal", async () => {
+        const mockTransferEvent1 = {
+          address: asset,
+          args: {
+            from: address1,
+            to: address2,
+            value: ethers.BigNumber.from(995),
+          },
+        };
+        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        // Balance call for pre-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(50) }, // Exploiter (address2)
+        ]);
+        // Balance call for post-drain balances
+        mockEthcallProviderTryAll.mockResolvedValueOnce([
+          { success: true, returnData: ethers.BigNumber.from(5) }, // Victim (address1)
+          { success: true, returnData: ethers.BigNumber.from(1045) }, // Exploiter (address2)
+        ]);
+
+        mockCalculateRate.mockResolvedValueOnce(0.00000034234);
+        mockGetValueInUsd.mockResolvedValueOnce(32000);
+
+        global.fetch = jest.fn();
+        global.fetch.mockResolvedValue({
+          json: jest.fn().mockResolvedValue({
+            status: "1",
+            message: "OK",
+            result: [
+              {
+                contractCreator: address4, // Tx Initiator
+              },
+            ],
+          }),
+        });
+
+        await handleTransaction(mockTxEvent);
+        const findings = await handleBlock(mockBlockEvent);
+        expect(mockEthcallProviderTryAll).toHaveBeenCalledTimes(2);
+        expect(findings).toStrictEqual([]);
       });
     });
   });
