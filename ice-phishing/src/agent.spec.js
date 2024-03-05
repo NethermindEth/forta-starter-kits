@@ -4100,288 +4100,288 @@ describe("ice-phishing bot", () => {
     });
   });
 
-  // describe("handleBlock", () => {
-  //   const timePeriod = 2 * timePeriodDays * 24 * 60 * 60;
+  describe("handleBlock", () => {
+    const timePeriod = 2 * timePeriodDays * 24 * 60 * 60;
 
-  //   beforeEach(() => {
-  //     resetLastTimestamp();
-  //     resetInit();
-  //     Object.keys(mockObjects).forEach((s) => {
-  //       mockObjects[s] = {};
-  //     });
-  //   });
+    beforeEach(() => {
+      resetLastTimestamp();
+      resetInit();
+      Object.keys(mockObjects).forEach((s) => {
+        mockObjects[s] = {};
+      });
+    });
 
-  //   beforeEach(async () => {
-  //     mockPersistenceHelper.persist.mockClear();
-  //   });
+    beforeEach(async () => {
+      mockPersistenceHelper.persist.mockClear();
+    });
 
-  //   it("should do nothing if enough time has not passed", async () => {
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValue(axiosResponse);
-  //     const mockBlockEvent = { block: { timestamp: 1000, number: 123 } };
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce({});
+    it("should do nothing if enough time has not passed", async () => {
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValue(axiosResponse);
+      const mockBlockEvent = { block: { timestamp: 1000, number: 123 } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce({});
 
-  //     mockObjects.approvals[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsERC721[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsForAll721[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.permissions[spender] = [{ deadline: 10 }];
-  //     mockObjects.transfers[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsInfoSeverity[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsERC20InfoSeverity[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsERC721InfoSeverity[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsForAll721InfoSeverity[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsForAll1155InfoSeverity[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.permissionsInfoSeverity[spender] = [{ deadline: 10 }];
-  //     mockObjects.transfersLowSeverity[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.pigButcheringTransfers[spender] = [{ timestamp: 1000 }];
-  //     await handleBlock(mockBlockEvent);
+      mockObjects.approvals[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
+      mockObjects.permissions[spender] = [{ deadline: 10 }];
+      mockObjects.transfers[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsInfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC20InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC721InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll721InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll1155InfoSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.permissionsInfoSeverity[spender] = [{ deadline: 10 }];
+      mockObjects.transfersLowSeverity[spender] = [{ timestamp: 1000 }];
+      mockObjects.pigButcheringTransfers[spender] = [{ timestamp: 1000 }];
+      await handleBlock(mockBlockEvent);
 
-  //     expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.permissions).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.transfers).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsInfoSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsERC20InfoSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsERC721InfoSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsForAll721InfoSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsForAll1155InfoSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.permissionsInfoSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.transfersLowSeverity).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.pigButcheringTransfers).length).toStrictEqual(1);
-  //   });
+      expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.permissions).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.transfers).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsInfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC20InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC721InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll721InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll1155InfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.permissionsInfoSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.transfersLowSeverity).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.pigButcheringTransfers).length).toStrictEqual(1);
+    });
 
-  //   it("should not delete the entry if it was updated recently/permission deadline has not passed", async () => {
-  //     const initialize = provideInitialize(
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       mockCounters,
-  //       MOCK_DATABASE_OBJECTS_KEY
-  //     );
-  //     mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+    it("should not delete the entry if it was updated recently/permission deadline has not passed", async () => {
+      const initialize = provideInitialize(
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEY
+      );
+      mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
 
-  //     for (const key in MOCK_DATABASE_KEYS) {
-  //       mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
-  //     }
-  //     mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
-  //     await initialize();
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      await initialize();
 
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
 
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValue(axiosResponse);
-  //     const mockBlockEvent = { block: { timestamp: timePeriod, number: 127 } };
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce({});
-  //     mockObjects.approvals[spender] = [{ timestamp: timePeriod }];
-  //     mockObjects.approvalsERC20[spender] = [{ timestamp: timePeriod }];
-  //     mockObjects.approvalsERC721[spender] = [{ timestamp: timePeriod }];
-  //     mockObjects.approvalsForAll721[spender] = [{ timestamp: timePeriod }];
-  //     mockObjects.approvalsForAll1155[spender] = [{ timestamp: timePeriod }];
-  //     mockObjects.permissions[spender] = [{ deadline: 5184001 }];
-  //     mockObjects.transfers[spender] = [{ timestamp: timePeriod }];
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValue(axiosResponse);
+      const mockBlockEvent = { block: { timestamp: timePeriod, number: 127 } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce({});
+      mockObjects.approvals[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsERC20[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsERC721[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsForAll721[spender] = [{ timestamp: timePeriod }];
+      mockObjects.approvalsForAll1155[spender] = [{ timestamp: timePeriod }];
+      mockObjects.permissions[spender] = [{ deadline: 5184001 }];
+      mockObjects.transfers[spender] = [{ timestamp: timePeriod }];
 
-  //     await handleBlock(mockBlockEvent);
+      await handleBlock(mockBlockEvent);
 
-  //     expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.permissions).length).toStrictEqual(1);
-  //     expect(Object.keys(mockObjects.transfers).length).toStrictEqual(1);
-  //   });
+      expect(Object.keys(mockObjects.approvals).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.permissions).length).toStrictEqual(1);
+      expect(Object.keys(mockObjects.transfers).length).toStrictEqual(1);
+    });
 
-  //   it("should delete the entry if it was not updated recently/permission deadline has expired", async () => {
-  //     const initialize = provideInitialize(
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       mockCounters,
-  //       MOCK_DATABASE_OBJECTS_KEY
-  //     );
-  //     mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
+    it("should delete the entry if it was not updated recently/permission deadline has expired", async () => {
+      const initialize = provideInitialize(
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        mockCounters,
+        MOCK_DATABASE_OBJECTS_KEY
+      );
+      mockProvider.getNetwork.mockReturnValue({ chainId: 1 });
 
-  //     for (const key in MOCK_DATABASE_KEYS) {
-  //       mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
-  //     }
-  //     mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
-  //     await initialize();
+      for (const key in MOCK_DATABASE_KEYS) {
+        mockPersistenceHelper.load.mockReturnValueOnce(mockCounters[key]);
+      }
+      mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
+      await initialize();
 
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
 
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValue(axiosResponse);
-  //     const mockBlockEvent = { block: { timestamp: timePeriod } };
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce({});
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValue(axiosResponse);
+      const mockBlockEvent = { block: { timestamp: timePeriod } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce({});
 
-  //     mockObjects.approvals[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsERC721[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsForAll721[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.permissions[spender] = [{ deadline: 1000 }];
-  //     mockObjects.transfers[spender] = [{ timestamp: 1000 }];
-  //     mockObjects.pigButcheringTransfers[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvals[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC20[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsERC721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll721[spender] = [{ timestamp: 1000 }];
+      mockObjects.approvalsForAll1155[spender] = [{ timestamp: 1000 }];
+      mockObjects.permissions[spender] = [{ deadline: 1000 }];
+      mockObjects.transfers[spender] = [{ timestamp: 1000 }];
+      mockObjects.pigButcheringTransfers[spender] = [{ timestamp: 1000 }];
 
-  //     await handleBlock(mockBlockEvent);
+      await handleBlock(mockBlockEvent);
 
-  //     expect(Object.keys(mockObjects.approvals).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.permissions).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.transfers).length).toStrictEqual(0);
-  //     expect(Object.keys(mockObjects.pigButcheringTransfers).length).toStrictEqual(0);
-  //   });
+      expect(Object.keys(mockObjects.approvals).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsERC20).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsERC721).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsForAll721).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.approvalsForAll1155).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.permissions).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.transfers).length).toStrictEqual(0);
+      expect(Object.keys(mockObjects.pigButcheringTransfers).length).toStrictEqual(0);
+    });
 
-  //   it("should populate the suspicious contracts set correctly", async () => {
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
+    it("should populate the suspicious contracts set correctly", async () => {
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
 
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValueOnce(axiosResponse);
-  //     const mockBlockEvent = { block: { number: 239 } };
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
-  //     await handleBlock(mockBlockEvent);
-  //     expect(getSuspiciousContracts().size).toStrictEqual(1);
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
+      const mockBlockEvent = { block: { number: 239 } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      await handleBlock(mockBlockEvent);
+      expect(getSuspiciousContracts().size).toStrictEqual(1);
 
-  //     const mockBlockEvent2 = { block: { number: 240 } };
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x765756756")]));
-  //     await handleBlock(mockBlockEvent2);
-  //     expect(getSuspiciousContracts().size).toStrictEqual(2);
-  //   });
+      const mockBlockEvent2 = { block: { number: 240 } };
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x765756756")]));
+      await handleBlock(mockBlockEvent2);
+      expect(getSuspiciousContracts().size).toStrictEqual(2);
+    });
 
-  //   it("should populate the failsafe wallets set correctly", async () => {
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     const mockGetFailSafeWallets = jest.fn().mockResolvedValueOnce(new Set([createAddress("0x5345a")]));
+    it("should populate the failsafe wallets set correctly", async () => {
+      const date = new Date();
+      const minutes = date.getMinutes();
+      const mockGetFailSafeWallets = jest.fn().mockResolvedValueOnce(new Set([createAddress("0x5345a")]));
 
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
 
-  //     const mockBlockEvent = { block: { number: 9600 } };
+      const mockBlockEvent = { block: { number: 9600 } };
 
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValueOnce(axiosResponse);
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValueOnce(axiosResponse);
 
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x1234234324")]));
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x1234234324")]));
 
-  //     await handleBlock(mockBlockEvent);
-  //     expect(getFailSafeWallets().size).toStrictEqual(1);
-  //   });
+      await handleBlock(mockBlockEvent);
+      expect(getFailSafeWallets().size).toStrictEqual(1);
+    });
 
-  //   it("should persist the value in a block evenly divisible by 240", async () => {
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValue(axiosResponse);
+    it("should persist the value in a block evenly divisible by 240", async () => {
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValue(axiosResponse);
 
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
 
-  //     const mockBlockEvent1 = {
-  //       block: {
-  //         number: 719,
-  //       },
-  //     };
-  //     const mockBlockEvent2 = {
-  //       block: {
-  //         number: 720,
-  //       },
-  //     };
+      const mockBlockEvent1 = {
+        block: {
+          number: 719,
+        },
+      };
+      const mockBlockEvent2 = {
+        block: {
+          number: 720,
+        },
+      };
 
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
-  //     await handleBlock(mockBlockEvent1);
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      await handleBlock(mockBlockEvent1);
 
-  //     mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
-  //     await handleBlock(mockBlockEvent2);
+      mockGetSuspiciousContracts.mockResolvedValueOnce(new Set([createAddress("0x34234324")]));
+      await handleBlock(mockBlockEvent2);
 
-  //     expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(8);
-  //   });
+      expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(8);
+    });
 
-  //   it("should not persist values because block is not evenly divisible by 240", async () => {
-  //     const axiosResponse = { data: [createAddress("0x5050")] };
-  //     axios.get.mockResolvedValue(axiosResponse);
+    it("should not persist values because block is not evenly divisible by 240", async () => {
+      const axiosResponse = { data: [createAddress("0x5050")] };
+      axios.get.mockResolvedValue(axiosResponse);
 
-  //     const date = new Date();
-  //     const minutes = date.getMinutes();
-  //     handleBlock = provideHandleBlock(
-  //       mockGetSuspiciousContracts,
-  //       mockGetFailSafeWallets,
-  //       mockPersistenceHelper,
-  //       MOCK_DATABASE_KEYS,
-  //       MOCK_DATABASE_OBJECTS_KEY,
-  //       mockCounters,
-  //       minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
-  //     );
+      const date = new Date();
+      const minutes = date.getMinutes();
+      handleBlock = provideHandleBlock(
+        mockGetSuspiciousContracts,
+        mockGetFailSafeWallets,
+        mockPersistenceHelper,
+        MOCK_DATABASE_KEYS,
+        MOCK_DATABASE_OBJECTS_KEY,
+        mockCounters,
+        minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
+      );
 
-  //     const mockBlockEvent = {
-  //       block: {
-  //         number: 600,
-  //       },
-  //     };
+      const mockBlockEvent = {
+        block: {
+          number: 600,
+        },
+      };
 
-  //     await handleBlock(mockBlockEvent);
+      await handleBlock(mockBlockEvent);
 
-  //     expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
-  //   });
-  // });
+      expect(mockPersistenceHelper.persist).toHaveBeenCalledTimes(0);
+    });
+  });
 });
