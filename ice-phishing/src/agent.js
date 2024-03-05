@@ -1085,7 +1085,7 @@ const provideHandleTransaction =
                         findings.push(
                           createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore)
                         );
-                        objects.pigButcheringTransfers[to] = [];
+                        delete objects.pigButcheringTransfers[to];
                       }
                     }
                   }
