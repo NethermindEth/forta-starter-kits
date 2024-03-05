@@ -1,17 +1,4 @@
-const {
-  getChainId,
-  Finding,
-  HandleTransaction,
-  TransactionEvent,
-  HandleBlock,
-  BlockEvent,
-  Initialize,
-  scanBase,
-  scanEthereum,
-  runHealthCheck,
-  ethers,
-  getProvider,
-} = require("forta-bot");
+const { getChainId, scanBase, scanEthereum, runHealthCheck, ethers, getProvider } = require("forta-bot");
 
 const LRU = require("lru-cache");
 const { default: axios } = require("axios");
@@ -128,6 +115,8 @@ const DATABASE_URL = "https://research.forta.network/database/bot/";
 const DATABASE_OBJECT_KEY = {
   key: "nm-icephishing-bot-objects-v6-shard",
 };
+
+let ethProvider;
 
 let objects = {
   approvals: {},
@@ -913,6 +902,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalERC20Approvals
             );
+
             findings.push(
               createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
             );
@@ -1687,7 +1677,7 @@ async function main() {
   //   localRpcUrl: "8453",
   // });
 
-  const ethProvider = await getProvider({
+  ethProvider = await getProvider({
     rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
     rpcKeyId: "ebbd1b21-4e72-4d80-b4f9-f605fee5eb68",
     localRpcUrl: "1",
@@ -1748,26 +1738,26 @@ if (require.main === module) {
 module.exports = {
   initialize: provideInitialize(new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters, DATABASE_OBJECT_KEY),
   provideInitialize,
-  // provideHandleTransaction,
-  // handleTransaction: provideHandleTransaction(
-  //   getEthersProvider(),
-  //   counters,
-  //   DATABASE_OBJECT_KEY,
-  //   new PersistenceHelper(DATABASE_URL),
-  //   calculateAlertRate,
-  //   lastBlock,
-  //   getNumberOfUniqueTxInitiators
-  // ),
-  // provideHandleBlock,
-  // handleBlock: provideHandleBlock(
-  //   getSuspiciousContracts,
-  //   getFailSafeWallets,
-  //   new PersistenceHelper(DATABASE_URL),
-  //   DATABASE_KEYS,
-  //   DATABASE_OBJECT_KEY,
-  //   counters,
-  //   lastExecutedMinute
-  // ),
+  provideHandleTransaction,
+  handleTransaction: provideHandleTransaction(
+    ethProvider,
+    counters,
+    DATABASE_OBJECT_KEY,
+    new PersistenceHelper(DATABASE_URL),
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  ),
+  provideHandleBlock,
+  handleBlock: provideHandleBlock(
+    getSuspiciousContracts,
+    getFailSafeWallets,
+    new PersistenceHelper(DATABASE_URL),
+    DATABASE_KEYS,
+    DATABASE_OBJECT_KEY,
+    counters,
+    lastExecutedMinute
+  ),
   getCachedAddresses: () => cachedAddresses, // Exported for unit tests,
   getCachedERC1155Tokens: () => cachedERC1155Tokens, // Exported for unit tests,
   getSuspiciousContracts: () => suspiciousContracts, // Exported for unit tests
