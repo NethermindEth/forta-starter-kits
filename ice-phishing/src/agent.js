@@ -310,7 +310,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalUpgrades
             );
-            findings.push(createOpenseaAlert(txFrom, attacker, implementation, anomalyScore, hash));
+            findings.push(createOpenseaAlert(txFrom, attacker, implementation, anomalyScore, txEvent));
           }
         }
       }
@@ -331,7 +331,7 @@ const provideHandleTransaction =
             ScanCountType.CustomScanCount,
             counters.totalTransfers
           );
-          findings.push(createSweepTokenAlert(txFrom, recipient, token, value, anomalyScore, hash));
+          findings.push(createSweepTokenAlert(txFrom, recipient, token, value, anomalyScore, txEvent));
           return findings;
         }
       }
@@ -392,7 +392,7 @@ const provideHandleTransaction =
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
               counters.totalPermits
             );
-            findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+            findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, txEvent));
           }
         }
       }
@@ -422,7 +422,7 @@ const provideHandleTransaction =
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
               counters.totalPermits
             );
-            findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, hash));
+            findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, txEvent));
           }
         }
       }
@@ -451,7 +451,7 @@ const provideHandleTransaction =
             ScanCountType.CustomScanCount,
             counters.totalPermits
           );
-          findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
+          findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, txEvent));
         } else {
           const scamDomains = fetchScamDomains(scamSnifferMap, [txFrom, spender]);
           let _scamAddresses = [];
@@ -469,7 +469,7 @@ const provideHandleTransaction =
             counters.totalPermits
           );
           findings.push(
-            createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+            createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, txEvent)
           );
         }
       } else if (
@@ -499,7 +499,15 @@ const provideHandleTransaction =
             counters.totalPermits
           );
           findings.push(
-            createPermitSuspiciousContractAlert(txFrom, spender, owner, asset, suspiciousContract, anomalyScore, hash)
+            createPermitSuspiciousContractAlert(
+              txFrom,
+              spender,
+              owner,
+              asset,
+              suspiciousContract,
+              anomalyScore,
+              txEvent
+            )
           );
         }
 
@@ -538,7 +546,7 @@ const provideHandleTransaction =
                   spenderContractCreator,
                   scamDomains,
                   anomalyScore,
-                  hash
+                  txEvent
                 )
               );
             }
@@ -560,7 +568,7 @@ const provideHandleTransaction =
           ScanCountType.CustomScanCount,
           counters.totalPermits
         );
-        findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, hash));
+        findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, txEvent));
       }
     }
 
@@ -602,7 +610,7 @@ const provideHandleTransaction =
               if (tries === 3) {
                 const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                 errorCache.add(
-                  createErrorAlert(e.toString(), "agent.handleTransaction (approvals-getCode)", stackTrace)
+                  createErrorAlert(e.toString(), "agent.handleTransaction (approvals-getCode)", stackTrace, txEvent)
                 );
                 return findings;
               }
@@ -756,7 +764,7 @@ const provideHandleTransaction =
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
             counters.totalApprovals
           );
-          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
+          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, txEvent));
         } else if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
           if (
             transferEvents.length &&
@@ -782,7 +790,7 @@ const provideHandleTransaction =
                 isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
                 counters.totalApprovals
               );
-              findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, hash));
+              findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, txEvent));
             }
           }
         } else {
@@ -797,7 +805,7 @@ const provideHandleTransaction =
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
                   counters.totalApprovals
                 );
-                findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+                findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, txEvent));
               }
             }
           }
@@ -829,7 +837,7 @@ const provideHandleTransaction =
                 suspiciousContract.address,
                 suspiciousContract.creator,
                 anomalyScore,
-                hash
+                txEvent
               )
             );
           }
@@ -856,7 +864,7 @@ const provideHandleTransaction =
                   asset,
                   scamDomains,
                   anomalyScore,
-                  hash
+                  txEvent
                 )
               );
             }
@@ -904,7 +912,12 @@ const provideHandleTransaction =
             );
 
             findings.push(
-              createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+              createHighNumApprovalsInfoAlertERC20(
+                spender,
+                objects.approvalsInfoSeverity[spender],
+                anomalyScore,
+                txEvent
+              )
             );
           }
         }
@@ -921,7 +934,12 @@ const provideHandleTransaction =
             counters.totalERC721Approvals
           );
           findings.push(
-            createHighNumApprovalsInfoAlertERC721(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+            createHighNumApprovalsInfoAlertERC721(
+              spender,
+              objects.approvalsInfoSeverity[spender],
+              anomalyScore,
+              txEvent
+            )
           );
         }
 
@@ -937,7 +955,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalERC721ApprovalsForAll
             );
-            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, txEvent));
           } else if (
             objects.approvalsForAll1155InfoSeverity[spender] &&
             objects.approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
@@ -949,7 +967,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalERC1155ApprovalsForAll
             );
-            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, txEvent));
           }
         }
       } else {
@@ -970,7 +988,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalERC20Approvals
             );
-            findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore));
+            findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore, txEvent));
           }
         }
 
@@ -982,7 +1000,7 @@ const provideHandleTransaction =
             ScanCountType.CustomScanCount,
             counters.totalERC721Approvals
           );
-          findings.push(createHighNumApprovalsAlertERC721(spender, objects.approvals[spender], anomalyScore));
+          findings.push(createHighNumApprovalsAlertERC721(spender, objects.approvals[spender], anomalyScore, txEvent));
         }
 
         if (isApprovalForAll) {
@@ -997,7 +1015,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalERC721ApprovalsForAll
             );
-            findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, txEvent));
           } else if (
             objects.approvalsForAll1155[spender] &&
             objects.approvalsForAll1155[spender].length > approveForAllCountThreshold
@@ -1009,7 +1027,7 @@ const provideHandleTransaction =
               ScanCountType.CustomScanCount,
               counters.totalERC1155ApprovalsForAll
             );
-            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, txEvent));
           }
         }
       }
@@ -1040,7 +1058,7 @@ const provideHandleTransaction =
           } catch (e) {
             const stackTrace = util.inspect(e, { showHidden: false, depth: null });
             errorCache.add(
-              createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount)", stackTrace)
+              createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount)", stackTrace, txEvent)
             );
             return findings;
           }
@@ -1054,7 +1072,7 @@ const provideHandleTransaction =
               } catch (e) {
                 const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                 errorCache.add(
-                  createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getCode)", stackTrace)
+                  createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getCode)", stackTrace, txEvent)
                 );
                 return findings;
               }
@@ -1069,7 +1087,12 @@ const provideHandleTransaction =
                   } catch (e) {
                     const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                     errorCache.add(
-                      createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount2)", stackTrace)
+                      createErrorAlert(
+                        e.toString(),
+                        "agent.handleTransaction (transfers-getTxCount2)",
+                        stackTrace,
+                        txEvent
+                      )
                     );
                     return findings;
                   }
@@ -1107,7 +1130,7 @@ const provideHandleTransaction =
                           counters.totalTransfers
                         );
                         findings.push(
-                          createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore)
+                          createPigButcheringAlert(to, objects.pigButcheringTransfers[to], txEvent, anomalyScore)
                         );
                         objects.pigButcheringTransfers[to] = [];
                       }
@@ -1144,7 +1167,7 @@ const provideHandleTransaction =
           counters.totalTransfers
         );
         findings.push(
-          createTransferScamAlert(txFrom, from, to, asset, id, _scamAddresses, scamDomains, anomalyScore, hash)
+          createTransferScamAlert(txFrom, from, to, asset, id, _scamAddresses, scamDomains, anomalyScore, txEvent)
         );
       }
 
@@ -1169,7 +1192,7 @@ const provideHandleTransaction =
           counters.totalTransfers
         );
         findings.push(
-          createTransferSuspiciousContractAlert(txFrom, from, to, asset, id, suspiciousContract, anomalyScore, hash)
+          createTransferSuspiciousContractAlert(txFrom, from, to, asset, id, suspiciousContract, anomalyScore, txEvent)
         );
       }
 
@@ -1195,7 +1218,9 @@ const provideHandleTransaction =
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
                   counters.totalTransfers
                 );
-                findings.push(createPermitTransferAlert(txFrom, from, to, asset, value.toString(), anomalyScore, hash));
+                findings.push(
+                  createPermitTransferAlert(txFrom, from, to, asset, value.toString(), anomalyScore, txEvent)
+                );
               }
             }
           })
@@ -1218,7 +1243,7 @@ const provideHandleTransaction =
                   counters.totalTransfers
                 );
                 findings.push(
-                  createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash)
+                  createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, txEvent)
                 );
               }
             }
@@ -1293,7 +1318,7 @@ const provideHandleTransaction =
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
             counters.totalTransfers
           );
-          findings.push(createHighNumTransfersAlert(txFrom, objects.transfers[txFrom], anomalyScore));
+          findings.push(createHighNumTransfersAlert(txFrom, objects.transfers[txFrom], anomalyScore, txEvent));
         }
       }
 
@@ -1375,7 +1400,7 @@ const provideHandleTransaction =
             counters.totalTransfers
           );
           findings.push(
-            createHighNumTransfersLowSeverityAlert(txFrom, objects.transfersLowSeverity[txFrom], anomalyScore)
+            createHighNumTransfersLowSeverityAlert(txFrom, objects.transfersLowSeverity[txFrom], anomalyScore, txEvent)
           );
         }
       }

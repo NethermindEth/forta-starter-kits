@@ -37,7 +37,7 @@ function getEventInformation(eventsArray) {
   };
 }
 
-function createErrorAlert(errorDescription, errorSource, errorStacktrace) {
+function createErrorAlert(errorDescription, errorSource, errorStacktrace, txEvent) {
   return Finding.fromObject({
     name: "Ice Phishing Bot Error",
     description: errorDescription,
@@ -48,10 +48,14 @@ function createErrorAlert(errorDescription, errorSource, errorStacktrace) {
       errorSource,
       errorStacktrace,
     },
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore) {
+function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore, txEvent) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   const alertId = "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS";
   const now = new Date();
@@ -92,11 +96,15 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore)
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
     uniqueKey,
   });
 }
 
-function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalyScore) {
+function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalyScore, txEvent) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   const alertId = "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO";
   const now = new Date();
@@ -137,11 +145,15 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
     uniqueKey,
   });
 }
 
-function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore) {
+function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore, txEvent) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   const alertId = "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS";
   const now = new Date();
@@ -182,11 +194,15 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
     uniqueKey,
   });
 }
 
-function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyScore) {
+function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyScore, txEvent) {
   const { firstTxHash, lastTxHash, assets, accounts, days } = getEventInformation(approvalsArray);
   const alertId = "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO";
   const now = new Date();
@@ -227,11 +243,15 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
     uniqueKey,
   });
 }
 
-function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, txHash) {
+function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-721 tokens",
     description: `${spender} obtained transfer approval for all ERC-721 tokens from ${owner}`,
@@ -252,16 +272,20 @@ function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, tx
         confidence: 0.2,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, txHash) {
+function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-721 tokens",
     description: `${spender} obtained transfer approval for all ERC-721 tokens from ${owner}`,
@@ -282,16 +306,20 @@ function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore
         confidence: 0.15,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, txHash) {
+function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-1155 tokens",
     description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner}`,
@@ -312,16 +340,20 @@ function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, t
         confidence: 0.2,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, txHash) {
+function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Account got approval for all ERC-1155 tokens",
     description: `${spender} obtained transfer approval for all ERC-1155 tokens from ${owner}`,
@@ -342,16 +374,20 @@ function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScor
         confidence: 0.15,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txHash) {
+function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Account got permission for ERC-20 tokens",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -373,16 +409,20 @@ function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txHas
         confidence: 0.3,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Permit",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, txHash) {
+function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Account got permission for ERC-20 tokens",
     description: `${msgSender} gave permission to ${spender} for ${owner}'s ERC-20 tokens`,
@@ -404,16 +444,20 @@ function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, t
         confidence: 0.2,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Permit",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, scamDomains, anomalyScore, txHash) {
+function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, scamDomains, anomalyScore, txEvent) {
   let labels = [];
   scamAddresses.map((scamAddress) => {
     labels.push(
@@ -427,7 +471,7 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
   });
   labels.push(
     Label.fromObject({
-      entity: txHash,
+      entity: txEvent.hash,
       entityType: EntityType.Transaction,
       label: "Permit",
       confidence: 1,
@@ -449,6 +493,10 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
     },
     addresses: [asset],
     labels: labels,
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
@@ -460,7 +508,7 @@ function createPermitScamCreatorAlert(
   scamAddress,
   scamDomains,
   anomalyScore,
-  txHash
+  txEvent
 ) {
   return Finding.fromObject({
     name: "Contract created by a scam address (flagged in the Scam Sniffer DB) was involved in an ERC-20 permission",
@@ -485,12 +533,16 @@ function createPermitScamCreatorAlert(
         confidence: 0.9,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Permit",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
@@ -501,7 +553,7 @@ function createPermitSuspiciousContractAlert(
   asset,
   suspiciousContract,
   anomalyScore,
-  txHash
+  txEvent
 ) {
   return Finding.fromObject({
     name: "Suspicious contract (creator) was involved in an ERC-20 permission",
@@ -526,16 +578,20 @@ function createPermitSuspiciousContractAlert(
         confidence: 0.5,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Permit",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomalyScore, txHash) {
+function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Scam address, flagged in the Scam Sniffer DB, got approval to spend assets",
     description: `Scam address ${scamSpender} got approval for ${owner}'s assets`,
@@ -557,12 +613,16 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
         confidence: 0.9,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
@@ -573,7 +633,7 @@ function createApprovalSuspiciousContractAlert(
   contract,
   creator,
   anomalyScore,
-  txHash
+  txEvent
 ) {
   return Finding.fromObject({
     name: "Suspicious contract (creator) got approval to spend assets",
@@ -597,16 +657,20 @@ function createApprovalSuspiciousContractAlert(
         confidence: 0.5,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scamDomains, anomalyScore, txHash) {
+function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scamDomains, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Contract, created by a known scam address (flagged in the Scam Sniffer DB), got approval to spend assets",
     description: `${spender}, created by the scam address ${scamCreator}, got approval for ${owner}'s assets`,
@@ -629,12 +693,16 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
         confidence: 0.9,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Approval",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
@@ -647,7 +715,7 @@ function createTransferScamAlert(
   scamAddresses,
   scamDomains,
   anomalyScore,
-  txHash
+  txEvent
 ) {
   let labels = [];
   if (id) {
@@ -685,7 +753,7 @@ function createTransferScamAlert(
   });
   labels.push(
     Label.fromObject({
-      entity: txHash,
+      entity: txEvent.hash,
       entityType: EntityType.Transaction,
       label: "Transfer",
       confidence: 1,
@@ -708,6 +776,10 @@ function createTransferScamAlert(
     },
     addresses: [asset],
     labels,
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
@@ -719,7 +791,7 @@ function createTransferSuspiciousContractAlert(
   id,
   suspiciousContract,
   anomalyScore,
-  txHash
+  txEvent
 ) {
   let labels = [
     Label.fromObject({
@@ -735,7 +807,7 @@ function createTransferSuspiciousContractAlert(
       confidence: 0.6,
     }),
     Label.fromObject({
-      entity: txHash,
+      entity: txEvent.hash,
       entityType: EntityType.Transaction,
       label: "Transfer",
       confidence: 1,
@@ -782,10 +854,14 @@ function createTransferSuspiciousContractAlert(
     },
     addresses: [asset],
     labels,
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
+function createHighNumTransfersAlert(spender, transfersArray, anomalyScore, txEvent) {
   const { firstTxHash, lastTxHash, assets, assetIdTuples, accounts, days } = getEventInformation(transfersArray);
   const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
   const now = new Date();
@@ -854,10 +930,14 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore) {
     addresses: assets,
     labels,
     uniqueKey,
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomalyScore) {
+function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomalyScore, txEvent) {
   const { firstTxHash, lastTxHash, assets, assetIdTuples, accounts, days } = getEventInformation(transfersArray);
   const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW";
   const now = new Date();
@@ -926,10 +1006,14 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
     addresses: assets,
     labels,
     uniqueKey,
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore) {
+function createPigButcheringAlert(receiver, transfersArray, txEvent, anomalyScore) {
   const alertId = "ICE-PHISHING-PIG-BUTCHERING";
   const now = new Date();
   const currentDate = now.getDate();
@@ -937,7 +1021,7 @@ function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore
   const currentYear = now.getFullYear();
 
   const uniqueKey = ethers.keccak256(
-    ethers.toUtf8Bytes(receiver + txHash + alertId + currentDate + currentMonth + currentYear)
+    ethers.toUtf8Bytes(receiver + txEvent.hash + alertId + currentDate + currentMonth + currentYear)
   );
 
   let labels = [];
@@ -949,7 +1033,7 @@ function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore
 
   labels.push(
     Label.fromObject({
-      entity: txHash,
+      entity: txEvent.hash,
       entityType: EntityType.Transaction,
       label: "Attack",
       confidence: 0.7,
@@ -1007,10 +1091,14 @@ function createPigButcheringAlert(receiver, transfersArray, txHash, anomalyScore
     metadata,
     labels,
     uniqueKey,
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createPermitTransferAlert(spender, owner, receiver, asset, value, anomalyScore, txHash) {
+function createPermitTransferAlert(spender, owner, receiver, asset, value, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Previously permitted assets transferred",
     description: `${spender} transferred ${value} tokens from ${owner} to ${receiver}`,
@@ -1032,16 +1120,20 @@ function createPermitTransferAlert(spender, owner, receiver, asset, value, anoma
         confidence: 0.4,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Transfer",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset, value, anomalyScore, txHash) {
+function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset, value, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Previously permitted assets transferred",
     description: `${spender} transferred ${value} tokens from ${owner} to ${receiver}`,
@@ -1063,16 +1155,20 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
         confidence: 0.3,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Transfer",
         confidence: 1,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createSweepTokenAlert(victim, attacker, asset, value, anomalyScore, txHash) {
+function createSweepTokenAlert(victim, attacker, asset, value, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Attacker stole funds through Router V3's pull and sweepTokens functions",
     description: `${attacker} received ${value} tokens (${asset}) from ${victim}`,
@@ -1099,16 +1195,20 @@ function createSweepTokenAlert(victim, attacker, asset, value, anomalyScore, txH
         confidence: 0.8,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Attack",
         confidence: 0.8,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createZeroNonceAllowanceAlert(victim, attacker, asset, anomalyScore, txHash) {
+function createZeroNonceAllowanceAlert(victim, attacker, asset, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Approval/Permission has been given to a 0 nonce address",
     description: `${attacker} received allowance from ${victim} to spend (${asset}) tokens`,
@@ -1135,16 +1235,20 @@ function createZeroNonceAllowanceAlert(victim, attacker, asset, anomalyScore, tx
         confidence: 0.7,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Attack",
         confidence: 0.7,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomalyScore, txHash) {
+function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomalyScore, txEvent) {
   let labels = [];
 
   const metadata = {
@@ -1183,16 +1287,20 @@ function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomaly
         confidence: 0.9,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Attack",
         confidence: 0.9,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
-function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, txHash) {
+function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, txEvent) {
   return Finding.fromObject({
     name: "Opensea proxy implementation changed to attacker's contract",
     description: `${victim} was tricked into upgrading their Opensea proxy implementation to ${newImplementation} created by ${attacker}`,
@@ -1219,12 +1327,16 @@ function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, t
         confidence: 0.8,
       }),
       Label.fromObject({
-        entity: txHash,
+        entity: txEvent.hash,
         entityType: EntityType.Transaction,
         label: "Attack",
         confidence: 0.8,
       }),
     ],
+    source: {
+      chains: [{ chainId: txEvent.network }],
+      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+    },
   });
 }
 
