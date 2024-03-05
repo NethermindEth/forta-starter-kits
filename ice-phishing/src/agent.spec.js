@@ -3435,6 +3435,7 @@ describe("ice-phishing bot", () => {
         data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
       };
       axios.get.mockResolvedValue(axiosResponse2);
+      mockProvider.getTransactionCount.mockReturnValueOnce(8); // Low nonce contract creator
       mockCalculateAlertRate.mockReturnValueOnce(0.5);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -3619,15 +3620,28 @@ describe("ice-phishing bot", () => {
         mockCounters,
         minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
+
+      const spender = createAddress("0x031");
       mockGetSuspiciousContracts.mockResolvedValueOnce(
-        new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0x01") }])
+        new Set([{ address: createAddress("0xabcdabcd"), creator: spender }])
       );
+      mockProvider.getTransactionCount.mockReturnValue(8); // Low nonce contract creator
       await handleBlock(mockBlockEvent);
 
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
+      const mockApprovalERC20Event = {
+        address: asset,
+        name: "Approval",
+        args: {
+          owner: owner1,
+          spender,
+          value: ethers.BigNumber.from(5),
+        },
+      };
+
       mockTxEvent.filterLog
-        .mockReturnValueOnce([mockApprovalERC20Events[0]]) // ERC20 approvals
+        .mockReturnValueOnce([mockApprovalERC20Event]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
         .mockReturnValueOnce([]) // ApprovalForAll
         .mockReturnValueOnce([]) // ERC20 transfers
