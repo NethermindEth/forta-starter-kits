@@ -42,7 +42,6 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "forta-agent": "^0.1.48",
     "bot-alert-rate": "^0.0.4",
     "lru-cache": "^7.13.1",
     "node-fetch": "^2.6.7",
