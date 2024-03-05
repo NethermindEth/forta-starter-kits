@@ -934,7 +934,7 @@ const provideHandleTransaction =
             let assetOwnerArray = objects.approvalsERC20[spender].map((entry) => [entry.asset, entry.owner]);
             haveInteractedAgain = await haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId);
             if (haveInteractedAgain) {
-              objects.approvalsERC20[spender] = [];
+              delete objects.approvalsERC20[spender];
             }
           }
           if (spenderType === AddressType.LowNumTxsUnverifiedContract || !haveInteractedAgain) {
