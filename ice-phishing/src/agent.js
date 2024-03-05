@@ -778,7 +778,11 @@ const provideHandleTransaction =
           for (const contract of suspiciousContracts) {
             if (contract.address === spender || contract.creator === spender) {
               const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
-              if (uniqueTxInitiatorsCount <= 100) {
+
+              if (
+                uniqueTxInitiatorsCount <= 100 &&
+                (await getTransactionCount(contract.creator, provider, blockNumber)) <= 100
+              ) {
                 suspiciousContractFound = true;
                 suspiciousContract = contract;
                 break; // Break the loop as we found a suspicious contract
@@ -1125,7 +1129,10 @@ const provideHandleTransaction =
       for (const contract of suspiciousContracts) {
         if (contract.address === to || contract.creator === to) {
           const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
-          if (uniqueTxInitiatorsCount <= 100) {
+          if (
+            uniqueTxInitiatorsCount <= 100 &&
+            (await getTransactionCount(contract.creator, provider, blockNumber)) <= 100
+          ) {
             suspiciousContractFound = true;
             suspiciousContract = contract;
             break; // Break the loop as we found a suspicious contract
