@@ -34,7 +34,10 @@ class PersistenceHelper {
       }
     } else {
       // Persist locally
-      writeFileSync(key, JSON.stringify(value));
+      writeFileSync(
+        key,
+        JSON.stringify(value, (key, value) => (typeof value === "bigint" ? value.toString() : value))
+      );
       return;
     }
   }
