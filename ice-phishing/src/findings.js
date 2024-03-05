@@ -17,8 +17,8 @@ function getEventInformation(eventsArray) {
       eventsArray.map((e) => {
         const id = e.id
           ? Array.isArray(e.id)
-            ? e.id.map((item) => ethers.BigNumber.from(item).toString())
-            : [ethers.BigNumber.from(e.id).toString()]
+            ? e.id.map((item) => BigInt(item).toString())
+            : [BigInt(e.id).toString()]
           : [];
         return JSON.stringify([id, e.asset]);
       })
@@ -440,8 +440,8 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
     severity: FindingSeverity.High,
     type: FindingType.Suspicious,
     metadata: {
-      scamAddresses,
-      scamDomains,
+      scamAddresses: scamAddresses.toString(),
+      scamDomains: scamDomains.toString(),
       msgSender,
       spender,
       owner,
@@ -470,7 +470,7 @@ function createPermitScamCreatorAlert(
     type: FindingType.Suspicious,
     metadata: {
       scamAddress,
-      scamDomains,
+      scamDomains: scamDomains.toString(),
       msgSender,
       spender,
       owner,
@@ -543,7 +543,7 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
     severity: FindingSeverity.High,
     type: FindingType.Suspicious,
     metadata: {
-      scamDomains,
+      scamDomains: scamDomains.toString(),
       scamSpender,
       owner,
       anomalyScore: anomalyScore.toString(),
@@ -614,7 +614,7 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
     severity: FindingSeverity.High,
     type: FindingType.Suspicious,
     metadata: {
-      scamDomains,
+      scamDomains: scamDomains.toString(),
       scamCreator,
       spender,
       owner,
@@ -699,8 +699,8 @@ function createTransferScamAlert(
     severity: FindingSeverity.Critical,
     type: FindingType.Exploit,
     metadata: {
-      scamAddresses,
-      scamDomains,
+      scamAddresses: scamAddresses.toString(),
+      scamDomains: scamDomains.toString(),
       msgSender,
       owner,
       receiver,
