@@ -356,7 +356,7 @@ function getBlockExplorerKey(chainId) {
   const apiKeys = getApiKeys();
   const getKey = (keys) => (keys.length > 0 ? keys[Math.floor(Math.random() * keys.length)] : "YourApiKeyToken");
 
-  switch (chainId) {
+  switch (Number(chainId)) {
     case 10:
       return getKey(apiKeys.apiKeys.assetDrained.optimisticEtherscanApiKeys);
     case 56:
