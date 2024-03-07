@@ -9,7 +9,10 @@ let chainId;
 let chain;
 let apiKeys;
 let nativeToken;
-const ETH_CHAIN_ID = 1;
+let hasCalledContractBeenProcessed = {
+  tokenProfits: false,
+  nativeProfit: false,
+};
 
 const PROFIT_THRESHOLD = 200_000;
 const PERCENTAGE_THRESHOLD = 1.3;
@@ -256,6 +259,23 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
     const { gasPrice } = txEvent.transaction;
     const txFee = ethers.BigNumber.from(gasUsed).mul(ethers.BigNumber.from(gasPrice));
     totalNativeProfit = totalNativeProfit.sub(txFee);
+
+    const calledContractCreator = await helper.getContractCreator(txEvent.to, Number(chainId));
+
+    // If the contract has been created by the tx initiator, calculate the profits/losses of the contract
+    if (calledContractCreator === initiator) {
+      if (!hasCalledContractBeenProcessed.tokenProfits) {
+        const calledContractTokenProfits = helper.calculateTokenProfits(transferEvents, txEvent.to.toLowerCase());
+        Object.entries(calledContractTokenProfits).forEach(([address, profit]) => {
+          if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+          totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+        });
+      }
+      if (!hasCalledContractBeenProcessed.nativeProfit) {
+        const calledContractNativeProfit = helper.calculateNativeProfit(traces, txEvent.to.toLowerCase());
+        totalNativeProfit = totalNativeProfit.add(calledContractNativeProfit);
+      }
+    }
 
     let tokensUsdProfit = 0;
     let nativeUsdProfit = 0;
