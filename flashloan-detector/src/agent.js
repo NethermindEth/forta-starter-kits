@@ -3,9 +3,11 @@ const { getFlashloans: getFlashloansFn } = require("./flashloan-detector");
 const helperModule = require("./helper");
 const { PersistenceHelper } = require("./persistence.helper");
 const { LRUCache } = require("lru-cache");
+const { getSecrets } = require("./storage");
 
 let chainId;
 let chain;
+let apiKeys;
 let nativeToken;
 const ETH_CHAIN_ID = 1;
 
@@ -33,6 +35,7 @@ function provideInitialize(
 ) {
   return async function initialize() {
     ({ chainId, chain, nativeToken } = await helper.init());
+    apiKeys = await getSecrets();
 
     detectedFlashloans = await persistenceHelper.load(detectFlashloansKey.concat("-", chainId));
     detectedFlashloansHighProfit = await persistenceHelper.load(detectFlashloansHighKey.concat("-", chainId));
@@ -395,4 +398,5 @@ module.exports = {
     DETECT_FLASHLOANS_HIGH_KEY,
     TOTAL_FLASHLOANS_KEY
   ),
+  getApiKeys: () => apiKeys,
 };
