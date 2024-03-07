@@ -262,7 +262,7 @@ async function getLabel(address) {
 
 const cachedNonces = new LRU({ max: 5 });
 
-async function getTransactionCount(address, provider, blockNumber) {
+async function getTransactionCount(address, provider, blockNumber, txEvent) {
   let nonce = 100000;
   let tries = 0;
   const maxTries = 3;
@@ -281,7 +281,7 @@ async function getTransactionCount(address, provider, blockNumber) {
       tries++;
       if (tries === maxTries) {
         const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
+        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace, txEvent));
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
@@ -289,8 +289,8 @@ async function getTransactionCount(address, provider, blockNumber) {
   return nonce;
 }
 
-async function getEoaType(address, provider, blockNumber) {
-  const nonce = await getTransactionCount(address, provider, blockNumber);
+async function getEoaType(address, provider, blockNumber, txEvent) {
+  const nonce = await getTransactionCount(address, provider, blockNumber, txEvent);
   return nonce > nonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
 }
 
@@ -353,7 +353,16 @@ async function getContractType(address, chainId) {
   }
 }
 
-async function getAddressType(address, scamAddresses, cachedAddresses, provider, blockNumber, chainId, isOwner) {
+async function getAddressType(
+  address,
+  scamAddresses,
+  cachedAddresses,
+  provider,
+  blockNumber,
+  chainId,
+  isOwner,
+  txEvent
+) {
   if (scamAddresses.includes(address)) {
     if (!cachedAddresses.has(address) || cachedAddresses.get(address) !== AddressType.ScamAddress) {
       cachedAddresses.set(address, AddressType.ScamAddress);
@@ -381,7 +390,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
 
     const getTypeFn =
       type === AddressType.EoaWithLowNonce
-        ? async () => getEoaType(address, provider, blockNumber)
+        ? async () => getEoaType(address, provider, blockNumber, txEvent)
         : async () => getContractType(address, chainId);
     const newType = await getTypeFn(address, blockNumber);
 
@@ -401,7 +410,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
       tries++;
       if (tries === maxTries) {
         const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
+        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace, txEvent));
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
@@ -413,7 +422,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
   if (isOwner && !isEoa) return AddressType.LowNumTxsUnverifiedContract;
 
   const getTypeFn = isEoa
-    ? async () => getEoaType(address, provider, blockNumber)
+    ? async () => getEoaType(address, provider, blockNumber, txEvent)
     : async () => getContractType(address, chainId);
   const type = await getTypeFn(address, blockNumber);
 

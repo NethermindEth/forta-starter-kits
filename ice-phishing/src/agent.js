@@ -368,7 +368,8 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        false
+        false,
+        txEvent
       );
 
       const spenderType = await getAddressType(
@@ -378,11 +379,12 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        false
+        false,
+        txEvent
       );
 
       if (spenderType === AddressType.EoaWithLowNonce) {
-        const nonce = await getTransactionCount(spender, provider, blockNumber);
+        const nonce = await getTransactionCount(spender, provider, blockNumber, txEvent);
         if (nonce == 0) {
           if (await hasZeroTransactions(spender, chainId)) {
             const anomalyScore = await calculateAlertRate(
@@ -523,7 +525,8 @@ const provideHandleTransaction =
               provider,
               blockNumber,
               chainId,
-              false
+              false,
+              txEvent
             );
           }
 
@@ -632,7 +635,8 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        true
+        true,
+        txEvent
       );
 
       if (
@@ -655,7 +659,8 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        false
+        false,
+        txEvent
       );
 
       if (
@@ -795,7 +800,7 @@ const provideHandleTransaction =
           }
         } else {
           if (spenderType === AddressType.EoaWithLowNonce && !isFailSafe(spender, owner, chainId)) {
-            const nonce = await getTransactionCount(spender, provider, blockNumber);
+            const nonce = await getTransactionCount(spender, provider, blockNumber, txEvent);
             if (nonce == 0) {
               if (await hasZeroTransactions(spender, chainId)) {
                 const anomalyScore = await calculateAlertRate(
@@ -1054,7 +1059,7 @@ const provideHandleTransaction =
         if (!(await hasTransferredNonStablecoins(txFrom, chainId))) {
           let nonce;
           try {
-            nonce = await getTransactionCount(txFrom, provider, blockNumber);
+            nonce = await getTransactionCount(txFrom, provider, blockNumber, txEvent);
           } catch (e) {
             const stackTrace = util.inspect(e, { showHidden: false, depth: null });
             errorCache.add(
@@ -1083,7 +1088,7 @@ const provideHandleTransaction =
                 if (balanceAfter < balanceBefore / BigInt(100)) {
                   let fromNonce;
                   try {
-                    fromNonce = await getTransactionCount(from, provider, blockNumber);
+                    fromNonce = await getTransactionCount(from, provider, blockNumber, txEvent);
                   } catch (e) {
                     const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                     errorCache.add(
