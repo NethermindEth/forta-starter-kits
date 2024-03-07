@@ -53,6 +53,11 @@ const transferFunctionSigs = [
   ethers.utils.keccak256(ethers.utils.toUtf8Bytes("transferFrom(address,address,uint256)")).substring(0, 10),
 ];
 
+const liquidateFunctionSigs = [
+  ethers.utils.keccak256(ethers.utils.toUtf8Bytes("liquidate(address,uint256,address)")).substring(0, 10),
+  ethers.utils.keccak256(ethers.utils.toUtf8Bytes("liquidate(uint256)")).substring(0, 10),
+];
+
 function provideHandleTransaction(helper, getFlashloans, provider) {
   return async function handleTransaction(txEvent) {
     const findings = [];
@@ -62,6 +67,10 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
     const numOfFlashloans = flashloans.length;
     totalFlashloans += numOfFlashloans;
     if (numOfFlashloans === 0) return findings;
+
+    // Filter out liquidations
+    const input = txEvent.transaction.data;
+    if (liquidateFunctionSigs.some((sig) => input.startsWith(sig))) return findings;
 
     const calledContract = txEvent.to.toLowerCase();
     const transferEvents = txEvent.filterLog(transferEventSigs);
