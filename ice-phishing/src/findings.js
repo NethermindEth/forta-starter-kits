@@ -49,8 +49,8 @@ function createErrorAlert(errorDescription, errorSource, errorStacktrace, txEven
       errorStacktrace,
     },
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -97,8 +97,8 @@ function createHighNumApprovalsAlertERC20(spender, approvalsArray, anomalyScore,
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
     uniqueKey,
   });
@@ -146,8 +146,8 @@ function createHighNumApprovalsInfoAlertERC20(spender, approvalsArray, anomalySc
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
     uniqueKey,
   });
@@ -195,8 +195,8 @@ function createHighNumApprovalsAlertERC721(spender, approvalsArray, anomalyScore
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
     uniqueKey,
   });
@@ -244,8 +244,8 @@ function createHighNumApprovalsInfoAlertERC721(spender, approvalsArray, anomalyS
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
     uniqueKey,
   });
@@ -279,8 +279,8 @@ function createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, tx
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -313,8 +313,8 @@ function createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -347,8 +347,8 @@ function createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, t
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -381,8 +381,8 @@ function createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScor
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -416,8 +416,8 @@ function createPermitAlert(msgSender, spender, owner, asset, anomalyScore, txEve
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -451,8 +451,8 @@ function createPermitInfoAlert(msgSender, spender, owner, asset, anomalyScore, t
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -494,8 +494,8 @@ function createPermitScamAlert(msgSender, spender, owner, asset, scamAddresses, 
     addresses: [asset],
     labels: labels,
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -540,8 +540,8 @@ function createPermitScamCreatorAlert(
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -585,8 +585,8 @@ function createPermitSuspiciousContractAlert(
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -620,8 +620,8 @@ function createApprovalScamAlert(scamSpender, owner, asset, scamDomains, anomaly
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -664,8 +664,8 @@ function createApprovalSuspiciousContractAlert(
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -700,8 +700,8 @@ function createApprovalScamCreatorAlert(spender, scamCreator, owner, asset, scam
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -777,8 +777,8 @@ function createTransferScamAlert(
     addresses: [asset],
     labels,
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -855,8 +855,8 @@ function createTransferSuspiciousContractAlert(
     addresses: [asset],
     labels,
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -931,8 +931,8 @@ function createHighNumTransfersAlert(spender, transfersArray, anomalyScore, txEv
     labels,
     uniqueKey,
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1007,8 +1007,8 @@ function createHighNumTransfersLowSeverityAlert(spender, transfersArray, anomaly
     labels,
     uniqueKey,
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1092,8 +1092,8 @@ function createPigButcheringAlert(receiver, transfersArray, txEvent, anomalyScor
     labels,
     uniqueKey,
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1127,8 +1127,8 @@ function createPermitTransferAlert(spender, owner, receiver, asset, value, anoma
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1162,8 +1162,8 @@ function createPermitTransferMediumSeverityAlert(spender, owner, receiver, asset
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1202,8 +1202,8 @@ function createSweepTokenAlert(victim, attacker, asset, value, anomalyScore, txE
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1242,8 +1242,8 @@ function createZeroNonceAllowanceAlert(victim, attacker, asset, anomalyScore, tx
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1294,8 +1294,8 @@ function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomaly
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
@@ -1334,8 +1334,8 @@ function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, t
       }),
     ],
     source: {
-      chains: [{ chainId: txEvent.network }],
-      transactions: [{ chainId: txEvent.network, hash: txEvent.hash }],
+      chains: [{ chainId: txEvent.chainId }],
+      transactions: [{ chainId: txEvent.chainId, hash: txEvent.hash }],
     },
   });
 }
