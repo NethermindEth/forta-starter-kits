@@ -36,6 +36,7 @@ function getBlockExplorerKey(chainId) {
     56: apiKeys.apiKeys.icePhishing.bscscanApiKeys,
     137: apiKeys.apiKeys.icePhishing.polygonscanApiKeys,
     250: apiKeys.apiKeys.icePhishing.fantomscanApiKeys,
+    8453: apiKeys.apiKeys.icePhishing.basescanApiKeys,
     42161: apiKeys.apiKeys.icePhishing.arbiscanApiKeys,
     43114: apiKeys.apiKeys.icePhishing.snowtraceApiKeys,
   };
