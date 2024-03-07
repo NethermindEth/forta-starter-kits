@@ -52,7 +52,7 @@ const transferEventSigs = [
   "event Withdrawal(address indexed src, uint256 wad)",
   "event Deposit(address indexed dst, uint256 wad)",
   // see note above `peculiarTokens` declaration in `helper.js`.
-  "event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)"
+  "event Withdraw(address indexed sender, address indexed receiver, address indexed owner, uint256 assets, uint256 shares)",
 ];
 
 const transferFunctionSigs = [
@@ -110,140 +110,150 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           }
         }
 
-        // Only loop through traces if on mainnet Ethereum
-        // (other chains don't require enabling traces)
-        // or if there are traces returned
-        if (chainId === ETH_CHAIN_ID || traces.length > 0) {
-          traceLoop: for (let i = traces.length - 1; i >= 0; i--) {
-            const { from, to, value, callType, input } = traces[i].action;
+        if (flashloanIndex === numOfFlashloans - 1) {
+          // Only loop through traces if on mainnet Ethereum
+          // (other chains don't require enabling traces)
+          // or if there are traces returned
+          if (traces.length > 0) {
+            traceLoop: for (let i = traces.length - 1; i >= 0; i--) {
+              const { from, to, value, callType, input } = traces[i].action;
 
-            if (value && value !== "0x0" && callType === "call") {
-              if (
-                (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
-                to.toLowerCase() === initiator
-              ) {
-                const nativeProfit = helper.calculateNativeProfit(traces, initiator);
-                totalNativeProfit = totalNativeProfit.add(nativeProfit);
-                break traceLoop;
-              } else if (
-                to.toLowerCase() === initiator &&
-                // Only start looping through transfers of unknown source (src)
-                // during the last flashloan to prevent "double counting"
-                flashloanIndex === numOfFlashloans - 1
-              ) {
-                // Only proceed with sources that are contracts
-                const cacheKey = `getCode-${chainId}-${from}`;
-
-                let fromCode;
-                if (cache.has(cacheKey)) {
-                  fromCode = cache.get(cacheKey);
-                } else {
-                  fromCode = await provider.getCode(from);
-                  cache.set(cacheKey, fromCode);
-                }
-
-                if (fromCode === "0x") {
-                  continue;
-                }
-
-                const nativeProfit = helper.calculateNativeProfit(traces, initiator);
-
-                if (nativeProfit === helper.zero) {
-                  continue;
-                }
-
-                totalNativeProfit = totalNativeProfit.add(nativeProfit);
-                break traceLoop;
-              } else if (
-                (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
-                // Only start looping through transfers of unknown destination (dst)
-                // during the last flashloan to prevent "double counting"
-                flashloanIndex === numOfFlashloans - 1
-              ) {
-                // Only proceed with recipients that are EOAs
-                const cacheKey = `getCode-${chainId}-${to}`;
-
-                let toCode;
-                if (cache.has(cacheKey)) {
-                  toCode = cache.get(cacheKey);
-                } else {
-                  toCode = await provider.getCode(to);
-                  cache.set(cacheKey, toCode);
-                }
-
-                if (toCode !== "0x") {
-                  continue;
-                }
-
-                const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
-                if (nativeProfit === helper.zero) {
-                  continue;
-                }
-
-                totalNativeProfit = totalNativeProfit.add(nativeProfit);
-                break traceLoop;
-              }
-            } else if (
-              value === "0x0" &&
-              (input.startsWith(transferFunctionSigs[0]) || input.startsWith(transferFunctionSigs[1])) &&
-              (calledContract === from.toLowerCase() || account === from.toLowerCase())
-            ) {
-              for (let j = transferEvents.length - 1; j >= 0; j--) {
-                const { name } = transferEvents[j];
-                const { src, dst } = transferEvents[j].args;
-
+              if (value && value !== "0x0" && callType === "call") {
                 if (
-                  name === "Transfer" &&
-                  (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
-                  dst.toLowerCase() === initiator
+                  (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
+                  to.toLowerCase() === initiator
                 ) {
-                  const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
-                  const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
-                  if (positiveProfits.length === 0) {
+                  const nativeProfit = helper.calculateNativeProfit(traces, initiator);
+                  totalNativeProfit = totalNativeProfit.add(nativeProfit);
+                  break traceLoop;
+                } else if (
+                  to.toLowerCase() === initiator &&
+                  // Only start looping through transfers of unknown source (src)
+                  // during the last flashloan to prevent "double counting"
+                  flashloanIndex === numOfFlashloans - 1
+                ) {
+                  // Only proceed with sources that are contracts
+                  const cacheKey = `getCode-${chainId}-${from}`;
+
+                  let fromCode;
+                  if (cache.has(cacheKey)) {
+                    fromCode = cache.get(cacheKey);
+                  } else {
+                    fromCode = await provider.getCode(from);
+                    cache.set(cacheKey, fromCode);
+                  }
+
+                  if (fromCode === "0x") {
                     continue;
                   }
 
-                  Object.entries(tokenProfits).forEach(([address, profit]) => {
-                    if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-                    totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-                  });
+                  const nativeProfit = helper.calculateNativeProfit(traces, initiator);
+
+                  if (nativeProfit === helper.zero) {
+                    continue;
+                  }
+
+                  totalNativeProfit = totalNativeProfit.add(nativeProfit);
                   break traceLoop;
                 } else if (
-                  name === "Transfer" &&
-                  (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
-                  // Only start looping through Transfers of unknown destination (dst)
+                  (from.toLowerCase() === account || from.toLowerCase() === calledContract) &&
+                  // Only start looping through transfers of unknown destination (dst)
                   // during the last flashloan to prevent "double counting"
                   flashloanIndex === numOfFlashloans - 1
                 ) {
                   // Only proceed with recipients that are EOAs
-                  const dstCode = await provider.getCode(dst);
-                  if (dstCode !== "0x") {
+                  const cacheKey = `getCode-${chainId}-${to}`;
+
+                  let toCode;
+                  if (cache.has(cacheKey)) {
+                    toCode = cache.get(cacheKey);
+                  } else {
+                    toCode = await provider.getCode(to);
+                    cache.set(cacheKey, toCode);
+                  }
+
+                  if (toCode !== "0x") {
                     continue;
                   }
 
-                  const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
-                  const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
-                  if (positiveProfits.length === 0) {
+                  if (to.toLowerCase() === calledContract) {
+                    hasCalledContractBeenProcessed.nativeProfit = true;
+                  }
+
+                  const nativeProfit = helper.calculateNativeProfit(traces, to.toLowerCase());
+                  if (nativeProfit === helper.zero) {
                     continue;
                   }
 
-                  Object.entries(tokenProfits).forEach(([address, profit]) => {
-                    if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-                    totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-                  });
+                  totalNativeProfit = totalNativeProfit.add(nativeProfit);
                   break traceLoop;
+                }
+              } else if (
+                value === "0x0" &&
+                (input.startsWith(transferFunctionSigs[0]) || input.startsWith(transferFunctionSigs[1])) &&
+                (calledContract === from.toLowerCase() || account === from.toLowerCase())
+              ) {
+                for (let j = transferEvents.length - 1; j >= 0; j--) {
+                  const { name } = transferEvents[j];
+                  const { src, dst } = transferEvents[j].args;
+
+                  if (
+                    name === "Transfer" &&
+                    (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
+                    dst.toLowerCase() === initiator
+                  ) {
+                    const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
+                    const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
+                    if (positiveProfits.length === 0) {
+                      continue;
+                    }
+
+                    Object.entries(tokenProfits).forEach(([address, profit]) => {
+                      if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+                      totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+                    });
+                    break traceLoop;
+                  } else if (
+                    name === "Transfer" &&
+                    (src.toLowerCase() === calledContract || src.toLowerCase() === account) &&
+                    dst !== ethers.constants.AddressZero &&
+                    // Only start looping through Transfers of unknown destination (dst)
+                    // during the last flashloan to prevent "double counting"
+                    flashloanIndex === numOfFlashloans - 1
+                  ) {
+                    // Only proceed with recipients that are EOAs
+                    const dstCode = await provider.getCode(dst);
+                    if (dstCode !== "0x") {
+                      continue;
+                    }
+
+                    if (dst.toLowerCase() === calledContract) {
+                      hasCalledContractBeenProcessed.tokenProfits = true;
+                    }
+
+                    const tokenProfits = helper.calculateTokenProfits(transferEvents, dst.toLowerCase());
+                    const positiveProfits = Object.values(tokenProfits).filter((profit) => profit > helper.zero);
+                    if (positiveProfits.length === 0) {
+                      continue;
+                    }
+
+                    Object.entries(tokenProfits).forEach(([address, profit]) => {
+                      if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+                      totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+                    });
+                    break traceLoop;
+                  }
                 }
               }
             }
-          }
-          // Check the profit of the initiator if not on mainnet
-          // or if no traces only during the last flashloan
-        } else if (flashloanIndex === numOfFlashloans - 1) {
-          const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
-          Object.entries(tokenProfits).forEach(([address, profit]) => {
-            if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-            totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-          });
+            // Check the profit of the initiator if not on mainnet
+            // or if no traces only during the last flashloan
+          } else {
+            const tokenProfits = helper.calculateTokenProfits(transferEvents, initiator);
+            Object.entries(tokenProfits).forEach(([address, profit]) => {
+              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+            });
 
             const nativeProfit = helper.calculateNativeProfit(traces, initiator);
             totalNativeProfit = totalNativeProfit.add(nativeProfit);
@@ -255,6 +265,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
               calledContract,
               totalNativeProfit
             );
+          }
         }
 
         borrowedAmount = await helper.calculateBorrowedAmount(asset, amount, chain);
