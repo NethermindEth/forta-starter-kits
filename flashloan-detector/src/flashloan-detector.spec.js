@@ -103,13 +103,22 @@ const mockUniswapV2FunctionCall = {
   address: market,
   args: {
     to: account,
-    data: "0x00",
+    data: "0x0" + "0".repeat(64), // Data length should be more 32 bytes (64 hex characters)
     amount0Out: amount,
     amount1Out: ethers.constants.Zero,
   },
 };
 
-const mockUniswapV3FunctionCall = {
+const mockUniswapV2Event = {
+  address: market,
+  args: {
+    to: account,
+    amount0Out: amount,
+    amount1Out: ethers.constants.Zero,
+  },
+};
+
+const mockUniswapV3Event = {
   address: market,
   args: {
     recipient: account,
@@ -131,6 +140,9 @@ describe("FlashloanDetector library", () => {
   const mockTxEvent = {
     filterLog: jest.fn(),
     filterFunction: jest.fn(),
+    transaction: {
+      data: "0x0",
+    },
   };
 
   beforeEach(() => {
@@ -160,7 +172,8 @@ describe("FlashloanDetector library", () => {
       mockTxEvent.filterLog.mockReturnValueOnce([mockIronBankEvent]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockMakerEvent]);
       mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV2FunctionCall]);
-      mockTxEvent.filterFunction.mockReturnValueOnce([mockUniswapV3FunctionCall]);
+      mockTxEvent.filterLog.mockReturnValueOnce([mockUniswapV2Event]);
+      mockTxEvent.filterLog.mockReturnValueOnce([mockUniswapV3Event]);
       // Checking for a `swap` in UniswapV3 Pool
       mockTxEvent.filterFunction.mockReturnValueOnce([]);
       mockTxEvent.filterLog.mockReturnValueOnce([mockBalancerEvent]);

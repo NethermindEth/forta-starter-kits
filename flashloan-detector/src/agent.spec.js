@@ -1,5 +1,6 @@
 const { FindingType, FindingSeverity, Finding, ethers, Label, EntityType } = require("forta-agent");
 const { provideHandleTransaction, provideInitialize, provideHandleBlock } = require("./agent");
+const { createAddress } = require("forta-agent-tools/lib/utils");
 
 const asset = "0xasset";
 const initiator = "0xfrom";
@@ -44,6 +45,8 @@ const mockHelper = {
   calculateNativeProfit: jest.fn(),
   calculateTokensUsdProfit: jest.fn(),
   calculateNativeUsdProfit: jest.fn(),
+  addWethBurnProfitIfApplicable: jest.fn(),
+  getContractCreator: jest.fn(),
   clear: () => {},
 };
 
@@ -129,7 +132,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [mockNativeTransferTrace],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for the current high profit flashloan
@@ -139,6 +142,7 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));
       mockHelper.calculateNativeUsdProfit.mockResolvedValueOnce(highNativeUsdProfit);
       const findings = await handleTransaction(mockTxEvent);
 
@@ -182,7 +186,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [mockErc20TransferTrace],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for both the current high profit flashloan
@@ -193,6 +197,7 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));
       mockHelper.calculateTokensUsdProfit.mockResolvedValueOnce(hightokenUsdProfit);
       const findings = await handleTransaction(mockTxEvent);
 
@@ -242,7 +247,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for the current flashloan
@@ -252,8 +257,10 @@ describe("flashloan detector agent", () => {
       mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
       mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
       mockHelper.calculateNativeProfit.mockReturnValueOnce(0);
+      mockHelper.addWethBurnProfitIfApplicable.mockReturnValueOnce(ethers.BigNumber.from(0));
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));
       mockHelper.calculateTokensUsdProfit.mockResolvedValueOnce(lowTokenUsdProfit);
       const findings = await handleTransaction(mockTxEvent);
 
@@ -303,7 +310,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [mockErc20TransferTrace],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for the current high profit flashloan
@@ -314,13 +321,14 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(100_000_000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));
       mockHelper.calculateTokensUsdProfit.mockResolvedValueOnce(veryHighTokenUsdProfit);
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
         Finding.fromObject({
           name: "Flashloan detected",
-          description: `${initiator} launched flash loan attack and made profit > $500000`,
+          description: `${initiator} launched flash loan attack and made profit > $200000`,
           alertId: "FLASHLOAN-ATTACK-WITH-HIGH-PROFIT",
           severity: FindingSeverity.High,
           type: FindingType.Exploit,
@@ -372,7 +380,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [mockErc20TransferTrace],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for the current flashloan
@@ -384,6 +392,7 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));
       mockHelper.calculateTokensUsdProfit.mockResolvedValueOnce(lowTokenUsdProfit);
       const findings = await handleTransaction(mockTxEvent);
 
@@ -445,7 +454,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [mockNativeTransferDiffRecipientTrace],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for the current flashloan
@@ -456,6 +465,7 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));
       mockHelper.calculateNativeUsdProfit.mockResolvedValueOnce(lowNativeUsdProfit);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -476,7 +486,12 @@ describe("flashloan detector agent", () => {
                 : mockLowProfitAnomalyScore.toFixed(2),
           },
           labels: [
-            Label.fromObject({ entityType: EntityType.Address, entity: initiator, label: "Attacker", confidence: 0.6 }),
+            Label.fromObject({
+              entityType: EntityType.Address,
+              entity: initiator,
+              label: "Attacker",
+              confidence: 0.6,
+            }),
             Label.fromObject({
               entityType: EntityType.Transaction,
               entity: mockTxEvent.hash,
@@ -515,7 +530,7 @@ describe("flashloan detector agent", () => {
         to: contractCalled,
         traces: [mockNativeTransferDiffRecipientTrace],
         filterLog: jest.fn(),
-        transaction: { gasPrice: 0 },
+        transaction: { gasPrice: 0, data: "0x" },
       };
 
       // Adding one to both for the current flashloan
@@ -526,8 +541,9 @@ describe("flashloan detector agent", () => {
       mockHelper.calculateNativeProfit.mockReturnValueOnce(nativeProfit);
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
+      mockHelper.calculateNativeProfit.mockReturnValueOnce(0); // Called contract's profit
       mockHelper.calculateNativeUsdProfit.mockResolvedValueOnce(lowNativeUsdProfit);
-      
+
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([
@@ -558,14 +574,10 @@ describe("flashloan detector agent", () => {
       ]);
 
       expect(mockProvider.getCode).toHaveBeenCalledWith(diffContract);
-      expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith(
-        [mockNativeTransferDiffRecipientTrace],
-        initiator
-      );
+      expect(mockHelper.calculateNativeProfit).toHaveBeenCalledWith([mockNativeTransferDiffRecipientTrace], initiator);
       expect(mockHelper.calculateBorrowedAmount).toHaveBeenCalledWith(asset, amount, chain);
       expect(mockHelper.calculateNativeUsdProfit).toHaveBeenCalledWith(nativeProfit, chain, mockTxEvent.blockNumber);
     });
-
   });
 
   describe("Block handler test suite", () => {
