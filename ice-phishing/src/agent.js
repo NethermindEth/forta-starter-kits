@@ -1,4 +1,4 @@
-const { getChainId, scanBase, scanEthereum, runHealthCheck, ethers, getProvider } = require("forta-bot");
+const { getChainId, scanBase, scanPolygon, scanEthereum, runHealthCheck, ethers, getProvider } = require("forta-bot");
 
 const LRU = require("lru-cache");
 const { default: axios } = require("axios");
@@ -1708,20 +1708,46 @@ const provideHandleBlock =
   };
 
 async function main() {
-  // const baseProvider = await getProvider({
-  //   rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
-  //   rpcKeyId: "85f8e757-1120-49eb-936a-7ee0aee57659",
-  //   localRpcUrl: "8453",
-  // });
+  const polygonProvider = await getProvider({
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "d208ddd4-2b53-48b0-92b1-39b8721c47da",
+    localRpcUrl: "8453",
+  });
 
   ethProvider = await getProvider({
     rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
-    rpcKeyId: "ebbd1b21-4e72-4d80-b4f9-f605fee5eb68",
+    rpcKeyId: "9febef20-c5b1-401c-bf8c-c06aa93262fa",
+    localRpcUrl: "1",
+  });
+
+  const baseProvider = await getProvider({
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "8031885c-4110-4c97-b6fd-9f1300e23ab3",
     localRpcUrl: "1",
   });
 
   const handleTransactionEth = provideHandleTransaction(
     ethProvider,
+    counters,
+    DATABASE_OBJECT_KEY,
+    new PersistenceHelper(DATABASE_URL),
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  );
+
+  const handleTransactionBase = provideHandleTransaction(
+    baseProvider,
+    counters,
+    DATABASE_OBJECT_KEY,
+    new PersistenceHelper(DATABASE_URL),
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  );
+
+  const handleTransactionPolygon = provideHandleTransaction(
+    polygonProvider,
     counters,
     DATABASE_OBJECT_KEY,
     new PersistenceHelper(DATABASE_URL),
@@ -1749,19 +1775,27 @@ async function main() {
 
   await initialize();
 
-  // scanBase({
-  //   rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
-  //   rpcKeyId: "d4855ef3-58ef-453e-928e-13c6d14d3caa",
-  //   localRpcUrl: "8453",
-  //   handleTransaction,
-  //   handleBlock,
-  // });
+  scanBase({
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "8031885c-4110-4c97-b6fd-9f1300e23ab3",
+    localRpcUrl: "8453",
+    handleTransaction: handleTransactionBase,
+    handleBlock,
+  });
 
   scanEthereum({
     rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
-    rpcKeyId: "9febef20-c5b1-401c-bf8c-c06aa93262fa",
+    rpcKeyId: "b6e6ca09-7878-4da0-aad0-2227518b440b",
     localRpcUrl: "1",
     handleTransaction: handleTransactionEth,
+    handleBlock,
+  });
+
+  scanPolygon({
+    rpcUrl: "https://polygon-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "d208ddd4-2b53-48b0-92b1-39b8721c47da",
+    localRpcUrl: "137",
+    handleTransaction: handleTransactionPolygon,
     handleBlock,
   });
 
