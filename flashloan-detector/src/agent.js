@@ -9,8 +9,8 @@ let chain;
 let nativeToken;
 const ETH_CHAIN_ID = 1;
 
-const PROFIT_THRESHOLD = 500_000;
-const PERCENTAGE_THRESHOLD = 2;
+const PROFIT_THRESHOLD = 200_000;
+const PERCENTAGE_THRESHOLD = 1.3;
 const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
 const cache = new LRUCache({ max: 100_000 });
 
