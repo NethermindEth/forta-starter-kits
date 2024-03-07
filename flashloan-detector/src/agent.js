@@ -231,8 +231,16 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             totalTokenProfits[address] = totalTokenProfits[address].add(profit);
           });
 
-          const nativeProfit = helper.calculateNativeProfit(traces, initiator);
-          totalNativeProfit = totalNativeProfit.add(nativeProfit);
+            const nativeProfit = helper.calculateNativeProfit(traces, initiator);
+            totalNativeProfit = totalNativeProfit.add(nativeProfit);
+
+            // Arbitrum
+            totalNativeProfit = helper.addWethBurnProfitIfApplicable(
+              chainId,
+              transferEvents,
+              calledContract,
+              totalNativeProfit
+            );
         }
 
         borrowedAmount = await helper.calculateBorrowedAmount(asset, amount, chain);
