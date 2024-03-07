@@ -18,6 +18,7 @@ const PROFIT_THRESHOLD = 200_000;
 const PERCENTAGE_THRESHOLD = 1.3;
 const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
 const cache = new LRUCache({ max: 100_000 });
+const processedAccounts = new Set();
 
 const DETECT_FLASHLOANS_KEY = "nm-flashloans-bot-key";
 const DETECT_FLASHLOANS_HIGH_KEY = "nm-flashloans-high-profit-bot-key";
@@ -90,16 +91,23 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
     await Promise.all(
       flashloans.map(async (flashloan, flashloanIndex) => {
         const { asset, amount, account } = flashloan;
+        if (!processedAccounts.has(account)) {
+          processedAccounts.add(account);
 
-        if (account !== initiator) {
-          const tokenProfits = helper.calculateTokenProfits(transferEvents, account);
-          const nativeProfit = helper.calculateNativeProfit(traces, account);
+          if (account !== initiator) {
+            if (account === calledContract) {
+              hasCalledContractBeenProcessed.tokenProfits = true;
+              hasCalledContractBeenProcessed.nativeProfit = true;
+            }
+            const tokenProfits = helper.calculateTokenProfits(transferEvents, account);
+            const nativeProfit = helper.calculateNativeProfit(traces, account);
 
-          Object.entries(tokenProfits).forEach(([address, profit]) => {
-            if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
-            totalTokenProfits[address] = totalTokenProfits[address].add(profit);
-          });
-          totalNativeProfit = totalNativeProfit.add(nativeProfit);
+            Object.entries(tokenProfits).forEach(([address, profit]) => {
+              if (!totalTokenProfits[address]) totalTokenProfits[address] = helper.zero;
+              totalTokenProfits[address] = totalTokenProfits[address].add(profit);
+            });
+            totalNativeProfit = totalNativeProfit.add(nativeProfit);
+          }
         }
 
         // Only loop through traces if on mainnet Ethereum
