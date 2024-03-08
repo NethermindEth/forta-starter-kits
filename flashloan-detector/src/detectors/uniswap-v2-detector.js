@@ -2,13 +2,14 @@ const { getEthersProvider, ethers } = require("forta-agent");
 
 const functionSignature = "function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data)";
 const swapFunctionSelector = "022c0d9f";
+const _32bytes = 64;
 
-const ABI = [
+const POOL_TOKENS_ABI = [
   "function token0() public view returns (address token)",
   "function token1() public view returns (address token)",
 ];
 
-const EVENT_ABI = [
+const SWAP_ABI = [
   "event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)",
 ];
 
@@ -38,7 +39,7 @@ module.exports = {
           );
 
           if (ethers.utils.hexlify(data) !== "0x") {
-            const swapEvents = txEvent.filterLog(EVENT_ABI);
+            const swapEvents = txEvent.filterLog(SWAP_ABI);
 
             // Loop through swapEvents to find the corresponding swap event
             for (let i = 0; i < swapEvents.length; i++) {
@@ -54,7 +55,7 @@ module.exports = {
                 const amount = tokenIndex === 0 ? amount0Out : amount1Out;
                 const tokenFnCall = tokenIndex === 0 ? "token0" : "token1";
 
-                const contract = new ethers.Contract(address, ABI, getEthersProvider());
+                const contract = new ethers.Contract(address, POOL_TOKENS_ABI, getEthersProvider());
                 const asset = await contract[tokenFnCall]();
 
                 flashloans.push({
@@ -73,7 +74,7 @@ module.exports = {
       return flashloans;
     } else {
       const flashloans = await Promise.all(
-        swaps.map(async (swap, i) => {
+        swaps.map(async (swap) => {
           const { data, amount0Out, amount1Out } = swap.args;
           let to;
 
@@ -81,7 +82,7 @@ module.exports = {
           try {
             to = await swap.args.to();
           } catch {
-            const swapEvents = txEvent.filterLog(EVENT_ABI);
+            const swapEvents = txEvent.filterLog(SWAP_ABI);
             if (!swapEvents.length) return null;
 
             for (let i = 0; i < swapEvents.length; i++) {
@@ -97,10 +98,13 @@ module.exports = {
           }
 
           const { address } = swap;
-          // In the context of Uniswap V2's protocol, a non-empty `data` field during a swap operation indicates a flash swap. This is documented in Uniswap's documentation (https://docs.uniswap.org/protocol/V2/guides/smart-contract-integration/using-flash-swaps).
-          // However, other protocols with identical swap function signatures may use the `data` field differently. For instance, a transaction on Mainnet (tx: 0xe099c7bb3f1ce6bc79a5df4e66a58d60ce131c1293583a9181a808618933495a) uses `data` to represent a price value.
-          // Therefore, to accurately identify flash swaps while accounting for these differences, we check if the `data` field is not only non-empty but also exceeds a certain length threshold. We consider `data` lengths of 64 characters or less (after removing the '0x' prefix) as potentially not indicative of a flash swap.
-          if (data === "0x" || data.slice(2).length <= 64) {
+          // In the context of Uniswap V2's protocol, a non-empty `data` field during a swap operation indicates a flash swap.
+          // This is documented in Uniswap's documentation (https://docs.uniswap.org/protocol/V2/guides/smart-contract-integration/using-flash-swaps).
+          // However, other protocols with identical swap function signatures may use the `data` field differently.
+          // For instance, a transaction on Mainnet (tx: 0xe099c7bb3f1ce6bc79a5df4e66a58d60ce131c1293583a9181a808618933495a) uses `data` to represent a price value.
+          // Therefore, to accurately identify flash swaps while accounting for these differences, we check if the `data` field is not only non-empty but also exceeds a certain length threshold.
+          //  We consider `data` lengths of 64 characters or less (after removing the '0x' prefix) as potentially not indicative of a flash swap.
+          if (data === "0x" || data.slice(2).length <= _32bytes) {
             return null;
           }
 
@@ -109,7 +113,7 @@ module.exports = {
           const amount = tokenIndex === 0 ? amount0Out : amount1Out;
           const tokenFnCall = tokenIndex === 0 ? "token0" : "token1";
 
-          const contract = new ethers.Contract(address, ABI, getEthersProvider());
+          const contract = new ethers.Contract(address, POOL_TOKENS_ABI, getEthersProvider());
           const asset = await contract[tokenFnCall]();
 
           return {

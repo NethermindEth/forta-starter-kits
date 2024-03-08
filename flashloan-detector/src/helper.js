@@ -459,7 +459,7 @@ module.exports = {
     console.error(`Failed to fetch contract creator for ${address} after ${MAX_RETRIES} retries`);
     return null;
   },
-  addWethBurnProfitIfApplicable(chainId, transferEvents, calledContract, totalNativeProfit) {
+  addArbWethBurnProfitIfApplicable(chainId, transferEvents, calledContract, totalNativeProfit) {
     // Check if we're on Arbitrum and the last Transfer event is a WETH burn from the called contract
     if (Number(chainId) === 42161 && transferEvents[transferEvents.length - 1].address === ARB_WETH_ADDRESS) {
       const { src: s, dst: d, wad } = transferEvents[transferEvents.length - 1].args;

@@ -111,9 +111,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
         }
 
         if (flashloanIndex === numOfFlashloans - 1) {
-          // Only loop through traces if on mainnet Ethereum
-          // (other chains don't require enabling traces)
-          // or if there are traces returned
+          // Only loop through traces if they're returned
           if (traces.length > 0) {
             traceLoop: for (let i = traces.length - 1; i >= 0; i--) {
               const { from, to, value, callType, input } = traces[i].action;
@@ -259,7 +257,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
             totalNativeProfit = totalNativeProfit.add(nativeProfit);
 
             // Arbitrum
-            totalNativeProfit = helper.addWethBurnProfitIfApplicable(
+            totalNativeProfit = helper.addArbWethBurnProfitIfApplicable(
               chainId,
               transferEvents,
               calledContract,

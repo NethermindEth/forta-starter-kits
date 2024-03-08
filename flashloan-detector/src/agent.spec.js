@@ -45,7 +45,7 @@ const mockHelper = {
   calculateNativeProfit: jest.fn(),
   calculateTokensUsdProfit: jest.fn(),
   calculateNativeUsdProfit: jest.fn(),
-  addWethBurnProfitIfApplicable: jest.fn(),
+  addArbWethBurnProfitIfApplicable: jest.fn(),
   getContractCreator: jest.fn(),
   clear: () => {},
 };
@@ -257,7 +257,7 @@ describe("flashloan detector agent", () => {
       mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent]);
       mockHelper.calculateTokenProfits.mockReturnValueOnce({ [asset]: tokenProfit });
       mockHelper.calculateNativeProfit.mockReturnValueOnce(0);
-      mockHelper.addWethBurnProfitIfApplicable.mockReturnValueOnce(ethers.BigNumber.from(0));
+      mockHelper.addArbWethBurnProfitIfApplicable.mockReturnValueOnce(ethers.BigNumber.from(0));
       mockHelper.calculateBorrowedAmount.mockResolvedValueOnce(10000);
       mockHelper.getTransactionReceipt.mockResolvedValueOnce({ gasUsed: 0 });
       mockHelper.getContractCreator.mockResolvedValueOnce(createAddress("0xa"));

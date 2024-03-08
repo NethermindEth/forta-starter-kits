@@ -3,7 +3,7 @@ const { ethers, getEthersProvider } = require("forta-agent");
 const FLASH_EVENT_ABI = [
   "event Flash(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1, uint256 paid0, uint256 paid1)",
 ];
-const swapAbi =
+const SWAP_ABI =
   "function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes data)";
 
 const ABI = [
@@ -14,7 +14,7 @@ const ABI = [
 module.exports = {
   getUniswapV3Flashloan: async (txEvent) => {
     const flashEvents = txEvent.filterLog(FLASH_EVENT_ABI);
-    const assetSwaps = txEvent.filterFunction(swapAbi);
+    const assetSwaps = txEvent.filterFunction(SWAP_ABI);
 
     const flashloans = await Promise.all(
       flashEvents.map(async (flash) => {
