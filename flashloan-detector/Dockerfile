@@ -6,7 +6,7 @@
 # RUN javascript-obfuscator ./src --output ./dist --split-strings true --split-strings-chunk-length 3
 
 # Final stage: install production dependencies
-FROM node:16-alpine
+FROM node:18-alpine3.17 AS builder
 ENV NODE_ENV=production
 # Uncomment the following line to enable agent logging
 LABEL "network.forta.settings.agent-logs.enable"="true"
