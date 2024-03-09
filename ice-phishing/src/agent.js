@@ -249,7 +249,7 @@ const provideHandleTransaction =
     ];
 
     // ERC20 and ERC721 approvals and transfers have the same signature
-    // so we need to collect them seperately
+    // so we need to collect them separately
     const approvalEvents = [
       ...txEvent.filterLog(approvalEventErc20ABI),
       ...txEvent.filterLog(approvalEventErc721ABI),
@@ -551,7 +551,7 @@ const provideHandleTransaction =
       if (IGNORED_ADDRESSES.includes(spender)) continue;
       if (failsafeWallets.has(spender.toLowerCase())) continue;
 
-      // When transfering ERC20 tokens an Approval event is emitted with lower value
+      // When transferring ERC20 tokens an Approval event is emitted with lower value
       // We should ignore these Approval events because they are duplicates
       const isAlreadyApproved = tokenId ? false : objects.approvals[spender]?.some((a) => a.owner === owner);
 
