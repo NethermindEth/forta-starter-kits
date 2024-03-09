@@ -490,7 +490,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS
 
-  - Fired when an account that gained high number of approvals starts transfering the approved assets
+  - Fired when an account that gained high number of approvals starts transferring the approved assets
   - Severity is always set to "high"
   - Type is always set to "exploit"
   - Metadata:
@@ -523,7 +523,7 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 
 - ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW
 
-  - Fired when an account (verified contract with low number of transactions or EOA with high nonce) that gained high number of approvals starts transfering the approved assets
+  - Fired when an account (verified contract with low number of transactions or EOA with high nonce) that gained high number of approvals starts transferring the approved assets
   - Severity is always set to "low"
   - Type is always set to "suspicious"
   - Metadata:
