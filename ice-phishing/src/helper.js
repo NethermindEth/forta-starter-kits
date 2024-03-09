@@ -1,4 +1,4 @@
-const { getAlerts, ethers } = require("forta-agent");
+const { ethers, getAlerts } = require("forta-bot");
 const { default: axios } = require("axios");
 const LRU = require("lru-cache");
 const util = require("util");
@@ -13,6 +13,7 @@ const {
 } = require("./utils");
 const errorCache = require("./errorCache");
 const AddressType = require("./address-type");
+const { createErrorAlert } = require("./findings");
 
 let getApiKeys;
 
@@ -35,6 +36,7 @@ function getBlockExplorerKey(chainId) {
     56: apiKeys.apiKeys.icePhishing.bscscanApiKeys,
     137: apiKeys.apiKeys.icePhishing.polygonscanApiKeys,
     250: apiKeys.apiKeys.icePhishing.fantomscanApiKeys,
+    8453: apiKeys.apiKeys.icePhishing.basescanApiKeys,
     42161: apiKeys.apiKeys.icePhishing.arbiscanApiKeys,
     43114: apiKeys.apiKeys.icePhishing.snowtraceApiKeys,
   };
@@ -261,7 +263,7 @@ async function getLabel(address) {
 
 const cachedNonces = new LRU({ max: 5 });
 
-async function getTransactionCount(address, provider, blockNumber) {
+async function getTransactionCount(address, provider, blockNumber, txEvent) {
   let nonce = 100000;
   let tries = 0;
   const maxTries = 3;
@@ -280,7 +282,7 @@ async function getTransactionCount(address, provider, blockNumber) {
       tries++;
       if (tries === maxTries) {
         const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
+        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace, txEvent));
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
@@ -288,8 +290,8 @@ async function getTransactionCount(address, provider, blockNumber) {
   return nonce;
 }
 
-async function getEoaType(address, provider, blockNumber) {
-  const nonce = await getTransactionCount(address, provider, blockNumber);
+async function getEoaType(address, provider, blockNumber, txEvent) {
+  const nonce = await getTransactionCount(address, provider, blockNumber, txEvent);
   return nonce > nonceThreshold ? AddressType.EoaWithHighNonce : AddressType.EoaWithLowNonce;
 }
 
@@ -352,7 +354,16 @@ async function getContractType(address, chainId) {
   }
 }
 
-async function getAddressType(address, scamAddresses, cachedAddresses, provider, blockNumber, chainId, isOwner) {
+async function getAddressType(
+  address,
+  scamAddresses,
+  cachedAddresses,
+  provider,
+  blockNumber,
+  chainId,
+  isOwner,
+  txEvent
+) {
   if (scamAddresses.includes(address)) {
     if (!cachedAddresses.has(address) || cachedAddresses.get(address) !== AddressType.ScamAddress) {
       cachedAddresses.set(address, AddressType.ScamAddress);
@@ -380,7 +391,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
 
     const getTypeFn =
       type === AddressType.EoaWithLowNonce
-        ? async () => getEoaType(address, provider, blockNumber)
+        ? async () => getEoaType(address, provider, blockNumber, txEvent)
         : async () => getContractType(address, chainId);
     const newType = await getTypeFn(address, blockNumber);
 
@@ -400,7 +411,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
       tries++;
       if (tries === maxTries) {
         const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
+        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace, txEvent));
       }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
@@ -412,7 +423,7 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
   if (isOwner && !isEoa) return AddressType.LowNumTxsUnverifiedContract;
 
   const getTypeFn = isEoa
-    ? async () => getEoaType(address, provider, blockNumber)
+    ? async () => getEoaType(address, provider, blockNumber, txEvent)
     : async () => getContractType(address, chainId);
   const type = await getTypeFn(address, blockNumber);
 
@@ -586,8 +597,8 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     }
     contracts = contracts.map((contract) => {
       return {
-        address: ethers.utils.getAddress(contract.address),
-        creator: ethers.utils.getAddress(contract.creator),
+        address: ethers.getAddress(contract.address),
+        creator: ethers.getAddress(contract.creator),
       };
     });
 
@@ -611,8 +622,8 @@ async function getSuspiciousContracts(chainId, blockNumber, init) {
     });
     contracts = contracts.map((contract) => {
       return {
-        address: ethers.utils.getAddress(contract.address),
-        creator: ethers.utils.getAddress(contract.creator),
+        address: ethers.getAddress(contract.address),
+        creator: ethers.getAddress(contract.creator),
       };
     });
     return new Set(contracts);
@@ -712,12 +723,12 @@ const failSafeBeacon = {
 };
 
 const getBytecode = (beaconProxy, protectedAddr) => {
-  const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "address"], [beaconProxy, protectedAddr]);
+  const encodedParams = ethers.defaultAbiCoder.encode(["address", "address"], [beaconProxy, protectedAddr]);
   return failSafeCreationCode + encodedParams.slice(2); // Remove '0x' from the encodedParams
 };
 
 const getBytecode1 = (beacon, stream) => {
-  const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [beacon, stream]);
+  const encodedParams = ethers.defaultAbiCoder.encode(["address", "bytes"], [beacon, stream]);
   return failSafeCreationCode + encodedParams.slice(2); // Remove '0x' from the encodedParams
 };
 const isFailSafe = (spender, protectedAddr, chainId) => {
@@ -730,27 +741,27 @@ const isFailSafe = (spender, protectedAddr, chainId) => {
     const proxy = proxies[i];
     const beacon = beacons[i]; // Assuming the same index for beacons
 
-    const packedParams = ethers.utils.solidityPack(
+    const packedParams = ethers.solidityPacked(
       ["bytes1", "address", "uint256", "bytes32"],
       [
         "0xff",
         protectedAddr,
         1, // version
-        ethers.utils.solidityKeccak256(["bytes"], [getBytecode(proxy, protectedAddr)]),
+        ethers.solidityPackedKeccak256(["bytes"], [getBytecode(proxy, protectedAddr)]),
       ]
     );
-    const salt = ethers.utils.solidityKeccak256(["bytes"], [packedParams]);
+    const salt = ethers.solidityPackedKeccak256(["bytes"], [packedParams]);
 
-    const encodedParams = ethers.utils.defaultAbiCoder.encode(["address", "address"], [proxy, protectedAddr]);
+    const encodedParams = ethers.defaultAbiCoder.encode(["address", "address"], [proxy, protectedAddr]);
     const stream = failSafeInitializeSelector + encodedParams.slice(2);
 
-    const packedParams2 = ethers.utils.solidityPack(
+    const packedParams2 = ethers.solidityPacked(
       ["bytes1", "address", "bytes32", "bytes32"],
-      ["0xff", proxy, salt, ethers.utils.solidityKeccak256(["bytes"], [getBytecode1(beacon, stream)])]
+      ["0xff", proxy, salt, ethers.solidityPackedKeccak256(["bytes"], [getBytecode1(beacon, stream)])]
     );
-    const hash = ethers.utils.solidityKeccak256(["bytes"], [packedParams2]);
+    const hash = ethers.solidityPackedKeccak256(["bytes"], [packedParams2]);
 
-    const address = ethers.utils.getAddress(ethers.utils.hexDataSlice(hash, 12)); // Slice the last 20 bytes and get the address
+    const address = ethers.getAddress(ethers.dataSlice(hash, 12)); // Slice the last 20 bytes and get the address
 
     if (spender.toLowerCase() === address.toLowerCase()) {
       return true; // Return true if at least one pair matches

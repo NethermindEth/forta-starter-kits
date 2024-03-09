@@ -34,6 +34,13 @@ const etherscanApis = {
     urlContractCreation: "https://api.ftmscan.com/api?module=contract&action=getcontractcreation",
     urlLogs: "https://api.ftmscan.com/api?module=logs&action=getLogs",
   },
+  8453: {
+    urlContract: "https://api.basescan.org/api?module=contract&action=getabi",
+    urlAccount: "https://api.basescan.org/api?module=account&action=txlist",
+    urlAccountToken: "https://api.basescan.org/api?module=account&action=tokentx",
+    urlContractCreation: "https://api.basescan.org/api?module=contract&action=getcontractcreation",
+    urlLogs: "https://api.basescan.org/api?module=logs&action=getLogs",
+  },
   42161: {
     urlContract: "https://api.arbiscan.io/api?module=contract&action=getabi",
     urlAccount: "https://api.arbiscan.io/api?module=account&action=txlist",

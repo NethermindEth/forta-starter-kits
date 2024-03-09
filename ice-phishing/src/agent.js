@@ -1,4 +1,5 @@
-const { ethers, getEthersProvider } = require("forta-agent");
+const { getChainId, scanBase, scanPolygon, scanEthereum, runHealthCheck, ethers, getProvider } = require("forta-bot");
+
 const LRU = require("lru-cache");
 const { default: axios } = require("axios");
 const util = require("util");
@@ -112,8 +113,10 @@ let scamSnifferMap = new Map();
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 const DATABASE_OBJECT_KEY = {
-  key: "nm-icephishing-bot-objects-v6-shard",
+  key: "nm-icephishing-v2-bot-objects-v1-shard",
 };
+
+let ethProvider;
 
 let objects = {
   approvals: {},
@@ -155,14 +158,22 @@ const counters = {
   totalERC1155ApprovalsForAll: 0,
 };
 
-const provideInitialize = (provider, persistenceHelper, databaseKeys, counters, databaseObjectsKey) => {
+const provideInitialize = (persistenceHelper, databaseKeys, counters, databaseObjectsKey) => {
   return async () => {
-    ({ chainId } = await provider.getNetwork());
+    const chainIdValue = getChainId();
+
+    if (chainIdValue !== undefined) {
+      chainId = chainIdValue.toString();
+      console.log("chain id is:", chainId);
+    } else {
+      console.log("chain id is undefined");
+      throw new Error("Chain ID is undefined");
+    }
     apiKeys = await getSecrets();
     process.env["ZETTABLOCK_API_KEY"] = apiKeys.generalApiKeys.ZETTABLOCK[1];
 
-    //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
-    isRelevantChain = [10, 250, 43114].includes(Number(chainId));
+    // Optimism, Fantom, Base & Avalanche not yet supported by bot-alert-rate package
+    isRelevantChain = [10, 250, 8453, 43114].includes(Number(chainId));
 
     Object.keys(databaseKeys).forEach((key) => {
       databaseKeys[key] = `${databaseKeys[key]}-${chainId}`;
@@ -202,45 +213,62 @@ const provideHandleTransaction =
         }
       }
 
-      const objectsSize = Buffer.from(JSON.stringify(objects)).length;
+      // Convert BigInt to string
+      const replacer = (key, value) => (typeof value === "bigint" ? value.toString() : value);
+
+      const objectsSize = Buffer.from(JSON.stringify(objects, replacer)).length;
+
       console.log("Objects Size:", objectsSize);
 
       if (objectsSize > MAX_OBJECT_SIZE) {
         Object.values(objects).forEach((obj) => checkObjectSizeAndCleanup(obj));
-        console.log("Objects Size After Cleanup:", Buffer.from(JSON.stringify(objects)).length);
+        console.log("Objects Size After Cleanup:", Buffer.from(JSON.stringify(objects, replacer)).length);
         await persistenceHelper.persist(databaseObjectsKey.key, objects);
         console.log("Objects Persisted After Cleanup");
       }
 
-      console.log("Approvals Size:", Buffer.from(JSON.stringify(objects.approvals)).length);
-      console.log("Approvals ERC20 Size:", Buffer.from(JSON.stringify(objects.approvalsERC20)).length);
-      console.log("Approvals ERC721 Size:", Buffer.from(JSON.stringify(objects.approvalsERC721)).length);
-      console.log("Transfers Size:", Buffer.from(JSON.stringify(objects.transfers)).length);
-      console.log("Approvals Info Size:", Buffer.from(JSON.stringify(objects.approvalsInfoSeverity)).length);
-      console.log("Approvals ERC20 Info Size:", Buffer.from(JSON.stringify(objects.approvalsERC20InfoSeverity)).length);
+      console.log("Approvals Size:", Buffer.from(JSON.stringify(objects.approvals, replacer)).length);
+      console.log("Approvals ERC20 Size:", Buffer.from(JSON.stringify(objects.approvalsERC20, replacer)).length);
+      console.log("Approvals ERC721 Size:", Buffer.from(JSON.stringify(objects.approvalsERC721, replacer)).length);
+      console.log("Transfers Size:", Buffer.from(JSON.stringify(objects.transfers, replacer)).length);
+
+      console.log("Approvals Info Size:", Buffer.from(JSON.stringify(objects.approvalsInfoSeverity, replacer)).length);
+      console.log(
+        "Approvals ERC20 Info Size:",
+        Buffer.from(JSON.stringify(objects.approvalsERC20InfoSeverity, replacer)).length
+      );
       console.log(
         "Approvals ERC721 Info Size:",
-        Buffer.from(JSON.stringify(objects.approvalsERC721InfoSeverity)).length
+        Buffer.from(JSON.stringify(objects.approvalsERC721InfoSeverity, replacer)).length
       );
-      console.log("Transfers Low Size:", Buffer.from(JSON.stringify(objects.transfersLowSeverity)).length);
-      console.log("Approvals For All ERC721 size:", Buffer.from(JSON.stringify(objects.approvalsForAll721)).length);
-      console.log("Approvals For All ERC1155 size:", Buffer.from(JSON.stringify(objects.approvalsForAll1155)).length);
+      console.log("Transfers Low Size:", Buffer.from(JSON.stringify(objects.transfersLowSeverity, replacer)).length);
+      console.log(
+        "Approvals For All ERC721 size:",
+        Buffer.from(JSON.stringify(objects.approvalsForAll721, replacer)).length
+      );
+      console.log(
+        "Approvals For All ERC1155 size:",
+        Buffer.from(JSON.stringify(objects.approvalsForAll1155, replacer)).length
+      );
       console.log(
         "Approvals For All ERC721 Info size:",
-        Buffer.from(JSON.stringify(objects.approvalsForAll721InfoSeverity)).length
+        Buffer.from(JSON.stringify(objects.approvalsForAll721InfoSeverity, replacer)).length
       );
       console.log(
         "Approvals For All ERC1155 Info size:",
-        Buffer.from(JSON.stringify(objects.approvalsForAll1155InfoSeverity)).length
+        Buffer.from(JSON.stringify(objects.approvalsForAll1155InfoSeverity, replacer)).length
       );
-      console.log("Permits Size:", Buffer.from(JSON.stringify(objects.permissions)).length);
-      console.log("Permits Info Size:", Buffer.from(JSON.stringify(objects.permissionsInfoSeverity)).length);
-      console.log("Pig Butchering Transfers Size:", Buffer.from(JSON.stringify(objects.pigButcheringTransfers)).length);
+      console.log("Permits Size:", Buffer.from(JSON.stringify(objects.permissions, replacer)).length);
+      console.log("Permits Info Size:", Buffer.from(JSON.stringify(objects.permissionsInfoSeverity, replacer)).length);
+      console.log(
+        "Pig Butchering Transfers Size:",
+        Buffer.from(JSON.stringify(objects.pigButcheringTransfers, replacer)).length
+      );
 
       lastBlock = blockNumber;
     }
 
-    const txFrom = ethers.utils.getAddress(f);
+    const txFrom = ethers.getAddress(f);
 
     const permitFunctions = [
       ...txEvent.filterFunction(permitFunctionABI),
@@ -276,13 +304,13 @@ const provideHandleTransaction =
           if (isOpensea) {
             const attacker = await getContractCreator(implementation, chainId);
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-OPENSEA-PROXY-UPGRADE",
               ScanCountType.CustomScanCount,
               counters.totalUpgrades
             );
-            findings.push(createOpenseaAlert(txFrom, attacker, implementation, anomalyScore, hash));
+            findings.push(createOpenseaAlert(txFrom, attacker, implementation, anomalyScore, txEvent));
           }
         }
       }
@@ -297,13 +325,13 @@ const provideHandleTransaction =
         const { token: sweepToken, amountMinimum, recipient } = sweepTokenFunctions[i].args;
         if (token === sweepToken && value.toString() === amountMinimum.toString() && recipient !== txFrom) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-PULL-SWEEPTOKEN",
             ScanCountType.CustomScanCount,
             counters.totalTransfers
           );
-          findings.push(createSweepTokenAlert(txFrom, recipient, token, value, anomalyScore, hash));
+          findings.push(createSweepTokenAlert(txFrom, recipient, token, value, anomalyScore, txEvent));
           return findings;
         }
       }
@@ -340,7 +368,8 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        false
+        false,
+        txEvent
       );
 
       const spenderType = await getAddressType(
@@ -350,21 +379,22 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        false
+        false,
+        txEvent
       );
 
       if (spenderType === AddressType.EoaWithLowNonce) {
-        const nonce = await getTransactionCount(spender, provider, blockNumber);
+        const nonce = await getTransactionCount(spender, provider, blockNumber, txEvent);
         if (nonce == 0) {
           if (await hasZeroTransactions(spender, chainId)) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
               counters.totalPermits
             );
-            findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+            findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, txEvent));
           }
         }
       }
@@ -388,13 +418,13 @@ const provideHandleTransaction =
             // Remove duplicates
             attackers = Array.from(new Set(attackers));
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ZERO-NONCE-APPROVAL-TRANSFER",
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
               counters.totalPermits
             );
-            findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, hash));
+            findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, txEvent));
           }
         }
       }
@@ -417,13 +447,13 @@ const provideHandleTransaction =
         });
         if (spenderType !== AddressType.ScamAddress && msgSenderType !== AddressType.ScamAddress) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-ERC20-PERMIT",
             ScanCountType.CustomScanCount,
             counters.totalPermits
           );
-          findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, hash));
+          findings.push(createPermitAlert(txFrom, spender, owner, asset, anomalyScore, txEvent));
         } else {
           const scamDomains = fetchScamDomains(scamSnifferMap, [txFrom, spender]);
           let _scamAddresses = [];
@@ -434,14 +464,14 @@ const provideHandleTransaction =
             _scamAddresses.push(txFrom);
           }
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-ERC20-SCAM-PERMIT",
             ScanCountType.CustomScanCount,
             counters.totalPermits
           );
           findings.push(
-            createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, hash)
+            createPermitScamAlert(txFrom, spender, owner, asset, _scamAddresses, scamDomains, anomalyScore, txEvent)
           );
         }
       } else if (
@@ -464,14 +494,22 @@ const provideHandleTransaction =
 
         if (suspiciousContractFound) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT",
             ScanCountType.CustomScanCount,
             counters.totalPermits
           );
           findings.push(
-            createPermitSuspiciousContractAlert(txFrom, spender, owner, asset, suspiciousContract, anomalyScore, hash)
+            createPermitSuspiciousContractAlert(
+              txFrom,
+              spender,
+              owner,
+              asset,
+              suspiciousContract,
+              anomalyScore,
+              txEvent
+            )
           );
         }
 
@@ -487,7 +525,8 @@ const provideHandleTransaction =
               provider,
               blockNumber,
               chainId,
-              false
+              false,
+              txEvent
             );
           }
 
@@ -495,7 +534,7 @@ const provideHandleTransaction =
             const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
             if (scamDomains.length > 0) {
               const anomalyScore = await calculateAlertRate(
-                chainId,
+                Number(chainId),
                 BOT_ID,
                 "ICE-PHISHING-ERC20-SCAM-CREATOR-PERMIT",
                 ScanCountType.CustomScanCount,
@@ -510,7 +549,7 @@ const provideHandleTransaction =
                   spenderContractCreator,
                   scamDomains,
                   anomalyScore,
-                  hash
+                  txEvent
                 )
               );
             }
@@ -526,13 +565,13 @@ const provideHandleTransaction =
           value: value ? value : 0,
         });
         const anomalyScore = await calculateAlertRate(
-          chainId,
+          Number(chainId),
           BOT_ID,
           "ICE-PHISHING-ERC20-PERMIT-INFO",
           ScanCountType.CustomScanCount,
           counters.totalPermits
         );
-        findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, hash));
+        findings.push(createPermitInfoAlert(txFrom, spender, owner, asset, anomalyScore, txEvent));
       }
     }
 
@@ -546,7 +585,7 @@ const provideHandleTransaction =
 
       // Filter out approval revokes
       if (isApprovalForAll && !approved) continue;
-      if (value?.eq(0)) continue;
+      if (value !== undefined && BigInt(value) === BigInt(0)) continue;
       if (spender === ADDRESS_ZERO) continue;
       if (IGNORED_ADDRESSES.includes(spender)) continue;
       if (failsafeWallets.has(spender.toLowerCase())) continue;
@@ -574,7 +613,7 @@ const provideHandleTransaction =
               if (tries === 3) {
                 const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                 errorCache.add(
-                  createErrorAlert(e.toString(), "agent.handleTransaction (approvals-getCode)", stackTrace)
+                  createErrorAlert(e.toString(), "agent.handleTransaction (approvals-getCode)", stackTrace, txEvent)
                 );
                 return findings;
               }
@@ -596,7 +635,8 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        true
+        true,
+        txEvent
       );
 
       if (
@@ -619,7 +659,8 @@ const provideHandleTransaction =
         provider,
         blockNumber,
         chainId,
-        false
+        false,
+        txEvent
       );
 
       if (
@@ -722,13 +763,13 @@ const provideHandleTransaction =
         if (spenderType === AddressType.ScamAddress) {
           const scamDomains = fetchScamDomains(scamSnifferMap, [spender]);
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-SCAM-APPROVAL",
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
             counters.totalApprovals
           );
-          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, hash));
+          findings.push(createApprovalScamAlert(spender, owner, asset, scamDomains, anomalyScore, txEvent));
         } else if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
           if (
             transferEvents.length &&
@@ -748,28 +789,28 @@ const provideHandleTransaction =
               // Remove duplicates
               attackers = Array.from(new Set(attackers));
               const anomalyScore = await calculateAlertRate(
-                chainId,
+                Number(chainId),
                 BOT_ID,
                 "ICE-PHISHING-ZERO-NONCE-APPROVAL-TRANSFER",
                 isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
                 counters.totalApprovals
               );
-              findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, hash));
+              findings.push(createZeroNonceAllowanceTransferAlert(owner, attackers, asset, anomalyScore, txEvent));
             }
           }
         } else {
           if (spenderType === AddressType.EoaWithLowNonce && !isFailSafe(spender, owner, chainId)) {
-            const nonce = await getTransactionCount(spender, provider, blockNumber);
+            const nonce = await getTransactionCount(spender, provider, blockNumber, txEvent);
             if (nonce == 0) {
               if (await hasZeroTransactions(spender, chainId)) {
                 const anomalyScore = await calculateAlertRate(
-                  chainId,
+                  Number(chainId),
                   BOT_ID,
                   "ICE-PHISHING-ZERO-NONCE-ALLOWANCE",
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
                   counters.totalApprovals
                 );
-                findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, hash));
+                findings.push(createZeroNonceAllowanceAlert(owner, spender, asset, anomalyScore, txEvent));
               }
             }
           }
@@ -778,7 +819,11 @@ const provideHandleTransaction =
           for (const contract of suspiciousContracts) {
             if (contract.address === spender || contract.creator === spender) {
               const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
-              if (uniqueTxInitiatorsCount <= 100) {
+
+              if (
+                uniqueTxInitiatorsCount <= 100 &&
+                (await getTransactionCount(contract.creator, provider, blockNumber, txEvent)) <= 100
+              ) {
                 suspiciousContractFound = true;
                 suspiciousContract = contract;
                 break; // Break the loop as we found a suspicious contract
@@ -787,7 +832,7 @@ const provideHandleTransaction =
           }
           if (suspiciousContractFound) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-SUSPICIOUS-APPROVAL",
               isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -801,7 +846,7 @@ const provideHandleTransaction =
                 suspiciousContract.address,
                 suspiciousContract.creator,
                 anomalyScore,
-                hash
+                txEvent
               )
             );
           }
@@ -811,10 +856,10 @@ const provideHandleTransaction =
             spenderType === AddressType.LowNumTxsUnverifiedContract
           ) {
             const spenderContractCreator = await getContractCreator(spender, chainId);
-            if (spenderContractCreator && scamAddresses.includes(ethers.utils.getAddress(spenderContractCreator))) {
+            if (spenderContractCreator && scamAddresses.includes(ethers.getAddress(spenderContractCreator))) {
               const scamDomains = fetchScamDomains(scamSnifferMap, [spenderContractCreator]);
               const anomalyScore = await calculateAlertRate(
-                chainId,
+                Number(chainId),
                 BOT_ID,
                 "ICE-PHISHING-SCAM-CREATOR-APPROVAL",
                 isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcApprovalCount,
@@ -828,7 +873,7 @@ const provideHandleTransaction =
                   asset,
                   scamDomains,
                   anomalyScore,
-                  hash
+                  txEvent
                 )
               );
             }
@@ -868,14 +913,20 @@ const provideHandleTransaction =
           }
           if (spenderType === AddressType.LowNumTxsVerifiedContract || !haveInteractedAgain) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO",
               ScanCountType.CustomScanCount,
               counters.totalERC20Approvals
             );
+
             findings.push(
-              createHighNumApprovalsInfoAlertERC20(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+              createHighNumApprovalsInfoAlertERC20(
+                spender,
+                objects.approvalsInfoSeverity[spender],
+                anomalyScore,
+                txEvent
+              )
             );
           }
         }
@@ -885,14 +936,19 @@ const provideHandleTransaction =
           objects.approvalsERC721InfoSeverity[spender].length > approveCountThreshold
         ) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO",
             ScanCountType.CustomScanCount,
             counters.totalERC721Approvals
           );
           findings.push(
-            createHighNumApprovalsInfoAlertERC721(spender, objects.approvalsInfoSeverity[spender], anomalyScore)
+            createHighNumApprovalsInfoAlertERC721(
+              spender,
+              objects.approvalsInfoSeverity[spender],
+              anomalyScore,
+              txEvent
+            )
           );
         }
 
@@ -902,25 +958,25 @@ const provideHandleTransaction =
             objects.approvalsForAll721InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO",
               ScanCountType.CustomScanCount,
               counters.totalERC721ApprovalsForAll
             );
-            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllInfoAlertERC721(spender, owner, asset, anomalyScore, txEvent));
           } else if (
             objects.approvalsForAll1155InfoSeverity[spender] &&
             objects.approvalsForAll1155InfoSeverity[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO",
               ScanCountType.CustomScanCount,
               counters.totalERC1155ApprovalsForAll
             );
-            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllInfoAlertERC1155(spender, owner, asset, anomalyScore, txEvent));
           }
         }
       } else {
@@ -930,30 +986,30 @@ const provideHandleTransaction =
             let assetOwnerArray = objects.approvalsERC20[spender].map((entry) => [entry.asset, entry.owner]);
             haveInteractedAgain = await haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId);
             if (haveInteractedAgain) {
-              objects.approvalsERC20[spender] = [];
+              delete objects.approvalsERC20[spender];
             }
           }
           if (spenderType === AddressType.LowNumTxsUnverifiedContract || !haveInteractedAgain) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS",
               ScanCountType.CustomScanCount,
               counters.totalERC20Approvals
             );
-            findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore));
+            findings.push(createHighNumApprovalsAlertERC20(spender, objects.approvals[spender], anomalyScore, txEvent));
           }
         }
 
         if (objects.approvalsERC721[spender] && objects.approvalsERC721[spender].length > approveCountThreshold) {
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS",
             ScanCountType.CustomScanCount,
             counters.totalERC721Approvals
           );
-          findings.push(createHighNumApprovalsAlertERC721(spender, objects.approvals[spender], anomalyScore));
+          findings.push(createHighNumApprovalsAlertERC721(spender, objects.approvals[spender], anomalyScore, txEvent));
         }
 
         if (isApprovalForAll) {
@@ -962,25 +1018,25 @@ const provideHandleTransaction =
             objects.approvalsForAll721[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC721-APPROVAL-FOR-ALL",
               ScanCountType.CustomScanCount,
               counters.totalERC721ApprovalsForAll
             );
-            findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllAlertERC721(spender, owner, asset, anomalyScore, txEvent));
           } else if (
             objects.approvalsForAll1155[spender] &&
             objects.approvalsForAll1155[spender].length > approveForAllCountThreshold
           ) {
             const anomalyScore = await calculateAlertRate(
-              chainId,
+              Number(chainId),
               BOT_ID,
               "ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL",
               ScanCountType.CustomScanCount,
               counters.totalERC1155ApprovalsForAll
             );
-            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, hash));
+            findings.push(createApprovalForAllAlertERC1155(spender, owner, asset, anomalyScore, txEvent));
           }
         }
       }
@@ -1007,41 +1063,45 @@ const provideHandleTransaction =
         if (!(await hasTransferredNonStablecoins(txFrom, chainId))) {
           let nonce;
           try {
-            nonce = await getTransactionCount(txFrom, provider, blockNumber);
+            nonce = await getTransactionCount(txFrom, provider, blockNumber, txEvent);
           } catch (e) {
             const stackTrace = util.inspect(e, { showHidden: false, depth: null });
             errorCache.add(
-              createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount)", stackTrace)
+              createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount)", stackTrace, txEvent)
             );
             return findings;
           }
           if (nonce > 50000) continue;
           const label = await getLabel(txFrom);
           if (!label || ["xploit", "hish", "heist"].some((keyword) => label.includes(keyword))) {
-            if (ethers.BigNumber.from(value).gt(ethers.BigNumber.from(0))) {
+            if (value !== undefined && BigInt(value) > BigInt(0)) {
               let code;
               try {
                 code = await provider.getCode(from);
               } catch (e) {
                 const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                 errorCache.add(
-                  createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getCode)", stackTrace)
+                  createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getCode)", stackTrace, txEvent)
                 );
                 return findings;
               }
               if (code === "0x") {
-                const balanceAfter = ethers.BigNumber.from(
-                  await getBalance(asset, from, provider, txEvent.blockNumber)
-                );
-                const balanceBefore = balanceAfter.add(ethers.BigNumber.from(value));
-                if (balanceAfter.lt(balanceBefore.div(100))) {
+                const balanceAfter = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
+                const balanceBefore = balanceAfter + BigInt(value);
+
+                if (balanceAfter < balanceBefore / BigInt(100)) {
                   let fromNonce;
                   try {
-                    fromNonce = await getTransactionCount(from, provider, blockNumber);
+                    fromNonce = await getTransactionCount(from, provider, blockNumber, txEvent);
                   } catch (e) {
                     const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                     errorCache.add(
-                      createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount2)", stackTrace)
+                      createErrorAlert(
+                        e.toString(),
+                        "agent.handleTransaction (transfers-getTxCount2)",
+                        stackTrace,
+                        txEvent
+                      )
                     );
                     return findings;
                   }
@@ -1072,16 +1132,16 @@ const provideHandleTransaction =
                       );
                       if (objects.pigButcheringTransfers[to].length > pigButcheringTransferCountThreshold) {
                         const anomalyScore = await calculateAlertRate(
-                          chainId,
+                          Number(chainId),
                           BOT_ID,
                           "ICE-PHISHING-PIG-BUTCHERING",
                           isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
                           counters.totalTransfers
                         );
                         findings.push(
-                          createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore)
+                          createPigButcheringAlert(to, objects.pigButcheringTransfers[to], txEvent, anomalyScore)
                         );
-                        objects.pigButcheringTransfers[to] = [];
+                        delete objects.pigButcheringTransfers[to];
                       }
                     }
                   }
@@ -1109,14 +1169,14 @@ const provideHandleTransaction =
       if (_scamAddresses.length > 0) {
         const scamDomains = fetchScamDomains(scamSnifferMap, [txFrom, to]);
         const anomalyScore = await calculateAlertRate(
-          chainId,
+          Number(chainId),
           BOT_ID,
           "ICE-PHISHING-SCAM-TRANSFER",
           isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
           counters.totalTransfers
         );
         findings.push(
-          createTransferScamAlert(txFrom, from, to, asset, id, _scamAddresses, scamDomains, anomalyScore, hash)
+          createTransferScamAlert(txFrom, from, to, asset, id, _scamAddresses, scamDomains, anomalyScore, txEvent)
         );
       }
 
@@ -1125,7 +1185,10 @@ const provideHandleTransaction =
       for (const contract of suspiciousContracts) {
         if (contract.address === to || contract.creator === to) {
           const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
-          if (uniqueTxInitiatorsCount <= 100) {
+          if (
+            uniqueTxInitiatorsCount <= 100 &&
+            (await getTransactionCount(contract.creator, provider, blockNumber, txEvent)) <= 100
+          ) {
             suspiciousContractFound = true;
             suspiciousContract = contract;
             break; // Break the loop as we found a suspicious contract
@@ -1134,14 +1197,14 @@ const provideHandleTransaction =
       }
       if (suspiciousContractFound && !UNISWAP_ROUTER_ADDRESSES.includes(txEvent.to)) {
         const anomalyScore = await calculateAlertRate(
-          chainId,
+          Number(chainId),
           BOT_ID,
           "ICE-PHISHING-SUSPICIOUS-TRANSFER",
           isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
           counters.totalTransfers
         );
         findings.push(
-          createTransferSuspiciousContractAlert(txFrom, from, to, asset, id, suspiciousContract, anomalyScore, hash)
+          createTransferSuspiciousContractAlert(txFrom, from, to, asset, id, suspiciousContract, anomalyScore, txEvent)
         );
       }
 
@@ -1156,15 +1219,20 @@ const provideHandleTransaction =
         await Promise.all(
           spenderPermissions.map(async (permission) => {
             if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-              if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
+              if (
+                !permission.value ||
+                (permission.value !== undefined && value !== undefined && BigInt(permission.value) >= BigInt(value))
+              ) {
                 const anomalyScore = await calculateAlertRate(
-                  chainId,
+                  Number(chainId),
                   BOT_ID,
                   "ICE-PHISHING-PERMITTED-ERC20-TRANSFER",
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
                   counters.totalTransfers
                 );
-                findings.push(createPermitTransferAlert(txFrom, from, to, asset, value.toString(), anomalyScore, hash));
+                findings.push(
+                  createPermitTransferAlert(txFrom, from, to, asset, value.toString(), anomalyScore, txEvent)
+                );
               }
             }
           })
@@ -1175,16 +1243,19 @@ const provideHandleTransaction =
         await Promise.all(
           spenderPermissionsInfoSeverity.map(async (permission) => {
             if (permission.asset === asset && permission.owner === from && permission.deadline > timestamp) {
-              if (!permission.value || ethers.BigNumber.from(permission.value).gte(ethers.BigNumber.from(value))) {
+              if (
+                !permission.value ||
+                (permission.value !== undefined && value !== undefined && BigInt(permission.value) >= BigInt(value))
+              ) {
                 const anomalyScore = await calculateAlertRate(
-                  chainId,
+                  Number(chainId),
                   BOT_ID,
                   "ICE-PHISHING-PERMITTED-ERC20-TRANSFER-MEDIUM",
                   isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
                   counters.totalTransfers
                 );
                 findings.push(
-                  createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, hash)
+                  createPermitTransferMediumSeverityAlert(txFrom, from, to, asset, value, anomalyScore, txEvent)
                 );
               }
             }
@@ -1200,7 +1271,12 @@ const provideHandleTransaction =
           tokenId || tokenIds
             ? spenderApprovals
                 .filter((a) => a.owner === from)
-                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+                .some(
+                  (a) =>
+                    a.isApprovalForAll ||
+                    BigInt(a.tokenId) === BigInt(tokenId) ||
+                    (tokenIds && tokenIds.map(BigInt).includes(BigInt(a.tokenId)))
+                )
             : spenderApprovals.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
         if (!hasMonitoredApproval) continue;
 
@@ -1229,30 +1305,32 @@ const provideHandleTransaction =
         if (objects.transfers[txFrom].length > transferCountThreshold) {
           if (value || (values && values.length > 0)) {
             if (tokenIds) {
-              tokenIds.forEach(async (tokenId) => {
-                const balance = ethers.BigNumber.from(
-                  await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              for (const tokenId of tokenIds) {
+                // Changed to a synchronous loop to use await inside
+                const balanceBigInt = BigInt(
+                  await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
                 );
-                if (!balance.eq(0)) return;
-              });
+                if (balanceBigInt !== BigInt(0)) return; // Early return for non-zero balance
+              }
             } else if (tokenId) {
-              const balance = ethers.BigNumber.from(
-                await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              const balanceBigInt = BigInt(
+                await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
               );
-              if (!balance.eq(0)) continue;
+              if (balanceBigInt !== BigInt(0)) continue; // Skip to next iteration for non-zero balance
             } else {
-              const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-              if (!balance.eq(0)) continue;
+              const balanceBigInt = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
+              if (balanceBigInt !== BigInt(0)) continue; // Skip to next iteration for non-zero balance
             }
           }
+
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS",
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
             counters.totalTransfers
           );
-          findings.push(createHighNumTransfersAlert(txFrom, objects.transfers[txFrom], anomalyScore));
+          findings.push(createHighNumTransfersAlert(txFrom, objects.transfers[txFrom], anomalyScore, txEvent));
         }
       }
 
@@ -1264,7 +1342,12 @@ const provideHandleTransaction =
           tokenId || tokenIds
             ? spenderApprovalsInfoSeverity
                 .filter((a) => a.owner === from)
-                .some((a) => a.isApprovalForAll || a.tokenId.eq(tokenId) || tokenIds?.includes(a.tokenId))
+                .some(
+                  (a) =>
+                    a.isApprovalForAll ||
+                    BigInt(a.tokenId) === BigInt(tokenId) ||
+                    (tokenIds && tokenIds.map(BigInt).includes(BigInt(a.tokenId)))
+                )
             : spenderApprovalsInfoSeverity.find((a) => a.owner === from && a.asset === asset)?.timestamp < timestamp;
 
         if (!hasMonitoredApproval) continue;
@@ -1296,32 +1379,40 @@ const provideHandleTransaction =
 
         if (objects.transfersLowSeverity[txFrom].length > transferCountThreshold) {
           if (value || (values && values.length > 0)) {
+            let shouldContinue = false;
+
             if (tokenIds) {
-              tokenIds.forEach(async (tokenId) => {
-                const balance = ethers.BigNumber.from(
-                  await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              for (const tokenId of tokenIds) {
+                const balance = BigInt(
+                  await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
                 );
-                if (!balance.eq(0)) return;
-              });
+                if (balance !== BigInt(0)) {
+                  shouldContinue = true;
+                  break; // Exit the loop early if a non-zero balance is found
+                }
+              }
             } else if (tokenId) {
-              const balance = ethers.BigNumber.from(
-                await getERC1155Balance(asset, tokenId, from, provider, txEvent.blockNumber)
+              const balance = BigInt(
+                await getERC1155Balance(asset, tokenId.toString(), from, provider, txEvent.blockNumber)
               );
-              if (!balance.eq(0)) continue;
+              if (balance !== BigInt(0)) shouldContinue = true;
             } else {
-              const balance = ethers.BigNumber.from(await getBalance(asset, from, provider, txEvent.blockNumber));
-              if (!balance.eq(0)) continue;
+              const balance = BigInt(await getBalance(asset, from, provider, txEvent.blockNumber));
+              if (balance !== BigInt(0)) shouldContinue = true;
             }
+
+            if (shouldContinue) continue;
           }
+
           const anomalyScore = await calculateAlertRate(
-            chainId,
+            Number(chainId),
             BOT_ID,
             "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW",
             isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
             counters.totalTransfers
           );
           findings.push(
-            createHighNumTransfersLowSeverityAlert(txFrom, objects.transfersLowSeverity[txFrom], anomalyScore)
+            createHighNumTransfersLowSeverityAlert(txFrom, objects.transfersLowSeverity[txFrom], anomalyScore, txEvent)
           );
         }
       }
@@ -1380,8 +1471,10 @@ const provideHandleBlock =
 
             // Merge the two arrays
             const mergedSubArray = [...subArray];
+            const replacer = (key, value) => (typeof value === "bigint" ? value.toString() : value);
+
             for (const obj of persistedSubArray) {
-              if (!mergedSubArray.some((o) => JSON.stringify(o) === JSON.stringify(obj))) {
+              if (!mergedSubArray.some((o) => JSON.stringify(o, replacer) === JSON.stringify(obj, replacer))) {
                 mergedSubArray.push(obj);
               }
             }
@@ -1408,7 +1501,7 @@ const provideHandleBlock =
       );
       scamAddresses = scamSnifferResponse.data;
       // Convert to checksum addresses
-      scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
+      scamAddresses = scamAddresses.map((address) => ethers.getAddress(address));
 
       init = true;
     } else if (number % 240 === 0) {
@@ -1424,7 +1517,7 @@ const provideHandleBlock =
       );
       scamAddresses = scamSnifferResponse.data;
       // Convert to checksum addresses
-      scamAddresses = scamAddresses.map((address) => ethers.utils.getAddress(address));
+      scamAddresses = scamAddresses.map((address) => ethers.getAddress(address));
 
       for (const key in counters) {
         await persistenceHelper.persist(counters[key], databaseKeys[key]);
@@ -1614,18 +1707,111 @@ const provideHandleBlock =
     return findings;
   };
 
-module.exports = {
-  initialize: provideInitialize(
-    getEthersProvider(),
+async function main() {
+  const polygonProvider = await getProvider({
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "d208ddd4-2b53-48b0-92b1-39b8721c47da",
+    localRpcUrl: "8453",
+  });
+
+  ethProvider = await getProvider({
+    rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "9febef20-c5b1-401c-bf8c-c06aa93262fa",
+    localRpcUrl: "1",
+  });
+
+  const baseProvider = await getProvider({
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "8031885c-4110-4c97-b6fd-9f1300e23ab3",
+    localRpcUrl: "1",
+  });
+
+  const handleTransactionEth = provideHandleTransaction(
+    ethProvider,
+    counters,
+    DATABASE_OBJECT_KEY,
+    new PersistenceHelper(DATABASE_URL),
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  );
+
+  const handleTransactionBase = provideHandleTransaction(
+    baseProvider,
+    counters,
+    DATABASE_OBJECT_KEY,
+    new PersistenceHelper(DATABASE_URL),
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  );
+
+  const handleTransactionPolygon = provideHandleTransaction(
+    polygonProvider,
+    counters,
+    DATABASE_OBJECT_KEY,
+    new PersistenceHelper(DATABASE_URL),
+    calculateAlertRate,
+    lastBlock,
+    getNumberOfUniqueTxInitiators
+  );
+
+  const handleBlock = provideHandleBlock(
+    getSuspiciousContracts,
+    getFailSafeWallets,
+    new PersistenceHelper(DATABASE_URL),
+    DATABASE_KEYS,
+    DATABASE_OBJECT_KEY,
+    counters,
+    lastExecutedMinute
+  );
+
+  const initialize = provideInitialize(
     new PersistenceHelper(DATABASE_URL),
     DATABASE_KEYS,
     counters,
     DATABASE_OBJECT_KEY
-  ),
+  );
+
+  await initialize();
+
+  scanBase({
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "8031885c-4110-4c97-b6fd-9f1300e23ab3",
+    localRpcUrl: "8453",
+    handleTransaction: handleTransactionBase,
+    handleBlock,
+  });
+
+  scanEthereum({
+    rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "b6e6ca09-7878-4da0-aad0-2227518b440b",
+    localRpcUrl: "1",
+    handleTransaction: handleTransactionEth,
+    handleBlock,
+  });
+
+  scanPolygon({
+    rpcUrl: "https://polygon-mainnet.g.alchemy.com/v2",
+    rpcKeyId: "d208ddd4-2b53-48b0-92b1-39b8721c47da",
+    localRpcUrl: "137",
+    handleTransaction: handleTransactionPolygon,
+    handleBlock,
+  });
+
+  runHealthCheck();
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  initialize: provideInitialize(new PersistenceHelper(DATABASE_URL), DATABASE_KEYS, counters, DATABASE_OBJECT_KEY),
   provideInitialize,
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(
-    getEthersProvider(),
+    ethProvider,
     counters,
     DATABASE_OBJECT_KEY,
     new PersistenceHelper(DATABASE_URL),

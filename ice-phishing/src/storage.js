@@ -1,4 +1,4 @@
-const { fetchJwt } = require("forta-agent");
+const { fetchJwt } = require("forta-bot");
 const { readFileSync } = require("fs");
 require("dotenv").config();
 

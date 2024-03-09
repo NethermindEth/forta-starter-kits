@@ -1,9 +1,9 @@
-const { ethers } = require("forta-agent");
+const { ethers } = require("forta-bot");
 const { timePeriodDays } = require("../bot-config.json");
 
 const ONE_DAY = 24 * 60 * 60;
 const TIME_PERIOD = timePeriodDays * ONE_DAY;
-const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_ZERO = ethers.ZeroAddress;
 const MALICIOUS_SMART_CONTRACT_ML_BOT_V2_ID = "0x0b241032ca430d9c02eaa6a52d217bbff046f0d1b3f3d2aa928e42a97150ec91";
 const safeBatchTransferFrom1155Sig = "2eb2c2d6";
 const transferFromSig = "0x23b872dd";
@@ -325,10 +325,10 @@ const erc1155transferEventABI = [
 ];
 
 const ERC_20_721_ABI = ["function balanceOf(address) public view returns (uint256)"];
-const ERC_20_721_INTERFACE = new ethers.utils.Interface(ERC_20_721_ABI);
+const ERC_20_721_INTERFACE = new ethers.Interface(ERC_20_721_ABI);
 
 const ERC_1155_ABI = ["function balanceOf(address owner, uint256 id) external view returns (uint256)"];
-const ERC_1155_INTERFACE = new ethers.utils.Interface(ERC_1155_ABI);
+const ERC_1155_INTERFACE = new ethers.Interface(ERC_1155_ABI);
 
 module.exports = {
   TIME_PERIOD,

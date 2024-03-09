@@ -1,4 +1,4 @@
-const { getEthersProvider, createTransactionEvent, createBlockEvent } = require("forta-agent");
+const { getProvider, createTransactionEvent, createBlockEvent } = require("forta-bot");
 const { default: calculateAlertRate } = require("bot-alert-rate");
 const {
   provideInitialize,
@@ -40,11 +40,26 @@ jest.mock(
   { virtual: true }
 );
 
+const mockGetChainId = jest.fn();
+jest.mock("forta-bot", () => {
+  const original = jest.requireActual("forta-bot");
+  return {
+    ...original,
+    getChainId: () => mockGetChainId(),
+  };
+});
+
 describe("Ice Phishing bot performance test", () => {
+  mockGetChainId.mockReturnValue(1);
+
   it("tests performance", async () => {
-    const realProvider = getEthersProvider();
+    const realProvider = await getProvider({
+      rpcUrl: "https://eth-mainnet.g.alchemy.com/v2",
+      rpcKeyId: "ebbd1b21-4e72-4d80-b4f9-f605fee5eb68",
+      localRpcUrl: "1",
+    });
+
     let initialize = provideInitialize(
-      realProvider,
       new PersistenceHelper(DATABASE_URL),
       DATABASE_KEYS,
       counters,
@@ -92,17 +107,21 @@ describe("Ice Phishing bot performance test", () => {
 
     //  * - subtracting ~600ms from the processing time to account for the time it takes to fetch the block's transactions and the data from the Scam Sniffer DB (which happens once per block)
 
-    const normalTxEvent = createTransactionEvent({
-      transaction: {
+    const normalTxEvent = createTransactionEvent(
+      (transaction = {
         hash: "hash",
         from: "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
         to: "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // Uniswap Router
-      },
-      block: {
+        input: "0x",
+      }),
+      (block = {
         number: 1236856,
         timestamp: 1684408535,
-      },
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = [])
+    );
 
     // ------ ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS-INFO ------
     const erc20ApprovalsInfoTxReceipt = await realProvider.getTransactionReceipt(
@@ -121,28 +140,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc20ApprovalsInfoTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc20ApprovalsInfoTxReceipt.transactionHash,
+    const erc20ApprovalsInfoTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc20ApprovalsInfoTxReceipt.hash,
         from: erc20ApprovalsInfoTxReceipt.from.toLowerCase(),
         to: erc20ApprovalsInfoTxReceipt.to.toLowerCase(),
         nonce: erc20ApprovalsInfoTx.nonce,
-        data: erc20ApprovalsInfoTx.data,
+        input: erc20ApprovalsInfoTx.data,
         gas: "1",
         gasPrice: erc20ApprovalsInfoTx.gasPrice.toString(),
         value: "0x0",
         r: erc20ApprovalsInfoTx.r,
         s: erc20ApprovalsInfoTx.s,
-        v: erc20ApprovalsInfoTx.v.toFixed(),
-      },
-      block: {
+        v: erc20ApprovalsInfoTx.v,
+      }),
+      (block = {
         number: erc20ApprovalsInfoTxReceipt.blockNumber,
         hash: erc20ApprovalsInfoTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc20ApprovalsInfoLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc20ApprovalsInfoLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-HIGH-NUM-ERC20-APPROVALS ------
     const erc20ApprovalsTxReceipt = await realProvider.getTransactionReceipt(
@@ -161,28 +181,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc20ApprovalsTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc20ApprovalsTxReceipt.transactionHash,
+    const erc20ApprovalsTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc20ApprovalsTxReceipt.hash,
         from: erc20ApprovalsTxReceipt.from.toLowerCase(),
         to: erc20ApprovalsTxReceipt.to.toLowerCase(),
         nonce: erc20ApprovalsTx.nonce,
-        data: erc20ApprovalsTx.data,
+        input: erc20ApprovalsTx.data,
         gas: "1",
         gasPrice: erc20ApprovalsTx.gasPrice.toString(),
         value: "0x0",
         r: erc20ApprovalsTx.r,
         s: erc20ApprovalsTx.s,
-        v: erc20ApprovalsTx.v.toFixed(),
-      },
-      block: {
+        v: erc20ApprovalsTx.v,
+      }),
+      (block = {
         number: erc20ApprovalsTxReceipt.blockNumber,
         hash: erc20ApprovalsTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc20ApprovalsLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc20ApprovalsLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS-INFO ------
     const erc721ApprovalsInfoTxReceipt = await realProvider.getTransactionReceipt(
@@ -201,28 +222,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc721ApprovalsInfoTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc721ApprovalsInfoTxReceipt.transactionHash,
+    const erc721ApprovalsInfoTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc721ApprovalsInfoTxReceipt.hash,
         from: erc721ApprovalsInfoTxReceipt.from.toLowerCase(),
         to: erc721ApprovalsInfoTxReceipt.to.toLowerCase(),
         nonce: erc721ApprovalsInfoTx.nonce,
-        data: erc721ApprovalsInfoTx.data,
+        input: erc721ApprovalsInfoTx.data,
         gas: "1",
         gasPrice: erc721ApprovalsInfoTx.gasPrice.toString(),
         value: "0x0",
         r: erc721ApprovalsInfoTx.r,
         s: erc721ApprovalsInfoTx.s,
-        v: erc721ApprovalsInfoTx.v.toFixed(),
-      },
-      block: {
+        v: erc721ApprovalsInfoTx.v,
+      }),
+      (block = {
         number: erc721ApprovalsInfoTxReceipt.blockNumber,
         hash: erc721ApprovalsInfoTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc721ApprovalsInfoLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc721ApprovalsInfoLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-HIGH-NUM-ERC721-APPROVALS ------
     const erc721ApprovalsTxReceipt = await realProvider.getTransactionReceipt(
@@ -241,28 +263,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc721ApprovalsTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc721ApprovalsTxReceipt.transactionHash,
+    const erc721ApprovalsTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc721ApprovalsTxReceipt.hash,
         from: erc721ApprovalsTxReceipt.from.toLowerCase(),
         to: erc721ApprovalsTxReceipt.to.toLowerCase(),
         nonce: erc721ApprovalsTx.nonce,
-        data: erc721ApprovalsTx.data,
+        input: erc721ApprovalsTx.data,
         gas: "1",
         gasPrice: erc721ApprovalsTx.gasPrice.toString(),
         value: "0x0",
         r: erc721ApprovalsTx.r,
         s: erc721ApprovalsTx.s,
-        v: erc721ApprovalsTx.v.toFixed(),
-      },
-      block: {
+        v: erc721ApprovalsTx.v,
+      }),
+      (block = {
         number: erc721ApprovalsTxReceipt.blockNumber,
         hash: erc721ApprovalsTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc721ApprovalsLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc721ApprovalsLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC20-PERMIT ------
     const erc20PermitTxReceipt = await realProvider.getTransactionReceipt(
@@ -281,28 +304,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc20PermitTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc20PermitTxReceipt.transactionHash,
+    const erc20PermitTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc20PermitTxReceipt.hash,
         from: erc20PermitTxReceipt.from.toLowerCase(),
         to: erc20PermitTxReceipt.to.toLowerCase(),
         nonce: erc20PermitTx.nonce,
-        data: erc20PermitTx.data,
+        input: erc20PermitTx.data,
         gas: "1",
         gasPrice: erc20PermitTx.gasPrice.toString(),
         value: "0x0",
         r: erc20PermitTx.r,
         s: erc20PermitTx.s,
-        v: erc20PermitTx.v.toFixed(),
-      },
-      block: {
+        v: erc20PermitTx.v,
+      }),
+      (block = {
         number: erc20PermitTxReceipt.blockNumber,
         hash: erc20PermitTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc20PermitLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc20PermitLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC20-PERMIT-INFO ------
     const erc20PermitInfoTxReceipt = await realProvider.getTransactionReceipt(
@@ -321,28 +345,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc20PermitInfoTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc20PermitInfoTxReceipt.transactionHash,
+    const erc20PermitInfoTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc20PermitInfoTxReceipt.hash,
         from: erc20PermitInfoTxReceipt.from.toLowerCase(),
         to: erc20PermitInfoTxReceipt.to.toLowerCase(),
         nonce: erc20PermitInfoTx.nonce,
-        data: erc20PermitInfoTx.data,
+        input: erc20PermitInfoTx.data,
         gas: "1",
         gasPrice: erc20PermitInfoTx.gasPrice.toString(),
         value: "0x0",
         r: erc20PermitInfoTx.r,
         s: erc20PermitInfoTx.s,
-        v: erc20PermitInfoTx.v.toFixed(),
-      },
-      block: {
+        v: erc20PermitInfoTx.v,
+      }),
+      (block = {
         number: erc20PermitInfoTxReceipt.blockNumber,
         hash: erc20PermitInfoTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc20PermitInfoLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc20PermitInfoLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC721-APPROVAL-FOR-ALL-INFO ------
     const erc721ApprovalForAllInfoTxReceipt = await realProvider.getTransactionReceipt(
@@ -361,28 +386,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc721ApprovalForAllInfoTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc721ApprovalForAllInfoTxReceipt.transactionHash,
+    const erc721ApprovalForAllInfoTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc721ApprovalForAllInfoTxReceipt.hash,
         from: erc721ApprovalForAllInfoTxReceipt.from.toLowerCase(),
         to: erc721ApprovalForAllInfoTxReceipt.to.toLowerCase(),
         nonce: erc721ApprovalForAllInfoTx.nonce,
-        data: erc721ApprovalForAllInfoTx.data,
+        input: erc721ApprovalForAllInfoTx.data,
         gas: "1",
         gasPrice: erc721ApprovalForAllInfoTx.gasPrice.toString(),
         value: "0x0",
         r: erc721ApprovalForAllInfoTx.r,
         s: erc721ApprovalForAllInfoTx.s,
-        v: erc721ApprovalForAllInfoTx.v.toFixed(),
-      },
-      block: {
+        v: erc721ApprovalForAllInfoTx.v,
+      }),
+      (block = {
         number: erc721ApprovalForAllInfoTxReceipt.blockNumber,
         hash: erc721ApprovalForAllInfoTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc721ApprovalForAllInfoLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc721ApprovalForAllInfoLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC721-APPROVAL-FOR-ALL ------
     const erc721ApprovalForAllTxReceipt = await realProvider.getTransactionReceipt(
@@ -401,28 +427,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc721ApprovalForAllTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc721ApprovalForAllTxReceipt.transactionHash,
+    const erc721ApprovalForAllTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc721ApprovalForAllTxReceipt.hash,
         from: erc721ApprovalForAllTxReceipt.from.toLowerCase(),
         to: erc721ApprovalForAllTxReceipt.to.toLowerCase(),
         nonce: erc721ApprovalForAllTx.nonce,
-        data: erc721ApprovalForAllTx.data,
+        input: erc721ApprovalForAllTx.data,
         gas: "1",
         gasPrice: erc721ApprovalForAllTx.gasPrice.toString(),
         value: "0x0",
         r: erc721ApprovalForAllTx.r,
         s: erc721ApprovalForAllTx.s,
-        v: erc721ApprovalForAllTx.v.toFixed(),
-      },
-      block: {
+        v: erc721ApprovalForAllTx.v,
+      }),
+      (block = {
         number: erc721ApprovalForAllTxReceipt.blockNumber,
         hash: erc721ApprovalForAllTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc721ApprovalForAllLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc721ApprovalForAllLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL-INFO ------
     const erc1155ApprovalForAllInfoTxReceipt = await realProvider.getTransactionReceipt(
@@ -441,28 +468,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc1155ApprovalForAllInfoTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc1155ApprovalForAllInfoTxReceipt.transactionHash,
+    const erc1155ApprovalForAllInfoTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc1155ApprovalForAllInfoTxReceipt.hash,
         from: erc1155ApprovalForAllInfoTxReceipt.from.toLowerCase(),
         to: erc1155ApprovalForAllInfoTxReceipt.to.toLowerCase(),
         nonce: erc1155ApprovalForAllInfoTx.nonce,
-        data: erc1155ApprovalForAllInfoTx.data,
+        input: erc1155ApprovalForAllInfoTx.data,
         gas: "1",
         gasPrice: erc1155ApprovalForAllInfoTx.gasPrice.toString(),
         value: "0x0",
         r: erc1155ApprovalForAllInfoTx.r,
         s: erc1155ApprovalForAllInfoTx.s,
-        v: erc1155ApprovalForAllInfoTx.v.toFixed(),
-      },
-      block: {
+        v: erc1155ApprovalForAllInfoTx.v,
+      }),
+      (block = {
         number: erc1155ApprovalForAllInfoTxReceipt.blockNumber,
         hash: erc1155ApprovalForAllInfoTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc1155ApprovalForAllInfoLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc1155ApprovalForAllInfoLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC1155-APPROVAL-FOR-ALL ------
     const erc1155ApprovalForAllTxReceipt = await realProvider.getTransactionReceipt(
@@ -481,28 +509,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const erc1155ApprovalForAllTxEvent = createTransactionEvent({
-      transaction: {
-        hash: erc1155ApprovalForAllTxReceipt.transactionHash,
+    const erc1155ApprovalForAllTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: erc1155ApprovalForAllTxReceipt.hash,
         from: erc1155ApprovalForAllTxReceipt.from.toLowerCase(),
         to: erc1155ApprovalForAllTxReceipt.to.toLowerCase(),
         nonce: erc1155ApprovalForAllTx.nonce,
-        data: erc1155ApprovalForAllTx.data,
+        input: erc1155ApprovalForAllTx.data,
         gas: "1",
         gasPrice: erc1155ApprovalForAllTx.gasPrice.toString(),
         value: "0x0",
         r: erc1155ApprovalForAllTx.r,
         s: erc1155ApprovalForAllTx.s,
-        v: erc1155ApprovalForAllTx.v.toFixed(),
-      },
-      block: {
+        v: erc1155ApprovalForAllTx.v,
+      }),
+      (block = {
         number: erc1155ApprovalForAllTxReceipt.blockNumber,
         hash: erc1155ApprovalForAllTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: erc1155ApprovalForAllLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = erc1155ApprovalForAllLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS-LOW ------
     const highNumApprovedTransfersLowTxReceipt = await realProvider.getTransactionReceipt(
@@ -521,28 +550,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const highNumApprovedTransfersLowTxEvent = createTransactionEvent({
-      transaction: {
-        hash: highNumApprovedTransfersLowTxReceipt.transactionHash,
+    const highNumApprovedTransfersLowTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: highNumApprovedTransfersLowTxReceipt.hash,
         from: highNumApprovedTransfersLowTxReceipt.from.toLowerCase(),
         to: highNumApprovedTransfersLowTxReceipt.to.toLowerCase(),
         nonce: highNumApprovedTransfersLowTx.nonce,
-        data: highNumApprovedTransfersLowTx.data,
+        input: highNumApprovedTransfersLowTx.data,
         gas: "1",
         gasPrice: highNumApprovedTransfersLowTx.gasPrice.toString(),
         value: "0x0",
         r: highNumApprovedTransfersLowTx.r,
         s: highNumApprovedTransfersLowTx.s,
-        v: highNumApprovedTransfersLowTx.v.toFixed(),
-      },
-      block: {
+        v: highNumApprovedTransfersLowTx.v,
+      }),
+      (block = {
         number: highNumApprovedTransfersLowTxReceipt.blockNumber,
         hash: highNumApprovedTransfersLowTxReceipt.blockHash,
         timestamp: 1685571203,
-      },
-      logs: highNumApprovedTransfersLowLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = highNumApprovedTransfersLowLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS ------
     const highNumApprovedTransfersTxReceipt = await realProvider.getTransactionReceipt(
@@ -561,28 +591,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const highNumApprovedTransfersTxEvent = createTransactionEvent({
-      transaction: {
-        hash: highNumApprovedTransfersTxReceipt.transactionHash,
+    const highNumApprovedTransfersTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: highNumApprovedTransfersTxReceipt.hash,
         from: highNumApprovedTransfersTxReceipt.from.toLowerCase(),
         to: highNumApprovedTransfersTxReceipt.to.toLowerCase(),
         nonce: highNumApprovedTransfersTx.nonce,
-        data: highNumApprovedTransfersTx.data,
+        input: highNumApprovedTransfersTx.data,
         gas: "1",
         gasPrice: highNumApprovedTransfersTx.gasPrice.toString(),
         value: "0x0",
         r: highNumApprovedTransfersTx.r,
         s: highNumApprovedTransfersTx.s,
-        v: highNumApprovedTransfersTx.v.toFixed(),
-      },
-      block: {
+        v: highNumApprovedTransfersTx.v,
+      }),
+      (block = {
         number: highNumApprovedTransfersTxReceipt.blockNumber,
         hash: highNumApprovedTransfersTxReceipt.blockHash,
         timestamp: 1685506355,
-      },
-      logs: highNumApprovedTransfersLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = highNumApprovedTransfersLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-SUSPICIOUS-APPROVAL ------
     const suspiciousApprovalTxReceipt = await realProvider.getTransactionReceipt(
@@ -601,30 +632,31 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const suspiciousApprovalTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousApprovalTxReceipt.transactionHash,
+    const suspiciousApprovalTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: suspiciousApprovalTxReceipt.hash,
         from: suspiciousApprovalTxReceipt.from.toLowerCase(),
         to: suspiciousApprovalTxReceipt.to.toLowerCase(),
         nonce: suspiciousApprovalTx.nonce,
-        data: suspiciousApprovalTx.data,
+        input: suspiciousApprovalTx.data,
         gas: "1",
         gasPrice: suspiciousApprovalTx.gasPrice.toString(),
         value: "0x0",
         r: suspiciousApprovalTx.r,
         s: suspiciousApprovalTx.s,
-        v: suspiciousApprovalTx.v.toFixed(),
-      },
-      block: {
+        v: suspiciousApprovalTx.v,
+      }),
+      (block = {
         number: suspiciousApprovalTxReceipt.blockNumber,
         hash: suspiciousApprovalTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: suspiciousApprovalLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = suspiciousApprovalLowerCaseLogs)
+    );
     const suspiciousApprovalBlock = await realProvider.getBlock(suspiciousApprovalTxEvent.block.number);
-    const suspiciousApprovalBlockEvent = createBlockEvent({ block: suspiciousApprovalBlock });
+    const suspiciousApprovalBlockEvent = createBlockEvent((block = suspiciousApprovalBlock));
 
     // ------ ICE-PHISHING-ERC20-SUSPICIOUS-PERMIT ------
     const suspiciousPermitTxReceipt = await realProvider.getTransactionReceipt(
@@ -643,30 +675,31 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const suspiciousPermitTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousPermitTxReceipt.transactionHash,
+    const suspiciousPermitTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: suspiciousPermitTxReceipt.hash,
         from: suspiciousPermitTxReceipt.from.toLowerCase(),
         to: suspiciousPermitTxReceipt.to.toLowerCase(),
         nonce: suspiciousPermitTx.nonce,
-        data: suspiciousPermitTx.data,
+        input: suspiciousPermitTx.data,
         gas: "1",
         gasPrice: suspiciousPermitTx.gasPrice.toString(),
         value: "0x0",
         r: suspiciousPermitTx.r,
         s: suspiciousPermitTx.s,
-        v: suspiciousPermitTx.v.toFixed(),
-      },
-      block: {
+        v: suspiciousPermitTx.v,
+      }),
+      (block = {
         number: suspiciousPermitTxReceipt.blockNumber,
         hash: suspiciousPermitTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: suspiciousPermitLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = suspiciousPermitLowerCaseLogs)
+    );
     const suspiciousPermitBlock = await realProvider.getBlock(suspiciousPermitTxEvent.block.number);
-    const suspiciousPermitBlockEvent = createBlockEvent({ block: suspiciousPermitBlock });
+    const suspiciousPermitBlockEvent = createBlockEvent((block = suspiciousPermitBlock));
 
     // ------ ICE-PHISHING-SUSPICIOUS-TRANSFER ------
     const suspiciousTransferTxReceipt = await realProvider.getTransactionReceipt(
@@ -685,30 +718,31 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const suspiciousTransferTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousTransferTxReceipt.transactionHash,
+    const suspiciousTransferTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: suspiciousTransferTxReceipt.hash,
         from: suspiciousTransferTxReceipt.from.toLowerCase(),
         to: suspiciousTransferTxReceipt.to.toLowerCase(),
         nonce: suspiciousTransferTx.nonce,
-        data: suspiciousTransferTx.data,
+        input: suspiciousTransferTx.data,
         gas: "1",
         gasPrice: suspiciousTransferTx.gasPrice.toString(),
         value: "0x0",
         r: suspiciousTransferTx.r,
         s: suspiciousTransferTx.s,
-        v: suspiciousTransferTx.v.toFixed(),
-      },
-      block: {
+        v: suspiciousTransferTx.v,
+      }),
+      (block = {
         number: suspiciousTransferTxReceipt.blockNumber,
         hash: suspiciousTransferTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: suspiciousTransferLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = suspiciousTransferLowerCaseLogs)
+    );
     const suspiciousTransferBlock = await realProvider.getBlock(suspiciousTransferTxEvent.block.number);
-    const suspiciousTransferBlockEvent = createBlockEvent({ block: suspiciousTransferBlock });
+    const suspiciousTransferBlockEvent = createBlockEvent((block = suspiciousTransferBlock));
 
     // ------ ICE-PHISHING-SCAM-APPROVAL ------
     const scamApprovalTxReceipt = await realProvider.getTransactionReceipt(
@@ -727,31 +761,32 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const scamApprovalTxEvent = createTransactionEvent({
-      transaction: {
-        hash: scamApprovalTxReceipt.transactionHash,
+    const scamApprovalTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: scamApprovalTxReceipt.hash,
         from: scamApprovalTxReceipt.from.toLowerCase(),
         to: scamApprovalTxReceipt.to.toLowerCase(),
         nonce: scamApprovalTx.nonce,
-        data: scamApprovalTx.data,
+        input: scamApprovalTx.data,
         gas: "1",
         gasPrice: scamApprovalTx.gasPrice.toString(),
         value: "0x0",
         r: scamApprovalTx.r,
         s: scamApprovalTx.s,
-        v: scamApprovalTx.v.toFixed(),
-      },
-      block: {
+        v: scamApprovalTx.v,
+      }),
+      (block = {
         number: scamApprovalTxReceipt.blockNumber,
         hash: scamApprovalTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: scamApprovalLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = scamApprovalLowerCaseLogs)
+    );
 
     const scamBlock = await realProvider.getBlock(scamApprovalTxEvent.block.number);
-    const scamBlockEvent = createBlockEvent({ block: scamBlock });
+    const scamBlockEvent = createBlockEvent((block = scamBlock));
 
     // ------ ICE-PHISHING-SCAM-TRANSFER ------
     const scamTransferTxReceipt = await realProvider.getTransactionReceipt(
@@ -770,28 +805,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const scamTransferTxEvent = createTransactionEvent({
-      transaction: {
-        hash: scamTransferTxReceipt.transactionHash,
+    const scamTransferTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: scamTransferTxReceipt.hash,
         from: scamTransferTxReceipt.from.toLowerCase(),
         to: scamTransferTxReceipt.to.toLowerCase(),
         nonce: scamTransferTx.nonce,
-        data: scamTransferTx.data,
+        input: scamTransferTx.data,
         gas: "1",
         gasPrice: scamTransferTx.gasPrice.toString(),
         value: "0x0",
         r: scamTransferTx.r,
         s: scamTransferTx.s,
-        v: scamTransferTx.v.toFixed(),
-      },
-      block: {
+        v: scamTransferTx.v,
+      }),
+      (block = {
         number: scamTransferTxReceipt.blockNumber,
         hash: scamTransferTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: scamTransferLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = "1"),
+      (traces = []),
+      (logs = scamTransferLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-PULL-SWEEPTOKEN ------
     const pullSweepTokenTxReceipt = await realProvider.getTransactionReceipt(
@@ -810,21 +846,27 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const pullSweepTokenTxEvent = createTransactionEvent({
-      transaction: {
-        hash: pullSweepTokenTxReceipt.transactionHash,
+    const pullSweepTokenTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: pullSweepTokenTxReceipt.hash,
         from: pullSweepTokenTxReceipt.from.toLowerCase(),
         to: pullSweepTokenTxReceipt.to.toLowerCase(),
         nonce: pullSweepTokenTx.nonce,
-        data: pullSweepTokenTx.data,
+        input: pullSweepTokenTx.data,
         gas: "1",
         gasPrice: pullSweepTokenTx.gasPrice.toString(),
         value: "0x0",
         r: pullSweepTokenTx.r,
         s: pullSweepTokenTx.s,
-        v: pullSweepTokenTx.v.toFixed(),
-      },
-      traces: [
+        v: pullSweepTokenTx.v,
+      }),
+      (block = {
+        number: pullSweepTokenTxReceipt.blockNumber,
+        hash: pullSweepTokenTxReceipt.blockHash,
+        timestamp: 1684408535,
+      }),
+      (chainId = "1"),
+      (traces = [
         {
           action: {
             callType: "call",
@@ -1076,15 +1118,9 @@ describe("Ice Phishing bot performance test", () => {
           type: "call",
           error: undefined,
         },
-      ],
-      block: {
-        number: pullSweepTokenTxReceipt.blockNumber,
-        hash: pullSweepTokenTxReceipt.blockHash,
-        timestamp: 1684408535,
-      },
-      logs: pullSweepTokenLowerCaseLogs,
-      contractAddress: null,
-    });
+      ]),
+      (logs = pullSweepTokenLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-OPENSEA-PROXY-UPGRADE ------
     const openseaProxyUpgradeTxReceipt = await realProvider.getTransactionReceipt(
@@ -1103,28 +1139,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const openseaProxyUpgradeTxEvent = createTransactionEvent({
-      transaction: {
-        hash: openseaProxyUpgradeTxReceipt.transactionHash,
+    const openseaProxyUpgradeTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: openseaProxyUpgradeTxReceipt.hash,
         from: openseaProxyUpgradeTxReceipt.from.toLowerCase(),
         to: openseaProxyUpgradeTxReceipt.to.toLowerCase(),
         nonce: openseaProxyUpgradeTx.nonce,
-        data: openseaProxyUpgradeTx.data,
+        input: openseaProxyUpgradeTx.data,
         gas: "1",
         gasPrice: openseaProxyUpgradeTx.gasPrice.toString(),
         value: "0x0",
         r: openseaProxyUpgradeTx.r,
         s: openseaProxyUpgradeTx.s,
-        v: openseaProxyUpgradeTx.v.toFixed(),
-      },
-      block: {
+        v: openseaProxyUpgradeTx.v,
+      }),
+      (block = {
         number: openseaProxyUpgradeTxReceipt.blockNumber,
         hash: openseaProxyUpgradeTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: openseaProxyUpgradeLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = openseaProxyUpgradeLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-ERC20-SCAM-PERMIT ------
     const scamPermitTxReceipt = await realProvider.getTransactionReceipt(
@@ -1143,28 +1180,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const scamPermitTxEvent = createTransactionEvent({
-      transaction: {
-        hash: scamPermitTxReceipt.transactionHash,
+    const scamPermitTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: scamPermitTxReceipt.hash,
         from: scamPermitTxReceipt.from.toLowerCase(),
         to: scamPermitTxReceipt.to.toLowerCase(),
         nonce: scamPermitTx.nonce,
-        data: scamPermitTx.data,
+        input: scamPermitTx.data,
         gas: "1",
         gasPrice: scamPermitTx.gasPrice.toString(),
         value: "0x0",
         r: scamPermitTx.r,
         s: scamPermitTx.s,
-        v: scamPermitTx.v.toFixed(),
-      },
-      block: {
+        v: scamPermitTx.v,
+      }),
+      (block = {
         number: scamPermitTxReceipt.blockNumber,
         hash: scamPermitTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: scamPermitLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = scamPermitLowerCaseLogs)
+    );
 
     // ------ ICE-PHISHING-SCAM-CREATOR-APPROVAL ------
     const scamCreatorApprovalTxReceipt = await realProvider.getTransactionReceipt(
@@ -1183,28 +1221,29 @@ describe("Ice Phishing bot performance test", () => {
       };
     });
 
-    const scamCreatorApprovalTxEvent = createTransactionEvent({
-      transaction: {
-        hash: scamCreatorApprovalTxReceipt.transactionHash,
+    const scamCreatorApprovalTxEvent = createTransactionEvent(
+      (transaction = {
+        hash: scamCreatorApprovalTxReceipt.hash,
         from: scamCreatorApprovalTxReceipt.from.toLowerCase(),
         to: scamCreatorApprovalTxReceipt.to.toLowerCase(),
         nonce: scamCreatorApprovalTx.nonce,
-        data: scamCreatorApprovalTx.data,
+        input: scamCreatorApprovalTx.data,
         gas: "1",
         gasPrice: scamCreatorApprovalTx.gasPrice.toString(),
         value: "0x0",
         r: scamCreatorApprovalTx.r,
         s: scamCreatorApprovalTx.s,
-        v: scamCreatorApprovalTx.v.toFixed(),
-      },
-      block: {
+        v: scamCreatorApprovalTx.v,
+      }),
+      (block = {
         number: scamCreatorApprovalTxReceipt.blockNumber,
         hash: scamCreatorApprovalTxReceipt.blockHash,
         timestamp: 1684408535,
-      },
-      logs: scamCreatorApprovalLowerCaseLogs,
-      contractAddress: null,
-    });
+      }),
+      (chainId = 1),
+      (traces = []),
+      (logs = scamCreatorApprovalLowerCaseLogs)
+    );
 
     let totalTimeNormalTx = 0;
     let totalTimeErc20ApprovalsInfo = 0;

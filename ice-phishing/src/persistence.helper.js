@@ -1,4 +1,4 @@
-const { fetchJwt } = require("forta-agent");
+const { fetchJwt } = require("forta-bot");
 const fetch = require("node-fetch");
 const { existsSync, readFileSync, writeFileSync } = require("fs");
 require("dotenv").config();
@@ -34,7 +34,10 @@ class PersistenceHelper {
       }
     } else {
       // Persist locally
-      writeFileSync(key, JSON.stringify(value));
+      writeFileSync(
+        key,
+        JSON.stringify(value, (key, value) => (typeof value === "bigint" ? value.toString() : value))
+      );
       return;
     }
   }

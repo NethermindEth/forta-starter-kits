@@ -1,4 +1,4 @@
-const { FindingType, FindingSeverity, Finding, ethers, Label, EntityType } = require("forta-agent");
+const { FindingType, FindingSeverity, Finding, ethers, Label, EntityType } = require("forta-bot");
 const axios = require("axios");
 const { createAddress, createChecksumAddress } = require("forta-agent-tools");
 const {
@@ -73,10 +73,12 @@ jest.mock(
 
 const mockCalculateAlertRate = jest.fn();
 const mockBalanceOf = jest.fn();
+const mockGetChainId = jest.fn();
+
 // Mock axios and ethers provider
 jest.mock("axios");
-jest.mock("forta-agent", () => {
-  const original = jest.requireActual("forta-agent");
+jest.mock("forta-bot", () => {
+  const original = jest.requireActual("forta-bot");
   return {
     ...original,
     ethers: {
@@ -85,6 +87,7 @@ jest.mock("forta-agent", () => {
         balanceOf: mockBalanceOf,
       })),
     },
+    getChainId: () => mockGetChainId(),
   };
 });
 
@@ -124,7 +127,7 @@ const mockPermitFunctionCall = {
     owner: owner1,
     spender,
     deadline: 9359543534435,
-    value: ethers.BigNumber.from(210),
+    value: BigInt(210),
   },
 };
 
@@ -145,7 +148,7 @@ const mockPermit2FunctionCall = {
       details: [
         {
           token: asset,
-          value: ethers.BigNumber.from(210),
+          value: BigInt(210),
           expiration: 9359543534435,
           nonce: 1,
         },
@@ -153,7 +156,7 @@ const mockPermit2FunctionCall = {
       spender,
       deadline: 9359543534435,
     },
-    signature: ethers.utils.formatBytes32String("signature"),
+    signature: ethers.encodeBytes32String("signature"),
   },
 };
 
@@ -161,7 +164,7 @@ const mockPullFunctionCall = {
   address: mockUniswapRouterV3,
   args: {
     token: asset,
-    value: ethers.BigNumber.from(210),
+    value: BigInt(210),
   },
 };
 
@@ -169,7 +172,7 @@ const mockSweepTokenFunctionCall = {
   address: mockUniswapRouterV3,
   args: {
     token: asset,
-    amountMinimum: ethers.BigNumber.from(210),
+    amountMinimum: BigInt(210),
     recipient: mockRecipient,
   },
 };
@@ -191,7 +194,7 @@ const mockApprovalERC20Events = [
     args: {
       owner: owner1,
       spender,
-      value: ethers.BigNumber.from(5),
+      value: BigInt(5),
     },
   },
   {
@@ -200,7 +203,7 @@ const mockApprovalERC20Events = [
     args: {
       owner: owner2,
       spender,
-      value: ethers.BigNumber.from(5),
+      value: BigInt(5),
     },
   },
   {
@@ -209,7 +212,7 @@ const mockApprovalERC20Events = [
     args: {
       owner: owner3,
       spender,
-      value: ethers.BigNumber.from(5),
+      value: BigInt(5),
     },
   },
   {
@@ -218,7 +221,7 @@ const mockApprovalERC20Events = [
     args: {
       owner: createAddress("0x2211"),
       spender: spenderNewEOA, // New EOA
-      value: ethers.BigNumber.from(5),
+      value: BigInt(5),
     },
   },
 ];
@@ -230,7 +233,7 @@ const mockApprovalERC721Events = [
     args: {
       owner: owner1,
       spender,
-      tokenId: ethers.BigNumber.from(5),
+      tokenId: BigInt(5),
     },
   },
   {
@@ -239,7 +242,7 @@ const mockApprovalERC721Events = [
     args: {
       owner: owner2,
       spender,
-      tokenId: ethers.BigNumber.from(5),
+      tokenId: BigInt(5),
     },
   },
   {
@@ -248,7 +251,7 @@ const mockApprovalERC721Events = [
     args: {
       owner: owner3,
       spender,
-      tokenId: ethers.BigNumber.from(5),
+      tokenId: BigInt(5),
     },
   },
 ];
@@ -260,7 +263,7 @@ const mockTransferEvents = [
     args: {
       from: owner1,
       to: createAddress("0x11"),
-      value: ethers.BigNumber.from(210),
+      value: BigInt(210),
     },
   },
   {
@@ -268,7 +271,7 @@ const mockTransferEvents = [
     name: "Transfer",
     args: {
       from: owner2,
-      value: ethers.BigNumber.from(1210),
+      value: BigInt(1210),
     },
   },
   {
@@ -276,7 +279,7 @@ const mockTransferEvents = [
     name: "Transfer",
     args: {
       from: owner3,
-      value: ethers.BigNumber.from(11210),
+      value: BigInt(11210),
     },
   },
 ];
@@ -288,7 +291,7 @@ const mockApprovalERC20Events2 = [
     args: {
       owner: owner1,
       spender,
-      value: ethers.BigNumber.from(10000005),
+      value: BigInt(10000005),
     },
   },
   {
@@ -297,7 +300,7 @@ const mockApprovalERC20Events2 = [
     args: {
       owner: owner2,
       spender,
-      value: ethers.BigNumber.from(10000005),
+      value: BigInt(10000005),
     },
   },
   {
@@ -306,7 +309,7 @@ const mockApprovalERC20Events2 = [
     args: {
       owner: owner3,
       spender,
-      value: ethers.BigNumber.from(10000005),
+      value: BigInt(10000005),
     },
   },
 ];
@@ -317,7 +320,7 @@ const mockTransferEvents2 = [
     name: "Transfer",
     args: {
       from: owner1,
-      value: ethers.BigNumber.from(210),
+      value: BigInt(210),
     },
   },
   {
@@ -325,7 +328,7 @@ const mockTransferEvents2 = [
     name: "Transfer",
     args: {
       from: owner2,
-      value: ethers.BigNumber.from(1210),
+      value: BigInt(1210),
     },
   },
   {
@@ -333,7 +336,7 @@ const mockTransferEvents2 = [
     name: "Transfer",
     args: {
       from: owner3,
-      value: ethers.BigNumber.from(11210),
+      value: BigInt(11210),
     },
   },
 ];
@@ -344,7 +347,7 @@ const mockTransferERC721Events = [
     name: "Transfer",
     args: {
       from: owner1,
-      tokenId: ethers.BigNumber.from(5),
+      tokenId: BigInt(5),
     },
   },
   {
@@ -352,7 +355,7 @@ const mockTransferERC721Events = [
     name: "Transfer",
     args: {
       from: owner2,
-      tokenId: ethers.BigNumber.from(5),
+      tokenId: BigInt(5),
     },
   },
   {
@@ -360,7 +363,7 @@ const mockTransferERC721Events = [
     name: "Transfer",
     args: {
       from: owner3,
-      tokenId: ethers.BigNumber.from(5),
+      tokenId: BigInt(5),
     },
   },
 ];
@@ -371,8 +374,8 @@ const mockTransferSingleEvents = [
     name: "TransferSingle",
     args: {
       from: owner1,
-      tokenId: ethers.BigNumber.from(5),
-      value: ethers.BigNumber.from(1234),
+      tokenId: BigInt(5),
+      value: BigInt(1234),
     },
   },
   {
@@ -380,8 +383,8 @@ const mockTransferSingleEvents = [
     name: "TransferSingle",
     args: {
       from: owner2,
-      tokenId: ethers.BigNumber.from(5),
-      value: ethers.BigNumber.from(122234),
+      tokenId: BigInt(5),
+      value: BigInt(122234),
     },
   },
   {
@@ -389,8 +392,8 @@ const mockTransferSingleEvents = [
     name: "TransferSingle",
     args: {
       from: owner3,
-      tokenId: ethers.BigNumber.from(5),
-      value: ethers.BigNumber.from(1122234),
+      tokenId: BigInt(5),
+      value: BigInt(1122234),
     },
   },
 ];
@@ -401,8 +404,8 @@ const mockTransferBatchEvents = [
     name: "TransferBatch",
     args: {
       from: owner1,
-      tokenIds: [ethers.BigNumber.from(4), ethers.BigNumber.from(5)],
-      values: [ethers.BigNumber.from(1234), ethers.BigNumber.from(1235)],
+      tokenIds: [BigInt(4), BigInt(5)],
+      values: [BigInt(1234), BigInt(1235)],
     },
   },
   {
@@ -410,8 +413,8 @@ const mockTransferBatchEvents = [
     name: "TransferBatch",
     args: {
       from: owner2,
-      tokenIds: [ethers.BigNumber.from(4), ethers.BigNumber.from(5)],
-      values: [ethers.BigNumber.from(111234), ethers.BigNumber.from(111235)],
+      tokenIds: [BigInt(4), BigInt(5)],
+      values: [BigInt(111234), BigInt(111235)],
     },
   },
   {
@@ -419,8 +422,8 @@ const mockTransferBatchEvents = [
     name: "TransferBatch",
     args: {
       from: owner3,
-      tokenIds: [ethers.BigNumber.from(4), ethers.BigNumber.from(5)],
-      values: [ethers.BigNumber.from(189234), ethers.BigNumber.from(189235)],
+      tokenIds: [BigInt(4), BigInt(5)],
+      values: [BigInt(189234), BigInt(189235)],
     },
   },
 ];
@@ -466,6 +469,8 @@ describe("ice-phishing bot", () => {
   const mockGetSuspiciousContracts = jest.fn();
   const mockGetFailSafeWallets = jest.fn();
   const mockGetNumberOfUniqueTxInitiators = jest.fn();
+  mockGetChainId.mockReturnValue(1);
+
   let handleBlock;
 
   describe("provideHandleTransaction", () => {
@@ -679,7 +684,6 @@ describe("ice-phishing bot", () => {
 
     it("should return a finding if a suspicious contract is involved in a permit function call", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -821,7 +825,6 @@ describe("ice-phishing bot", () => {
 
     it("should return a finding if a creator of a suspicious contract is involved in a permit function call", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -1070,7 +1073,6 @@ describe("ice-phishing bot", () => {
 
     it("should return findings if there is a high number of ERC721 ApprovalForAll events", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -1339,8 +1341,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
       const findings = await handleTransaction(mockTxEvent);
 
@@ -1384,7 +1386,6 @@ describe("ice-phishing bot", () => {
 
     it("should not return findings if there is a high number of ERC20 Approval events but there have been more than once interactions between the victim and the attacker", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -1510,8 +1511,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -1556,7 +1557,6 @@ describe("ice-phishing bot", () => {
 
     it("should return findings if there is a high number of ERC721 Approval events regarding a verified contract", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -1580,7 +1580,7 @@ describe("ice-phishing bot", () => {
           args: {
             owner: owner1,
             spender,
-            tokenId: ethers.BigNumber.from(5),
+            tokenId: BigInt(5),
           },
         },
         {
@@ -1589,7 +1589,7 @@ describe("ice-phishing bot", () => {
           args: {
             owner: owner2,
             spender,
-            tokenId: ethers.BigNumber.from(5),
+            tokenId: BigInt(5),
           },
         },
         {
@@ -1598,7 +1598,7 @@ describe("ice-phishing bot", () => {
           args: {
             owner: owner3,
             spender,
-            tokenId: ethers.BigNumber.from(5),
+            tokenId: BigInt(5),
           },
         },
       ];
@@ -1660,8 +1660,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -1706,7 +1706,6 @@ describe("ice-phishing bot", () => {
 
     it("should not return findings if there is a high number of ERC721 Approval events regarding a verified contract with high number of past transactions", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -1727,7 +1726,7 @@ describe("ice-phishing bot", () => {
           args: {
             owner: owner1,
             spender,
-            tokenId: ethers.BigNumber.from(5),
+            tokenId: BigInt(5),
           },
         },
         {
@@ -1736,7 +1735,7 @@ describe("ice-phishing bot", () => {
           args: {
             owner: owner2,
             spender,
-            tokenId: ethers.BigNumber.from(5),
+            tokenId: BigInt(5),
           },
         },
         {
@@ -1745,7 +1744,7 @@ describe("ice-phishing bot", () => {
           args: {
             owner: owner3,
             spender,
-            tokenId: ethers.BigNumber.from(5),
+            tokenId: BigInt(5),
           },
         },
       ];
@@ -1890,7 +1889,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValueOnce(BigInt(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.4);
 
       const alertId = "ICE-PHISHING-HIGH-NUM-APPROVED-TRANSFERS";
@@ -1899,8 +1898,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2010,9 +2009,7 @@ describe("ice-phishing bot", () => {
             data: "0x0",
           },
         };
-        mockBalanceOf
-          .mockResolvedValue(ethers.BigNumber.from("100000000000000"))
-          .mockResolvedValue(ethers.BigNumber.from("100000000000000")); // not drained
+        mockBalanceOf.mockResolvedValue(BigInt("100000000000000")).mockResolvedValue(BigInt("100000000000000")); // not drained
         await handleTransaction(tempTxEvent);
       }
 
@@ -2031,7 +2028,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from("100000000000000")); // not drained
+      mockBalanceOf.mockResolvedValue(BigInt("100000000000000")); // not drained
       expect(mockProvider.getCode).toHaveBeenCalledTimes(4);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2136,8 +2133,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2260,7 +2257,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValueOnce(BigInt(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.421).mockReturnValueOnce(0.1421);
 
@@ -2270,8 +2267,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2422,7 +2419,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValue(BigInt(0));
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.212421).mockReturnValueOnce(0.1212);
 
@@ -2432,8 +2429,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2631,7 +2628,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValue(BigInt(0));
 
       expect(mockProvider.getCode).toHaveBeenCalledTimes(6);
       mockCalculateAlertRate.mockReturnValueOnce(0.11095).mockReturnValueOnce(0.11);
@@ -2642,8 +2639,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(spender + alertId + currentDate + currentMonth + currentYear)
       );
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2768,7 +2765,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC1155 transfers
         .mockReturnValueOnce([]); // Upgrades
 
-      mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValueOnce(BigInt(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.095);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2854,7 +2851,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
         .mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValueOnce(BigInt(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.4111);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2935,7 +2932,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
-      mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValueOnce(BigInt(0));
       mockCalculateAlertRate.mockReturnValueOnce(0.095);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -2998,7 +2995,7 @@ describe("ice-phishing bot", () => {
           owner: owner1,
           spender: createAddress("0x5050"),
           deadline: 9359543534435,
-          value: ethers.BigNumber.from(210),
+          value: BigInt(210),
         },
       };
 
@@ -3027,8 +3024,8 @@ describe("ice-phishing bot", () => {
           severity: FindingSeverity.High,
           type: FindingType.Suspicious,
           metadata: {
-            scamAddresses: [createAddress("0x5050")],
-            scamDomains: ["www.scamDomain.com"],
+            scamAddresses: [createAddress("0x5050")].toString(),
+            scamDomains: ["www.scamDomain.com"].toString(),
             msgSender: spender,
             spender: createAddress("0x5050"),
             owner: owner1,
@@ -3059,7 +3056,6 @@ describe("ice-phishing bot", () => {
       mockGetSuspiciousContracts.mockResolvedValueOnce(new Set());
 
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -3096,7 +3092,7 @@ describe("ice-phishing bot", () => {
           owner: owner1,
           spender: createAddress("0x23325050"),
           deadline: 9359543534435,
-          value: ethers.BigNumber.from(210),
+          value: BigInt(210),
         },
       };
 
@@ -3129,7 +3125,7 @@ describe("ice-phishing bot", () => {
           type: FindingType.Suspicious,
           metadata: {
             scamAddress: createAddress("0x215050"),
-            scamDomains: ["www.scamDomain.com"],
+            scamDomains: ["www.scamDomain.com"].toString(),
             msgSender: spender,
             spender: createAddress("0x23325050"),
             owner: owner1,
@@ -3244,7 +3240,7 @@ describe("ice-phishing bot", () => {
           severity: FindingSeverity.High,
           type: FindingType.Suspicious,
           metadata: {
-            scamDomains: ["www.scamDomain.com"],
+            scamDomains: ["www.scamDomain.com"].toString(),
             scamSpender: spender,
             owner: owner1,
             anomalyScore: "0.003",
@@ -3323,8 +3319,8 @@ describe("ice-phishing bot", () => {
           severity: FindingSeverity.Critical,
           type: FindingType.Exploit,
           metadata: {
-            scamAddresses: [spender],
-            scamDomains: ["www.scamDomain.com"],
+            scamAddresses: [spender].toString(),
+            scamDomains: ["www.scamDomain.com"].toString(),
             msgSender: spender,
             owner: owner1,
             receiver: mockTransferEvents[0].args.to,
@@ -3353,7 +3349,6 @@ describe("ice-phishing bot", () => {
       resetInit();
 
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -3410,7 +3405,7 @@ describe("ice-phishing bot", () => {
         args: {
           from: owner1,
           to: suspiciousReceiver,
-          value: ethers.BigNumber.from(210),
+          value: BigInt(210),
         },
       };
 
@@ -3435,6 +3430,7 @@ describe("ice-phishing bot", () => {
         data: { message: "okkk", status: "1", result: [{ contractCreator: createAddress("0xaaaabbb") }] },
       };
       axios.get.mockResolvedValue(axiosResponse2);
+      mockProvider.getTransactionCount.mockReturnValueOnce(8); // Low nonce contract creator
       mockCalculateAlertRate.mockReturnValueOnce(0.5);
 
       const findings = await handleTransaction(mockTxEvent);
@@ -3482,7 +3478,6 @@ describe("ice-phishing bot", () => {
     it("should return findings if a creator of a suspicious contract is involved in a transfer", async () => {
       resetInit();
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -3533,7 +3528,7 @@ describe("ice-phishing bot", () => {
         args: {
           from: owner1,
           to: suspiciousContractCreator,
-          value: ethers.BigNumber.from(210),
+          value: BigInt(210),
         },
       };
 
@@ -3619,15 +3614,29 @@ describe("ice-phishing bot", () => {
         mockCounters,
         minutes // Passing minutes to make sure peristence is not triggered as minutes === lastExecutedMinute
       );
+
+      const spender = createAddress("0x031");
+
       mockGetSuspiciousContracts.mockResolvedValueOnce(
-        new Set([{ address: createAddress("0xabcdabcd"), creator: createAddress("0x01") }])
+        new Set([{ address: createAddress("0xabcdabcd"), creator: spender }])
       );
+      mockProvider.getTransactionCount.mockReturnValue(8); // Low nonce contract creator
       await handleBlock(mockBlockEvent);
 
       mockPersistenceHelper.load.mockReturnValueOnce(mockObjects);
 
+      const mockApprovalERC20Event = {
+        address: asset,
+        name: "Approval",
+        args: {
+          owner: owner1,
+          spender,
+          value: BigInt(5),
+        },
+      };
+
       mockTxEvent.filterLog
-        .mockReturnValueOnce([mockApprovalERC20Events[0]]) // ERC20 approvals
+        .mockReturnValueOnce([mockApprovalERC20Event]) // ERC20 approvals
         .mockReturnValueOnce([]) // ERC721 approvals
         .mockReturnValueOnce([]) // ApprovalForAll
         .mockReturnValueOnce([]) // ERC20 transfers
@@ -3708,7 +3717,7 @@ describe("ice-phishing bot", () => {
       expect(findings).toStrictEqual([
         expect.objectContaining({
           name: "Attacker stole funds through Router V3's pull and sweepTokens functions",
-          description: `${mockRecipient} received ${ethers.BigNumber.from(210)} tokens (${asset}) from ${victim}`,
+          description: `${mockRecipient} received ${BigInt(210)} tokens (${asset}) from ${victim}`,
           alertId: "ICE-PHISHING-PULL-SWEEPTOKEN",
           severity: FindingSeverity.Critical,
           type: FindingType.Suspicious,
@@ -3744,7 +3753,6 @@ describe("ice-phishing bot", () => {
 
     it("should return findings if a victim was tricked into upgrading their Opensea proxy to an attacker's implementation contract", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -3862,7 +3870,7 @@ describe("ice-phishing bot", () => {
           args: {
             from: owner1,
             to: createAddress("0x11"),
-            value: ethers.BigNumber.from(210),
+            value: BigInt(210),
           },
         },
 
@@ -3872,7 +3880,7 @@ describe("ice-phishing bot", () => {
           args: {
             from: owner3,
             to: createAddress("0x11"),
-            value: ethers.BigNumber.from(11210),
+            value: BigInt(11210),
           },
         },
       ];
@@ -3916,7 +3924,7 @@ describe("ice-phishing bot", () => {
       };
       axios.get.mockResolvedValue(axiosResponse);
       mockProvider.getCode.mockReturnValue("0x");
-      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValue(BigInt(0));
       mockProvider.getTransactionCount.mockReturnValue(1);
       const axiosResponse2 = {
         data: { message: "okkk", status: "1", result: [{ from: CEX_ADDRESSES[0], functionName: "" }] },
@@ -3929,7 +3937,7 @@ describe("ice-phishing bot", () => {
       };
       axios.get.mockResolvedValue(axiosResponse1b);
       mockProvider.getCode.mockReturnValue("0x");
-      mockBalanceOf.mockResolvedValue(ethers.BigNumber.from(0));
+      mockBalanceOf.mockResolvedValue(BigInt(0));
       mockProvider.getTransactionCount.mockReturnValue(1);
       const axiosResponse2b = {
         data: { message: "okkk", status: "1", result: [{ from: CEX_ADDRESSES[0], functionName: "" }] },
@@ -3970,8 +3978,8 @@ describe("ice-phishing bot", () => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
-      const uniqueKey = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(
+      const uniqueKey = ethers.keccak256(
+        ethers.toUtf8Bytes(
           createAddress("0x11") + mockTxEvent1.hash + alertId + currentDate + currentMonth + currentYear
         )
       );
@@ -4175,7 +4183,6 @@ describe("ice-phishing bot", () => {
 
     it("should not delete the entry if it was updated recently/permission deadline has not passed", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
@@ -4226,7 +4233,6 @@ describe("ice-phishing bot", () => {
 
     it("should delete the entry if it was not updated recently/permission deadline has expired", async () => {
       const initialize = provideInitialize(
-        mockProvider,
         mockPersistenceHelper,
         MOCK_DATABASE_KEYS,
         mockCounters,
