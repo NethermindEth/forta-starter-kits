@@ -2,7 +2,7 @@
 
 ## Description
 
-This bot detects wheter there is a sneak governance proposal about to be approved or is already approved
+This bot detects whether there is a sneak governance proposal about to be approved or is already approved
 
 ## Supported Chains
 
