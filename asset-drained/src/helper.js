@@ -14,6 +14,8 @@ const TOKEN_ABI = [
 
 const MKR_TOKEN_ABI = ["function symbol() external view returns (bytes32)"];
 
+const GNOSIS_PROXY_EVENT_ABI = ["event ExecutionSuccess(bytes32 txHash, uint256 payment)"];
+
 const etherscanApis = {
   1: {
     urlContractCreation: "https://api.etherscan.io/api?module=contract&action=getcontractcreation",
@@ -417,4 +419,5 @@ module.exports = {
   TOKEN_ABI,
   USD_VALUE_THRESHOLD,
   TOTAL_SUPPLY_PERCENTAGE_THRESHOLD,
+  GNOSIS_PROXY_EVENT_ABI,
 };
