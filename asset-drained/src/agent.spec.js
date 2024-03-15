@@ -84,7 +84,7 @@ describe("Asset drained bot test suite", () => {
     });
 
     it("should do nothing if there are no transfers", async () => {
-      mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([]);
+      mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
       await handleTransaction(mockTxEvent);
       expect(Object.keys(getTransfersObj()).length).toStrictEqual(0);
     });
@@ -106,7 +106,10 @@ describe("Asset drained bot test suite", () => {
           value: ethers.BigNumber.from(10),
         },
       };
-      mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1, mockTransferEvent2]).mockReturnValueOnce([]);
+      mockTxEvent.filterLog
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([mockTransferEvent1, mockTransferEvent2])
+        .mockReturnValueOnce([]);
 
       await handleTransaction(mockTxEvent);
       expect(Object.keys(getTransfersObj()).length).toStrictEqual(3);
@@ -187,7 +190,7 @@ describe("Asset drained bot test suite", () => {
       const mockBlockEvent = { blockNumber: 10_001 }; // After implementing sharding, each block on Ethereum processes transations from 2 blocks ago (9999 -> 10001)
 
       it("should not alert if there are no transfers", async () => {
-        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
         await handleTransaction(mockTxEvent);
         const findings = await handleBlock(mockBlockEvent);
         expect(findings).toStrictEqual([]);
@@ -202,7 +205,7 @@ describe("Asset drained bot test suite", () => {
             value: ethers.BigNumber.from(995),
           },
         };
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
@@ -288,7 +291,10 @@ describe("Asset drained bot test suite", () => {
             to: address7,
           },
         };
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([mockBurnEvent]);
+        mockTxEvent.filterLog
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([mockTransferEvent1])
+          .mockReturnValueOnce([mockBurnEvent]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
@@ -351,7 +357,7 @@ describe("Asset drained bot test suite", () => {
             value: ethers.BigNumber.from(995),
           },
         };
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
@@ -380,7 +386,7 @@ describe("Asset drained bot test suite", () => {
             value: ethers.BigNumber.from(995),
           },
         };
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
@@ -444,7 +450,7 @@ describe("Asset drained bot test suite", () => {
             value: ethers.BigNumber.from(995),
           },
         };
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(0) }, // Victim (address1)
@@ -480,8 +486,11 @@ describe("Asset drained bot test suite", () => {
           },
         };
 
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
-        mockTxEvent2.filterLog.mockReturnValueOnce([mockTransferEvent2]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        mockTxEvent2.filterLog
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([mockTransferEvent2])
+          .mockReturnValueOnce([]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)
@@ -556,7 +565,7 @@ describe("Asset drained bot test suite", () => {
             value: ethers.BigNumber.from(995),
           },
         };
-        mockTxEvent.filterLog.mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
+        mockTxEvent.filterLog.mockReturnValueOnce([]).mockReturnValueOnce([mockTransferEvent1]).mockReturnValueOnce([]);
         // Balance call for pre-drain balances
         mockEthcallProviderTryAll.mockResolvedValueOnce([
           { success: true, returnData: ethers.BigNumber.from(1000) }, // Victim (address1)

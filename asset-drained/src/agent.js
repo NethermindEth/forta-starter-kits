@@ -14,6 +14,7 @@ const {
   getTotalSupply,
   getContractCreator,
   USD_VALUE_THRESHOLD,
+  GNOSIS_PROXY_EVENT_ABI,
 } = require("./helper");
 const AddressType = require("./address-type");
 
@@ -55,6 +56,9 @@ const provideInitialize = (provider) => {
 const provideHandleTransaction = () => {
   return async (txEvent) => {
     const { hash, from: txFrom, blockNumber } = txEvent;
+
+    if (txEvent.filterLog(GNOSIS_PROXY_EVENT_ABI).length) return [];
+
     txEvent
       .filterLog(ERC20_TRANSFER_EVENT)
       .filter((event) => !event.args.value.eq(ZERO))
