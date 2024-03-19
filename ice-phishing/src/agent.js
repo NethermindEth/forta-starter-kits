@@ -112,7 +112,7 @@ let scamSnifferMap = new Map();
 const DATABASE_URL = "https://research.forta.network/database/bot/";
 
 const DATABASE_OBJECT_KEY = {
-  key: "nm-icephishing-bot-objects-v6-shard",
+  key: "nm-icephishing-bot-objects-v7-shard",
 };
 
 let objects = {
@@ -778,7 +778,11 @@ const provideHandleTransaction =
           for (const contract of suspiciousContracts) {
             if (contract.address === spender || contract.creator === spender) {
               const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
-              if (uniqueTxInitiatorsCount <= 100) {
+
+              if (
+                uniqueTxInitiatorsCount <= 100 &&
+                (await getTransactionCount(contract.creator, provider, blockNumber)) <= 100
+              ) {
                 suspiciousContractFound = true;
                 suspiciousContract = contract;
                 break; // Break the loop as we found a suspicious contract
@@ -930,7 +934,7 @@ const provideHandleTransaction =
             let assetOwnerArray = objects.approvalsERC20[spender].map((entry) => [entry.asset, entry.owner]);
             haveInteractedAgain = await haveInteractedMoreThanOnce(spender, assetOwnerArray, chainId);
             if (haveInteractedAgain) {
-              objects.approvalsERC20[spender] = [];
+              delete objects.approvalsERC20[spender];
             }
           }
           if (spenderType === AddressType.LowNumTxsUnverifiedContract || !haveInteractedAgain) {
@@ -1081,7 +1085,7 @@ const provideHandleTransaction =
                         findings.push(
                           createPigButcheringAlert(to, objects.pigButcheringTransfers[to], hash, anomalyScore)
                         );
-                        objects.pigButcheringTransfers[to] = [];
+                        delete objects.pigButcheringTransfers[to];
                       }
                     }
                   }
@@ -1125,7 +1129,10 @@ const provideHandleTransaction =
       for (const contract of suspiciousContracts) {
         if (contract.address === to || contract.creator === to) {
           const uniqueTxInitiatorsCount = await getNumberOfUniqueTxInitiators(contract.address, chainId);
-          if (uniqueTxInitiatorsCount <= 100) {
+          if (
+            uniqueTxInitiatorsCount <= 100 &&
+            (await getTransactionCount(contract.creator, provider, blockNumber)) <= 100
+          ) {
             suspiciousContractFound = true;
             suspiciousContract = contract;
             break; // Break the loop as we found a suspicious contract
