@@ -17,6 +17,7 @@ let hasCalledContractBeenProcessed = {
 const PROFIT_THRESHOLD = 200_000;
 const PERCENTAGE_THRESHOLD = 1.3;
 const PROFIT_THRESHOLD_WITH_HIGH_PERCENTAGE = 100_000;
+const STANDARD_ALERT_PROFIT_THRESHOLD = 1000;
 const cache = new LRUCache({ max: 100_000 });
 const processedAccounts = new Set();
 
@@ -342,7 +343,7 @@ function provideHandleTransaction(helper, getFlashloans, provider) {
           ],
         })
       );
-    } else if (percentage > PERCENTAGE_THRESHOLD) {
+    } else if (percentage > PERCENTAGE_THRESHOLD && totalProfit >= STANDARD_ALERT_PROFIT_THRESHOLD) {
       detectedFlashloans += 1;
       const anomalyScore = detectedFlashloans / totalFlashloans;
       findings.push(
