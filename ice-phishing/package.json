@@ -16,28 +16,28 @@
   ],
   "chainSettings": {
     "1": {
-      "shards": 21,
-      "target": 2
+      "shards": 14,
+      "target": 3
     },
     "56": {
-      "shards": 28,
-      "target": 2
+      "shards": 19,
+      "target": 3
     },
     "137": {
-      "shards": 30,
-      "target": 2
+      "shards": 20,
+      "target": 3
     },
     "10": {
-      "shards": 12,
-      "target": 2
+      "shards": 8,
+      "target": 3
     },
     "43114": {
-      "shards": 7,
-      "target": 2
+      "shards": 5,
+      "target": 3
     },
     "default": {
-      "shards": 10,
-      "target": 2
+      "shards": 7,
+      "target": 3
     }
   },
   "scripts": {
