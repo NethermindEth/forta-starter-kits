@@ -372,9 +372,7 @@ const provideHandleTransaction =
       if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
         if (
           transferEvents.length &&
-          !transferEvents.some(
-            (event) => [event.args.from, event.args.to].includes(spender) || event.args.from === ADDRESS_ZERO
-          )
+          !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
         ) {
           if ((await getContractCreationHash(spender, chainId)) === hash) {
             let attackers = [
@@ -383,6 +381,7 @@ const provideHandleTransaction =
               txEvent.to,
               ...transferEvents
                 .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
+                .filter((event) => event.args.to.toLowerCase() !== owner.toLowerCase())
                 .map((event) => event.args.to),
             ];
             // Remove duplicates
@@ -732,9 +731,7 @@ const provideHandleTransaction =
         } else if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
           if (
             transferEvents.length &&
-            !transferEvents.some(
-              (event) => [event.args.from, event.args.to].includes(spender) || event.args.from === ADDRESS_ZERO
-            )
+            !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
           ) {
             if ((await getContractCreationHash(spender, chainId)) === hash) {
               let attackers = [
@@ -743,6 +740,7 @@ const provideHandleTransaction =
                 txEvent.to,
                 ...transferEvents
                   .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
+                  .filter((event) => event.args.to.toLowerCase() !== owner.toLowerCase())
                   .map((event) => event.args.to),
               ];
               // Remove duplicates
