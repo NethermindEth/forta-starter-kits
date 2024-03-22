@@ -1,6 +1,6 @@
 {
   "name": "forta-ice-phishing-starter-kit",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "displayName": "Ice Phishing Detection Bot",
   "description": "This bot detects if an account gains high number of approvals and if it transfers the approved funds",
   "longDescription": "The bot's functionality revolves around identifying specific transaction patterns involving accounts or contracts. It detects instances where an account, whether an externally owned account (EOA) with a low nonce or an unverified contract with a low transaction count, garners a unusually high number of approvals or ERC20 permissions, subsequently transferring the approved funds. The bot extends its analysis to EOAs with high nonces or verified contracts with limited transactions, emitting alerts of lower severity. Moreover, it scrutinizes the involvement of accounts or contracts flagged in the ScamSniffer database or identified by the Malicious Smart Contract ML Bot v2 alert, particularly in Approval, Transfer, or permit transactions. The bot's multifaceted approach contributes to a comprehensive monitoring system within the blockchain ecosystem, aimed at identifying potential anomalies or risks associated with transactional activities.",
