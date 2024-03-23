@@ -372,6 +372,7 @@ const provideHandleTransaction =
       if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
         if (
           transferEvents.length &&
+          transferEvents.length <= 5 &&
           !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
         ) {
           if ((await getContractCreationHash(spender, chainId)) === hash) {
@@ -382,6 +383,13 @@ const provideHandleTransaction =
               ...transferEvents
                 .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
                 .filter((event) => event.args.to.toLowerCase() !== owner.toLowerCase())
+                .filter((event) => !UNISWAP_ROUTER_ADDRESSES.includes(event.args.to.toLowerCase()))
+                .filter(
+                  (eventToFilter) =>
+                    !transferEvents.some(
+                      (event) => event.args.from.toLowerCase() === eventToFilter.args.to.toLowerCase()
+                    )
+                )
                 .map((event) => event.args.to),
             ];
             // Remove duplicates
@@ -731,6 +739,7 @@ const provideHandleTransaction =
         } else if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
           if (
             transferEvents.length &&
+            transferEvents.length <= 5 &&
             !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
           ) {
             if ((await getContractCreationHash(spender, chainId)) === hash) {
@@ -741,6 +750,13 @@ const provideHandleTransaction =
                 ...transferEvents
                   .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
                   .filter((event) => event.args.to.toLowerCase() !== owner.toLowerCase())
+                  .filter((event) => !UNISWAP_ROUTER_ADDRESSES.includes(event.args.to.toLowerCase()))
+                  .filter(
+                    (eventToFilter) =>
+                      !transferEvents.some(
+                        (event) => event.args.from.toLowerCase() === eventToFilter.args.to.toLowerCase()
+                      )
+                  )
                   .map((event) => event.args.to),
               ];
               // Remove duplicates
