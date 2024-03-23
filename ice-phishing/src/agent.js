@@ -56,6 +56,8 @@ const {
   createOpenseaAlert,
   createZeroNonceAllowanceAlert,
   createZeroNonceAllowanceTransferAlert,
+  createGnosisMultisigPhishingAlert,
+  createUniswapPermitPhishing,
 } = require("./findings");
 const {
   approveCountThreshold,
@@ -73,6 +75,7 @@ const {
   safeBatchTransferFrom1155Sig,
   transferFromSig,
   CEX_ADDRESSES,
+  UNISWAP_PERMIT_2,
   permitFunctionABI,
   daiPermitFunctionABI,
   uniswapPermitFunctionABI,
@@ -86,6 +89,10 @@ const {
   erc1155transferEventABI,
   upgradedEventABI,
   MAX_OBJECT_SIZE,
+  gnosisExecutionSuccessEventABI,
+  multiSendSig,
+  permitSig,
+  uniswapPermitSig,
 } = require("./utils");
 const AddressType = require("./address-type");
 const { PersistenceHelper } = require("./persistence.helper");
@@ -283,6 +290,44 @@ const provideHandleTransaction =
               counters.totalUpgrades
             );
             findings.push(createOpenseaAlert(txFrom, attacker, implementation, anomalyScore, hash));
+          }
+        }
+      }
+    }
+
+    const gnosisExecutionSuccessEvents = txEvent.filterLog(gnosisExecutionSuccessEventABI);
+    if (gnosisExecutionSuccessEvents.length) {
+      for (const trace of txEvent.traces) {
+        if (trace.action.callType == "delegatecall" && trace.action.input.startsWith(multiSendSig)) {
+          for (const trace of txEvent.traces) {
+            let permitSigUsed, permitFunctionABIUsed;
+            if (trace.action.input.startsWith(permitSig)) {
+              permitSigUsed = permitSig;
+              permitFunctionABIUsed = permitFunctionABI;
+            } else if (trace.action.input.startsWith(uniswapPermitSig)) {
+              permitSigUsed = uniswapPermitSig;
+              permitFunctionABIUsed = uniswapPermitFunctionABI;
+            }
+
+            if (permitSigUsed) {
+              const permitInterface = new ethers.utils.Interface([permitFunctionABIUsed]);
+              const decodedData = permitInterface.parseTransaction({ data: trace.action.input });
+              const { owner } = decodedData.args;
+              const erc20TransferEvents = txEvent.filterLog(transferEventErc20ABI);
+              if (erc20TransferEvents.length >= 2 && erc20TransferEvents.every((event) => event.args.from === owner)) {
+                const anomalyScore = await calculateAlertRate(
+                  chainId,
+                  BOT_ID,
+                  "ICE-PHISHING-MULTISIG",
+                  ScanCountType.CustomScanCount,
+                  counters.totalTransfers
+                );
+
+                const attackers = [f, txEvent.to, ...erc20TransferEvents.map((event) => event.args.to)];
+                findings.push(createGnosisMultisigPhishingAlert(owner, attackers, anomalyScore, hash));
+                return findings;
+              }
+            }
           }
         }
       }
@@ -1107,6 +1152,21 @@ const provideHandleTransaction =
               }
             }
           }
+        }
+      }
+
+      // Uniswap Permit2 phishing logic
+      if (txEvent.to && txEvent.to === UNISWAP_PERMIT_2.toLowerCase() && from !== txFrom.toLowerCase()) {
+        if ((await getTransactionCount(txFrom, provider, blockNumber)) < 20) {
+          const attackers = [txFrom, to];
+          const anomalyScore = await calculateAlertRate(
+            chainId,
+            BOT_ID,
+            "ICE-PHISHING-UNISWAP-PERMIT2",
+            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+            counters.totalTransfers
+          );
+          findings.push(createUniswapPermitPhishing(from, attackers, anomalyScore, hash));
         }
       }
 
