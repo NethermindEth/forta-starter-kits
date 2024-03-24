@@ -303,6 +303,7 @@ const gnosisExecutionSuccessEventABI = "event ExecutionSuccess(bytes32 txHash, u
 const multiSendSig = "0x8d80ff0a";
 const permitSig = "0xd505accf";
 const uniswapPermitSig = "0x2a2d80d1";
+const createInstanceSig = "0xe10cb8b1"; // To filter out zero-nonce transfer FPs
 
 const upgradedEventABI = ["event Upgraded(address indexed implementation)"];
 
@@ -353,6 +354,7 @@ module.exports = {
   multiSendSig,
   permitSig,
   uniswapPermitSig,
+  createInstanceSig,
   permitFunctionABI,
   daiPermitFunctionABI,
   uniswapPermitFunctionABI,

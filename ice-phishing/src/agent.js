@@ -93,6 +93,7 @@ const {
   multiSendSig,
   permitSig,
   uniswapPermitSig,
+  createInstanceSig,
 } = require("./utils");
 const AddressType = require("./address-type");
 const { PersistenceHelper } = require("./persistence.helper");
@@ -418,7 +419,8 @@ const provideHandleTransaction =
         if (
           transferEvents.length &&
           transferEvents.length <= 5 &&
-          !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
+          !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender)) &&
+          !txEvent.transaction.data.startsWith(createInstanceSig) // FP
         ) {
           if ((await getContractCreationHash(spender, chainId)) === hash) {
             let attackers = [
@@ -785,7 +787,8 @@ const provideHandleTransaction =
           if (
             transferEvents.length &&
             transferEvents.length <= 5 &&
-            !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
+            !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender)) &&
+            !txEvent.transaction.data.startsWith(createInstanceSig) // FP
           ) {
             if ((await getContractCreationHash(spender, chainId)) === hash) {
               let attackers = [
