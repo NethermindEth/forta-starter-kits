@@ -9,9 +9,11 @@ const safeBatchTransferFrom1155Sig = "2eb2c2d6";
 const transferFromSig = "0x23b872dd";
 const MAX_OBJECT_SIZE = 9 * 1024 * 1024; // 9 MB
 
+const UNISWAP_PERMIT_2 = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+
 // Ignore Approvals to Uniswap Permit 2, OpenSea Conduit, Blur Execution Delegate and Uniswap Universal Router
 const IGNORED_ADDRESSES = [
-  "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+  UNISWAP_PERMIT_2,
   "0x1E0049783F008A0085193E00003D00cd54003c71",
   "0x00000000000111AbE46ff893f3B2fdF1F759a8A8",
   "0xEf1c6E67703c7BD7107eed8303Fbe6EC2554BF6B",
@@ -297,6 +299,12 @@ const CEX_ADDRESSES = [
   "0xa910f92acdaf488fa6ef02174fb86208ad7722ba",
 ];
 
+const gnosisExecutionSuccessEventABI = "event ExecutionSuccess(bytes32 txHash, uint256 payment)";
+const multiSendSig = "0x8d80ff0a";
+const permitSig = "0xd505accf";
+const uniswapPermitSig = "0x2a2d80d1";
+const createInstanceSig = "0xe10cb8b1"; // To filter out zero-nonce transfer FPs
+
 const upgradedEventABI = ["event Upgraded(address indexed implementation)"];
 
 const permitFunctionABI =
@@ -341,6 +349,12 @@ module.exports = {
   safeBatchTransferFrom1155Sig,
   transferFromSig,
   CEX_ADDRESSES,
+  UNISWAP_PERMIT_2,
+  gnosisExecutionSuccessEventABI,
+  multiSendSig,
+  permitSig,
+  uniswapPermitSig,
+  createInstanceSig,
   permitFunctionABI,
   daiPermitFunctionABI,
   uniswapPermitFunctionABI,

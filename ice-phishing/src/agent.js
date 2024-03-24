@@ -56,6 +56,8 @@ const {
   createOpenseaAlert,
   createZeroNonceAllowanceAlert,
   createZeroNonceAllowanceTransferAlert,
+  createGnosisMultisigPhishingAlert,
+  createUniswapPermitPhishing,
 } = require("./findings");
 const {
   approveCountThreshold,
@@ -73,6 +75,7 @@ const {
   safeBatchTransferFrom1155Sig,
   transferFromSig,
   CEX_ADDRESSES,
+  UNISWAP_PERMIT_2,
   permitFunctionABI,
   daiPermitFunctionABI,
   uniswapPermitFunctionABI,
@@ -86,6 +89,11 @@ const {
   erc1155transferEventABI,
   upgradedEventABI,
   MAX_OBJECT_SIZE,
+  gnosisExecutionSuccessEventABI,
+  multiSendSig,
+  permitSig,
+  uniswapPermitSig,
+  createInstanceSig,
 } = require("./utils");
 const AddressType = require("./address-type");
 const { PersistenceHelper } = require("./persistence.helper");
@@ -288,6 +296,44 @@ const provideHandleTransaction =
       }
     }
 
+    const gnosisExecutionSuccessEvents = txEvent.filterLog(gnosisExecutionSuccessEventABI);
+    if (gnosisExecutionSuccessEvents.length) {
+      for (const trace of txEvent.traces) {
+        if (trace.action.callType == "delegatecall" && trace.action.input.startsWith(multiSendSig)) {
+          for (const trace of txEvent.traces) {
+            let permitSigUsed, permitFunctionABIUsed;
+            if (trace.action.input.startsWith(permitSig)) {
+              permitSigUsed = permitSig;
+              permitFunctionABIUsed = permitFunctionABI;
+            } else if (trace.action.input.startsWith(uniswapPermitSig)) {
+              permitSigUsed = uniswapPermitSig;
+              permitFunctionABIUsed = uniswapPermitFunctionABI;
+            }
+
+            if (permitSigUsed) {
+              const permitInterface = new ethers.utils.Interface([permitFunctionABIUsed]);
+              const decodedData = permitInterface.parseTransaction({ data: trace.action.input });
+              const { owner } = decodedData.args;
+              const erc20TransferEvents = txEvent.filterLog(transferEventErc20ABI);
+              if (erc20TransferEvents.length >= 2 && erc20TransferEvents.every((event) => event.args.from === owner)) {
+                const anomalyScore = await calculateAlertRate(
+                  chainId,
+                  BOT_ID,
+                  "ICE-PHISHING-MULTISIG",
+                  ScanCountType.CustomScanCount,
+                  counters.totalTransfers
+                );
+
+                const attackers = [f, txEvent.to, ...erc20TransferEvents.map((event) => event.args.to)];
+                findings.push(createGnosisMultisigPhishingAlert(owner, attackers, anomalyScore, hash));
+                return findings;
+              }
+            }
+          }
+        }
+      }
+    }
+
     const pullFunctions = [...txEvent.filterFunction(pullFunctionABI)];
     const sweepTokenFunctions = [...txEvent.filterFunction(sweepTokenFunctionABI)];
     if (pullFunctions.length && sweepTokenFunctions.length) {
@@ -372,7 +418,9 @@ const provideHandleTransaction =
       if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
         if (
           transferEvents.length &&
-          !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
+          transferEvents.length <= 5 &&
+          !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender)) &&
+          !txEvent.transaction.data.startsWith(createInstanceSig) // FP
         ) {
           if ((await getContractCreationHash(spender, chainId)) === hash) {
             let attackers = [
@@ -382,6 +430,13 @@ const provideHandleTransaction =
               ...transferEvents
                 .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
                 .filter((event) => event.args.to.toLowerCase() !== owner.toLowerCase())
+                .filter((event) => !UNISWAP_ROUTER_ADDRESSES.includes(event.args.to.toLowerCase()))
+                .filter(
+                  (eventToFilter) =>
+                    !transferEvents.some(
+                      (event) => event.args.from.toLowerCase() === eventToFilter.args.to.toLowerCase()
+                    )
+                )
                 .map((event) => event.args.to),
             ];
             // Remove duplicates
@@ -731,7 +786,9 @@ const provideHandleTransaction =
         } else if (spenderType === AddressType.LowNumTxsUnverifiedContract) {
           if (
             transferEvents.length &&
-            !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender))
+            transferEvents.length <= 5 &&
+            !transferEvents.some((event) => [event.args.from, event.args.to].includes(spender)) &&
+            !txEvent.transaction.data.startsWith(createInstanceSig) // FP
           ) {
             if ((await getContractCreationHash(spender, chainId)) === hash) {
               let attackers = [
@@ -741,6 +798,13 @@ const provideHandleTransaction =
                 ...transferEvents
                   .filter((event) => event.args.to.toLowerCase() !== event.address) // filter out token addresses
                   .filter((event) => event.args.to.toLowerCase() !== owner.toLowerCase())
+                  .filter((event) => !UNISWAP_ROUTER_ADDRESSES.includes(event.args.to.toLowerCase()))
+                  .filter(
+                    (eventToFilter) =>
+                      !transferEvents.some(
+                        (event) => event.args.from.toLowerCase() === eventToFilter.args.to.toLowerCase()
+                      )
+                  )
                   .map((event) => event.args.to),
               ];
               // Remove duplicates
@@ -1091,6 +1155,21 @@ const provideHandleTransaction =
               }
             }
           }
+        }
+      }
+
+      // Uniswap Permit2 phishing logic
+      if (txEvent.to && txEvent.to === UNISWAP_PERMIT_2.toLowerCase() && from !== txFrom.toLowerCase()) {
+        if ((await getTransactionCount(txFrom, provider, blockNumber)) < 20) {
+          const attackers = [txFrom, to];
+          const anomalyScore = await calculateAlertRate(
+            chainId,
+            BOT_ID,
+            "ICE-PHISHING-UNISWAP-PERMIT2",
+            isRelevantChain ? ScanCountType.CustomScanCount : ScanCountType.ErcTransferCount,
+            counters.totalTransfers
+          );
+          findings.push(createUniswapPermitPhishing(from, attackers, anomalyScore, hash));
         }
       }
 
