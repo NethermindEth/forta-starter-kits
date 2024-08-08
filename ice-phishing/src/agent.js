@@ -28,7 +28,6 @@ const {
   isFailSafe,
 } = require("./helper");
 const {
-  createErrorAlert,
   createHighNumApprovalsAlertERC20,
   createHighNumApprovalsInfoAlertERC20,
   createHighNumApprovalsAlertERC721,
@@ -571,10 +570,6 @@ const provideHandleTransaction =
             } catch (e) {
               tries++;
               if (tries === 3) {
-                const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-                errorCache.add(
-                  createErrorAlert(e.toString(), "agent.handleTransaction (approvals-getCode)", stackTrace)
-                );
                 return findings;
               }
               console.log(`Attempt ${tries} to get the code failed, retrying...`);
@@ -1011,10 +1006,6 @@ const provideHandleTransaction =
           try {
             nonce = await getTransactionCount(txFrom, provider, blockNumber);
           } catch (e) {
-            const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-            errorCache.add(
-              createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount)", stackTrace)
-            );
             return findings;
           }
           if (nonce > 50000) continue;
@@ -1025,10 +1016,6 @@ const provideHandleTransaction =
               try {
                 code = await provider.getCode(from);
               } catch (e) {
-                const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-                errorCache.add(
-                  createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getCode)", stackTrace)
-                );
                 return findings;
               }
               if (code === "0x") {
@@ -1041,10 +1028,6 @@ const provideHandleTransaction =
                   try {
                     fromNonce = await getTransactionCount(from, provider, blockNumber);
                   } catch (e) {
-                    const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-                    errorCache.add(
-                      createErrorAlert(e.toString(), "agent.handleTransaction (transfers-getTxCount2)", stackTrace)
-                    );
                     return findings;
                   }
                   if (fromNonce < 3) {
