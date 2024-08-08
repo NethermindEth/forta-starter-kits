@@ -31,7 +31,7 @@
   "dependencies": {
     "@types/jest": "^27.4.1",
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.36"
+    "forta-agent": "^0.1.48"
   },
   "devDependencies": {
     "jest": "^27.0.6",
