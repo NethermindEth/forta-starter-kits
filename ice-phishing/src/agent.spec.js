@@ -517,7 +517,8 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ApprovalForAll
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
-        .mockReturnValueOnce([]); // ERC1155 transfers
+        .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]); // Gnosis Execution Success events
       mockTxEvent.filterFunction
         .mockReturnValueOnce([])
         .mockReturnValueOnce([])
@@ -526,7 +527,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]);
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
-      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
@@ -575,7 +576,7 @@ describe("ice-phishing bot", () => {
           ],
         }),
       ]);
-      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
@@ -624,7 +625,7 @@ describe("ice-phishing bot", () => {
           ],
         }),
       ]);
-      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
@@ -673,7 +674,7 @@ describe("ice-phishing bot", () => {
           ],
         }),
       ]);
-      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(6);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
@@ -815,7 +816,7 @@ describe("ice-phishing bot", () => {
           ],
         }),
       ]);
-      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(8);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
@@ -955,7 +956,7 @@ describe("ice-phishing bot", () => {
           ],
         }),
       ]);
-      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(7);
+      expect(mockTxEvent.filterLog).toHaveBeenCalledTimes(8);
       expect(mockTxEvent.filterFunction).toHaveBeenCalledTimes(5);
     });
 
@@ -977,7 +978,9 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([mockApprovalForAllEvent[0]]) // ApprovalForAll
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]) // ERC1155 transfers
+
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash0",
         timestamp: 0,
@@ -1005,6 +1008,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash1",
         timestamp: 1000,
@@ -1022,6 +1026,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1100,6 +1105,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1118,6 +1124,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1212,6 +1219,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1229,6 +1237,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1297,6 +1306,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1314,6 +1324,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1413,6 +1424,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1442,6 +1454,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1478,6 +1491,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1494,6 +1508,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1619,6 +1634,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1645,6 +1661,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1766,6 +1783,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1792,6 +1810,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1826,6 +1845,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -1863,6 +1883,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([mockTransferEvents[i]]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
@@ -1882,6 +1903,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvents[2]]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -1971,6 +1993,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -2002,6 +2025,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([mockTransferEvents2[i]]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
@@ -2023,6 +2047,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvents2[2]]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -2067,6 +2092,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -2097,6 +2123,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([mockTransferERC721Events[i]]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
@@ -2119,6 +2146,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([mockTransferERC721Events[2]]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -2207,6 +2235,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -2234,6 +2263,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([mockTransferSingleEvents[i]]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
@@ -2252,6 +2282,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([mockTransferSingleEvents[2]]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -2368,6 +2399,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -2395,6 +2427,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([mockTransferBatchEvents[i]]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
@@ -2414,6 +2447,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([mockTransferBatchEvents[2]]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -2567,6 +2601,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 1000 * i,
@@ -2594,6 +2629,7 @@ describe("ice-phishing bot", () => {
             .mockReturnValueOnce([]) // ERC20 transfers
             .mockReturnValueOnce([]) // ERC721 transfers
             .mockReturnValueOnce([mockTransferBatchEvents[i]]) // ERC1155 transfers
+            .mockReturnValueOnce([]) // Gnosis Execution Success events
             .mockReturnValueOnce([]), // Upgrades
           hash: `hash${i}`,
           timestamp: 3000 + 1000 * i,
@@ -2623,6 +2659,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([mockTransferBatchEvents[2]]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -2744,6 +2781,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash33",
         timestamp: 1001,
@@ -2766,6 +2804,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockBalanceOf.mockResolvedValueOnce(ethers.BigNumber.from(0));
@@ -2824,6 +2863,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash33",
         timestamp: 1001,
@@ -2846,6 +2886,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -2910,6 +2951,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash33",
         timestamp: 1001,
@@ -2932,6 +2974,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction.mockReturnValueOnce([]).mockReturnValueOnce([]).mockReturnValueOnce([]);
@@ -3220,6 +3263,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -3302,6 +3346,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -3421,6 +3466,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvent]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -3545,6 +3591,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([mockTransferEvent]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -3647,6 +3694,7 @@ describe("ice-phishing bot", () => {
         .mockReturnValueOnce([]) // ERC20 transfers
         .mockReturnValueOnce([]) // ERC721 transfers
         .mockReturnValueOnce([]) // ERC1155 transfers
+        .mockReturnValueOnce([]) // Gnosis Execution Success events
         .mockReturnValueOnce([]); // Upgrades
 
       mockTxEvent.filterFunction
@@ -3711,6 +3759,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash33",
         timestamp: 1001,
@@ -3788,7 +3837,8 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
-          .mockReturnValueOnce([mockUpgradedEvents[0]]), // Upgrades
+          .mockReturnValueOnce([mockUpgradedEvents[0]]) // Upgrades
+          .mockReturnValueOnce([]), // Gnosis Execution Success events
         hash: "hash33",
         timestamp: 1001,
         from: victim,
@@ -3909,6 +3959,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([mockTransferEvents[0]]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash33",
         timestamp: 1001,
@@ -3966,6 +4017,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([mockTransferEvents[1]]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: "hash334",
         timestamp: 1101,
@@ -4065,6 +4117,7 @@ describe("ice-phishing bot", () => {
           .mockReturnValueOnce([]) // ERC20 transfers
           .mockReturnValueOnce([]) // ERC721 transfers
           .mockReturnValueOnce([]) // ERC1155 transfers
+          .mockReturnValueOnce([]) // Gnosis Execution Success events
           .mockReturnValueOnce([]), // Upgrades
         hash: `hash123`,
         timestamp: 4000,

@@ -1203,6 +1203,100 @@ function createZeroNonceAllowanceTransferAlert(victim, attackers, asset, anomaly
   });
 }
 
+function createGnosisMultisigPhishingAlert(victim, attackers, anomalyScore, txHash) {
+  let labels = [];
+
+  const metadata = {
+    anomalyScore: anomalyScore.toString(),
+  };
+  metadata["victim"] = victim;
+
+  attackers.forEach((attacker, index) => {
+    const attackerName = `attacker${index + 1}`;
+    metadata[attackerName] = attacker;
+
+    const attackerLabel = Label.fromObject({
+      entity: attacker,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.9,
+      remove: false,
+    });
+    labels.push(attackerLabel);
+  });
+
+  return Finding.fromObject({
+    name: "Permitted assets have been transferred using a multisig",
+    description: `${attackers[0]} transferred ${victim}'s assets using a multisig contract`,
+    alertId: "ICE-PHISHING-MULTISIG",
+    severity: FindingSeverity.Critical,
+    type: FindingType.Suspicious,
+    metadata,
+    labels: [
+      ...labels,
+      Label.fromObject({
+        entity: victim,
+        entityType: EntityType.Address,
+        label: "Victim",
+        confidence: 0.9,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Attack",
+        confidence: 0.9,
+      }),
+    ],
+  });
+}
+
+function createUniswapPermitPhishing(victim, attackers, anomalyScore, txHash) {
+  let labels = [];
+
+  const metadata = {
+    anomalyScore: anomalyScore.toString(),
+  };
+  metadata["victim"] = victim;
+
+  attackers.forEach((attacker, index) => {
+    const attackerName = `attacker${index + 1}`;
+    metadata[attackerName] = attacker;
+
+    const attackerLabel = Label.fromObject({
+      entity: attacker,
+      entityType: EntityType.Address,
+      label: "Attacker",
+      confidence: 0.9,
+      remove: false,
+    });
+    labels.push(attackerLabel);
+  });
+
+  return Finding.fromObject({
+    name: "Permitted assets have been transferred through Uniswap Permit2",
+    description: `${attackers[0]} transferred ${victim}'s assets using Uniswap Permit2`,
+    alertId: "ICE-PHISHING-UNISWAP-PERMIT2",
+    severity: FindingSeverity.Critical,
+    type: FindingType.Suspicious,
+    metadata,
+    labels: [
+      ...labels,
+      Label.fromObject({
+        entity: victim,
+        entityType: EntityType.Address,
+        label: "Victim",
+        confidence: 0.9,
+      }),
+      Label.fromObject({
+        entity: txHash,
+        entityType: EntityType.Transaction,
+        label: "Attack",
+        confidence: 0.9,
+      }),
+    ],
+  });
+}
+
 function createOpenseaAlert(victim, attacker, newImplementation, anomalyScore, txHash) {
   return Finding.fromObject({
     name: "Opensea proxy implementation changed to attacker's contract",
@@ -1268,4 +1362,6 @@ module.exports = {
   createOpenseaAlert,
   createZeroNonceAllowanceAlert,
   createZeroNonceAllowanceTransferAlert,
+  createGnosisMultisigPhishingAlert,
+  createUniswapPermitPhishing,
 };
