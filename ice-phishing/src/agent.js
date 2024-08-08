@@ -1028,7 +1028,6 @@ const provideHandleTransaction =
                   try {
                     fromNonce = await getTransactionCount(from, provider, blockNumber);
                   } catch (e) {
-                    const stackTrace = util.inspect(e, { showHidden: false, depth: null });
                     return findings;
                   }
                   if (fromNonce < 3) {
