@@ -13,7 +13,6 @@ const {
 } = require("./utils");
 const errorCache = require("./errorCache");
 const AddressType = require("./address-type");
-const { createErrorAlert } = require("./findings");
 
 let getApiKeys;
 
@@ -279,10 +278,6 @@ async function getTransactionCount(address, provider, blockNumber) {
       break; // exit the loop if successful
     } catch (e) {
       tries++;
-      if (tries === maxTries) {
-        const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
-      }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
   }
@@ -399,10 +394,6 @@ async function getAddressType(address, scamAddresses, cachedAddresses, provider,
       break; // exit the loop if successful
     } catch (e) {
       tries++;
-      if (tries === maxTries) {
-        const stackTrace = util.inspect(e, { showHidden: false, depth: null });
-        errorCache.add(createErrorAlert(e.toString(), "helper.getEoaType", stackTrace));
-      }
       await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second before retrying
     }
   }
