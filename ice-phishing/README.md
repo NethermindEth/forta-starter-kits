@@ -12,7 +12,6 @@ This bot detects if an account (EOA with low nonce or unverified contract with l
 - Optimism
 - Binance Smart Chain
 - Polygon
-- Fantom
 - Arbitrum
 - Avalanche
 
