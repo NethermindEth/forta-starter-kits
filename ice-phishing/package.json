@@ -58,7 +58,7 @@
     "format": "prettier --write \"src/**/*.js\""
   },
   "dependencies": {
-    "axios": "^0.27.2",
+    "axios": "^0.28.0",
     "forta-agent": "^0.1.48",
     "bot-alert-rate": "^0.0.4",
     "lru-cache": "^7.13.1",
