@@ -32,7 +32,7 @@
     "@types/jest": "^27.4.1",
     "arima": "^0.2.5",
     "bignumber.js": "^9.0.2",
-    "forta-agent": "^0.1.36",
+    "forta-agent": "^0.1.48",
     "rolling-math": "^0.0.3"
   },
   "devDependencies": {
