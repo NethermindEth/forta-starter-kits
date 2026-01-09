@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.36",
+    "forta-agent": "^0.1.48",
     "node-fetch": "^2.6.7",
     "dotenv": "^16.0.3"
   },

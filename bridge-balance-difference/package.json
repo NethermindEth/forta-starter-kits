@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "arima": "^0.2.5",
-    "forta-agent": "^0.1.36"
+    "forta-agent": "^0.1.48"
   },
   "devDependencies": {
     "eslint": "^8.20.0",
